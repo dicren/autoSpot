@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Backup Room database with vehicles and locations -->
+    <include domain="database" path="parking_database" />
+    <include domain="database" path="parking_database-shm" />
+    <include domain="database" path="parking_database-wal" />
+</full-backup-content>

@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Emplacement de stationnement</string>
+    <string name="notification_channel_description">Notifications lors de l\'enregistrement de l\'emplacement de la voiture</string>
+    <string name="notification_title">Enregistrement de l\'emplacement</string>
+    <string name="notification_text">Enregistrement de l\'emplacement de votre voiture…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">Votre voiture</string>
+    <string name="parked_at">Garé</string>
+    <string name="navigate_button">Naviguer avec Google Maps</string>
+    <string name="clear_button">Effacer l\'emplacement</string>
+    <string name="center_map">Centrer la carte</string>
+    <string name="reset_orientation">Réinitialiser l\'orientation</string>
+    <string name="share_location">Partager l\'emplacement</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">Aucun emplacement enregistré</string>
+    <string name="no_location_description">L\'emplacement de votre voiture sera enregistré automatiquement lorsque vous vous déconnecterez du Bluetooth de votre voiture.</string>
+    <string name="save_location_button">Enregistrer l\'emplacement actuel</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">Aucun véhicule configuré</string>
+    <string name="vehicles_title">Véhicules</string>
+    <string name="add_vehicle">Ajouter un véhicule</string>
+    <string name="edit_vehicle">Modifier le véhicule</string>
+    <string name="vehicle_name">Nom du véhicule</string>
+    <string name="vehicle_name_hint">ex. Ma voiture</string>
+    <string name="bluetooth_device">Appareil Bluetooth</string>
+    <string name="select_bluetooth_device">Sélectionner l\'appareil Bluetooth</string>
+    <string name="no_paired_devices">Aucun appareil associé. Associez d\'abord votre voiture dans les paramètres Bluetooth.</string>
+    <string name="save">Enregistrer</string>
+    <string name="cancel">Annuler</string>
+    <string name="no_vehicles">Aucun véhicule configuré</string>
+    <string name="tap_to_activate">Appuyez pour activer</string>
+    <string name="active">Actif</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">Surveillance Bluetooth</string>
+    <string name="bluetooth_monitor_channel_description">Détecte quand vous vous déconnectez du Bluetooth de votre voiture</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">Surveillance du Bluetooth de la voiture</string>
+
+    <!-- History -->
+    <string name="history_title">Historique</string>
+    <string name="no_history">Aucun historique de stationnement</string>
+    <string name="clear_all">Tout effacer</string>
+    <string name="delete">Supprimer</string>
+    <string name="back_to_latest">Retour au plus récent</string>
+
+    <!-- Relative time -->
+    <string name="just_now">À l\'instant</string>
+    <plurals name="minutes_ago">
+        <item quantity="one">Il y a %d minute</item>
+        <item quantity="other">Il y a %d minutes</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="one">Il y a %d heure</item>
+        <item quantity="other">Il y a %d heures</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">Ajouter un raccourci</string>
+    <string name="shortcut_label">Trouver ma voiture</string>
+    <string name="shortcut_long_label">Naviguer vers ma voiture</string>
+    <string name="shortcut_long_label_vehicle">Naviguer vers %s</string>
+    <string name="shortcut_not_supported">Raccourcis non pris en charge</string>
+    <string name="no_location_saved">Aucun emplacement enregistré</string>
+    <string name="maps_not_found">Google Maps introuvable</string>
+    <string name="select_vehicle_shortcut">Sélectionner le véhicule pour le raccourci</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Passer</string>
+    <string name="onboarding_back">Retour</string>
+    <string name="onboarding_next">Suivant</string>
+    <string name="onboarding_start">Commencer</string>
+    <string name="onboarding_welcome_title">Bienvenue sur AutoSpot</string>
+    <string name="onboarding_welcome_description">N\'oubliez plus jamais où vous avez garé votre voiture. Cette application enregistre automatiquement votre emplacement de stationnement.</string>
+    <string name="onboarding_bluetooth_title">Connectez votre véhicule</string>
+    <string name="onboarding_bluetooth_description">Ajoutez l\'appareil Bluetooth de votre voiture. L\'application détectera quand vous vous en déconnectez pour enregistrer votre emplacement.</string>
+    <string name="onboarding_auto_save_title">Enregistrement automatique</string>
+    <string name="onboarding_auto_save_description">Lorsque vous vous déconnectez du Bluetooth de votre voiture, l\'application enregistre automatiquement l\'endroit où vous vous êtes garé. Aucune action manuelle requise.</string>
+    <string name="onboarding_navigate_title">Retournez à votre voiture</string>
+    <string name="onboarding_navigate_description">Appuyez sur le bouton de navigation pour ouvrir Google Maps avec les directions vers votre voiture garée.</string>
+    <string name="onboarding_history_title">Historique de stationnement</string>
+    <string name="onboarding_history_description">Consultez tous vos emplacements de stationnement précédents. Appuyez sur une entrée pour la voir sur la carte.</string>
+    <string name="onboarding_share_title">Partagez votre emplacement</string>
+    <string name="onboarding_share_description">Partagez l\'emplacement de votre voiture avec vos amis ou votre famille pour qu\'ils puissent trouver où vous vous êtes garé.</string>
+    <string name="onboarding_shortcut_title">Raccourci d\'accès rapide</string>
+    <string name="onboarding_shortcut_description">Ajoutez un raccourci sur votre écran d\'accueil pour naviguer instantanément vers votre voiture en un seul tap. Appuyez longuement sur l\'icône de l\'application pour le créer.</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">Autorisations requises</string>
+    <string name="permissions_required_description">Activez la localisation sur \"Toujours\" avec la position précise, et l\'autorisation Bluetooth.</string>
+    <string name="grant_permissions">Accorder les autorisations</string>
+</resources>

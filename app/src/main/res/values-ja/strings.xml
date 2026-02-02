@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">駐車位置</string>
+    <string name="notification_channel_description">車の位置を保存する際の通知</string>
+    <string name="notification_title">位置を保存中</string>
+    <string name="notification_text">車の位置を保存しています…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">あなたの車</string>
+    <string name="parked_at">駐車済み</string>
+    <string name="navigate_button">Google Mapsでナビ</string>
+    <string name="clear_button">位置を消去</string>
+    <string name="center_map">地図を中央に</string>
+    <string name="reset_orientation">向きをリセット</string>
+    <string name="share_location">位置を共有</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">保存された位置がありません</string>
+    <string name="no_location_description">車のBluetoothから切断すると、車の位置が自動的に保存されます。</string>
+    <string name="save_location_button">現在地を保存</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">車両が設定されていません</string>
+    <string name="vehicles_title">車両</string>
+    <string name="add_vehicle">車両を追加</string>
+    <string name="edit_vehicle">車両を編集</string>
+    <string name="vehicle_name">車両名</string>
+    <string name="vehicle_name_hint">例：マイカー</string>
+    <string name="bluetooth_device">Bluetoothデバイス</string>
+    <string name="select_bluetooth_device">Bluetoothデバイスを選択</string>
+    <string name="no_paired_devices">ペアリングされたデバイスがありません。まずBluetooth設定で車をペアリングしてください。</string>
+    <string name="save">保存</string>
+    <string name="cancel">キャンセル</string>
+    <string name="no_vehicles">車両がまだ設定されていません</string>
+    <string name="tap_to_activate">タップしてアクティブに</string>
+    <string name="active">アクティブ</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">Bluetooth監視</string>
+    <string name="bluetooth_monitor_channel_description">車のBluetoothからの切断を検出します</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">車のBluetoothを監視中</string>
+
+    <!-- History -->
+    <string name="history_title">履歴</string>
+    <string name="no_history">駐車履歴がありません</string>
+    <string name="clear_all">すべて消去</string>
+    <string name="delete">削除</string>
+    <string name="back_to_latest">最新に戻る</string>
+
+    <!-- Relative time -->
+    <string name="just_now">たった今</string>
+    <plurals name="minutes_ago">
+        <item quantity="other">%d分前</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="other">%d時間前</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">ショートカットを追加</string>
+    <string name="shortcut_label">車を探す</string>
+    <string name="shortcut_long_label">車へナビゲート</string>
+    <string name="shortcut_long_label_vehicle">%sへナビゲート</string>
+    <string name="shortcut_not_supported">ショートカットはサポートされていません</string>
+    <string name="no_location_saved">位置が保存されていません</string>
+    <string name="maps_not_found">Google Mapsが見つかりません</string>
+    <string name="select_vehicle_shortcut">ショートカット用の車両を選択</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">スキップ</string>
+    <string name="onboarding_back">戻る</string>
+    <string name="onboarding_next">次へ</string>
+    <string name="onboarding_start">始める</string>
+    <string name="onboarding_welcome_title">AutoSpotへようこそ</string>
+    <string name="onboarding_welcome_description">もう駐車位置を忘れることはありません。このアプリは駐車位置を自動的に保存します。</string>
+    <string name="onboarding_bluetooth_title">車両を接続</string>
+    <string name="onboarding_bluetooth_description">車のBluetoothデバイスを追加してください。切断を検出して位置を保存します。</string>
+    <string name="onboarding_auto_save_title">自動保存</string>
+    <string name="onboarding_auto_save_description">車のBluetoothから切断すると、アプリが自動的に駐車位置を保存します。手動操作は不要です。</string>
+    <string name="onboarding_navigate_title">車へナビゲート</string>
+    <string name="onboarding_navigate_description">ナビゲーションボタンをタップすると、駐車した車への道順をGoogle Mapsで開きます。</string>
+    <string name="onboarding_history_title">駐車履歴</string>
+    <string name="onboarding_history_description">過去の駐車位置をすべて表示します。エントリーをタップすると地図上で確認できます。</string>
+    <string name="onboarding_share_title">位置を共有</string>
+    <string name="onboarding_share_description">友人や家族と車の位置を共有して、駐車場所を見つけてもらいましょう。</string>
+    <string name="onboarding_shortcut_title">クイックアクセスショートカット</string>
+    <string name="onboarding_shortcut_description">ホーム画面にショートカットを追加して、ワンタップで車へナビゲートできます。アプリアイコンを長押しして作成してください。</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">権限が必要です</string>
+    <string name="permissions_required_description">位置情報を「常に許可」で正確な位置情報を有効にし、Bluetooth権限を許可してください。</string>
+    <string name="grant_permissions">権限を付与</string>
+</resources>

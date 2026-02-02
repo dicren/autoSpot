@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">停车位置</string>
+    <string name="notification_channel_description">保存汽车位置时的通知</string>
+    <string name="notification_title">正在保存位置</string>
+    <string name="notification_text">正在保存您的汽车位置…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">您的汽车</string>
+    <string name="parked_at">已停车</string>
+    <string name="navigate_button">使用Google地图导航</string>
+    <string name="clear_button">清除位置</string>
+    <string name="center_map">居中地图</string>
+    <string name="reset_orientation">重置方向</string>
+    <string name="share_location">分享位置</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">没有保存的位置</string>
+    <string name="no_location_description">当您断开汽车蓝牙连接时，汽车位置将自动保存。</string>
+    <string name="save_location_button">保存当前位置</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">未配置车辆</string>
+    <string name="vehicles_title">车辆</string>
+    <string name="add_vehicle">添加车辆</string>
+    <string name="edit_vehicle">编辑车辆</string>
+    <string name="vehicle_name">车辆名称</string>
+    <string name="vehicle_name_hint">例如：我的汽车</string>
+    <string name="bluetooth_device">蓝牙设备</string>
+    <string name="select_bluetooth_device">选择蓝牙设备</string>
+    <string name="no_paired_devices">没有已配对的设备。请先在蓝牙设置中配对您的汽车。</string>
+    <string name="save">保存</string>
+    <string name="cancel">取消</string>
+    <string name="no_vehicles">尚未配置车辆</string>
+    <string name="tap_to_activate">点击激活</string>
+    <string name="active">活跃</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">蓝牙监控</string>
+    <string name="bluetooth_monitor_channel_description">检测您何时断开汽车蓝牙连接</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">正在监控汽车蓝牙</string>
+
+    <!-- History -->
+    <string name="history_title">历史记录</string>
+    <string name="no_history">没有停车记录</string>
+    <string name="clear_all">全部清除</string>
+    <string name="delete">删除</string>
+    <string name="back_to_latest">返回最新</string>
+
+    <!-- Relative time -->
+    <string name="just_now">刚刚</string>
+    <plurals name="minutes_ago">
+        <item quantity="other">%d分钟前</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="other">%d小时前</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">添加快捷方式</string>
+    <string name="shortcut_label">找到我的车</string>
+    <string name="shortcut_long_label">导航到我的车</string>
+    <string name="shortcut_long_label_vehicle">导航到%s</string>
+    <string name="shortcut_not_supported">不支持快捷方式</string>
+    <string name="no_location_saved">未保存位置</string>
+    <string name="maps_not_found">找不到Google地图</string>
+    <string name="select_vehicle_shortcut">选择快捷方式的车辆</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">跳过</string>
+    <string name="onboarding_back">返回</string>
+    <string name="onboarding_next">下一步</string>
+    <string name="onboarding_start">开始</string>
+    <string name="onboarding_welcome_title">欢迎使用AutoSpot</string>
+    <string name="onboarding_welcome_description">再也不会忘记停车位置。此应用会自动保存您的停车位置。</string>
+    <string name="onboarding_bluetooth_title">连接您的车辆</string>
+    <string name="onboarding_bluetooth_description">添加您汽车的蓝牙设备。应用会检测断开连接并保存您的位置。</string>
+    <string name="onboarding_auto_save_title">自动保存</string>
+    <string name="onboarding_auto_save_description">当您断开汽车蓝牙连接时，应用会自动保存停车位置。无需手动操作。</string>
+    <string name="onboarding_navigate_title">导航回您的车</string>
+    <string name="onboarding_navigate_description">点击导航按钮，使用Google地图打开前往停放汽车的路线。</string>
+    <string name="onboarding_history_title">停车历史</string>
+    <string name="onboarding_history_description">查看所有以前的停车位置。点击任何条目在地图上查看。</string>
+    <string name="onboarding_share_title">分享您的位置</string>
+    <string name="onboarding_share_description">与朋友或家人分享您的汽车位置，以便他们找到您的停车位置。</string>
+    <string name="onboarding_shortcut_title">快速访问快捷方式</string>
+    <string name="onboarding_shortcut_description">在主屏幕添加快捷方式，一键即可导航到您的车。长按应用图标创建。</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">需要权限</string>
+    <string name="permissions_required_description">请将位置权限设置为"始终"并启用精确位置，同时授予蓝牙权限。</string>
+    <string name="grant_permissions">授予权限</string>
+</resources>

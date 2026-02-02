@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Parkstandort</string>
+    <string name="notification_channel_description">Benachrichtigungen beim Speichern des Autostandorts</string>
+    <string name="notification_title">Standort speichern</string>
+    <string name="notification_text">Ihr Autostandort wird gespeichert…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">Ihr Auto</string>
+    <string name="parked_at">Geparkt</string>
+    <string name="navigate_button">Mit Google Maps navigieren</string>
+    <string name="clear_button">Standort löschen</string>
+    <string name="center_map">Karte zentrieren</string>
+    <string name="reset_orientation">Ausrichtung zurücksetzen</string>
+    <string name="share_location">Standort teilen</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">Kein gespeicherter Standort</string>
+    <string name="no_location_description">Der Standort Ihres Autos wird automatisch gespeichert, wenn Sie die Bluetooth-Verbindung zu Ihrem Auto trennen.</string>
+    <string name="save_location_button">Aktuellen Standort speichern</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">Kein Fahrzeug konfiguriert</string>
+    <string name="vehicles_title">Fahrzeuge</string>
+    <string name="add_vehicle">Fahrzeug hinzufügen</string>
+    <string name="edit_vehicle">Fahrzeug bearbeiten</string>
+    <string name="vehicle_name">Fahrzeugname</string>
+    <string name="vehicle_name_hint">z.B. Mein Auto</string>
+    <string name="bluetooth_device">Bluetooth-Gerät</string>
+    <string name="select_bluetooth_device">Bluetooth-Gerät auswählen</string>
+    <string name="no_paired_devices">Keine gekoppelten Geräte. Koppeln Sie zuerst Ihr Auto in den Bluetooth-Einstellungen.</string>
+    <string name="save">Speichern</string>
+    <string name="cancel">Abbrechen</string>
+    <string name="no_vehicles">Noch keine Fahrzeuge konfiguriert</string>
+    <string name="tap_to_activate">Zum Aktivieren tippen</string>
+    <string name="active">Aktiv</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">Bluetooth-Überwachung</string>
+    <string name="bluetooth_monitor_channel_description">Erkennt, wenn Sie die Bluetooth-Verbindung zu Ihrem Auto trennen</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">Auto-Bluetooth wird überwacht</string>
+
+    <!-- History -->
+    <string name="history_title">Verlauf</string>
+    <string name="no_history">Kein Parkverlauf</string>
+    <string name="clear_all">Alles löschen</string>
+    <string name="delete">Löschen</string>
+    <string name="back_to_latest">Zurück zum neuesten</string>
+
+    <!-- Relative time -->
+    <string name="just_now">Gerade eben</string>
+    <plurals name="minutes_ago">
+        <item quantity="one">Vor %d Minute</item>
+        <item quantity="other">Vor %d Minuten</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="one">Vor %d Stunde</item>
+        <item quantity="other">Vor %d Stunden</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">Verknüpfung hinzufügen</string>
+    <string name="shortcut_label">Mein Auto finden</string>
+    <string name="shortcut_long_label">Zu meinem Auto navigieren</string>
+    <string name="shortcut_long_label_vehicle">Zu %s navigieren</string>
+    <string name="shortcut_not_supported">Verknüpfungen nicht unterstützt</string>
+    <string name="no_location_saved">Kein Standort gespeichert</string>
+    <string name="maps_not_found">Google Maps nicht gefunden</string>
+    <string name="select_vehicle_shortcut">Fahrzeug für Verknüpfung auswählen</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Überspringen</string>
+    <string name="onboarding_back">Zurück</string>
+    <string name="onboarding_next">Weiter</string>
+    <string name="onboarding_start">Los geht\'s</string>
+    <string name="onboarding_welcome_title">Willkommen bei AutoSpot</string>
+    <string name="onboarding_welcome_description">Vergessen Sie nie wieder, wo Sie Ihr Auto geparkt haben. Diese App speichert automatisch Ihren Parkstandort.</string>
+    <string name="onboarding_bluetooth_title">Verbinden Sie Ihr Fahrzeug</string>
+    <string name="onboarding_bluetooth_description">Fügen Sie das Bluetooth-Gerät Ihres Autos hinzu. Die App erkennt, wenn Sie sich davon trennen, um Ihren Standort zu speichern.</string>
+    <string name="onboarding_auto_save_title">Automatisches Speichern</string>
+    <string name="onboarding_auto_save_description">Wenn Sie die Bluetooth-Verbindung zu Ihrem Auto trennen, speichert die App automatisch, wo Sie geparkt haben. Keine manuelle Aktion erforderlich.</string>
+    <string name="onboarding_navigate_title">Zurück zu Ihrem Auto navigieren</string>
+    <string name="onboarding_navigate_description">Tippen Sie auf die Navigationsschaltfläche, um Google Maps mit der Route zu Ihrem geparkten Auto zu öffnen.</string>
+    <string name="onboarding_history_title">Parkverlauf</string>
+    <string name="onboarding_history_description">Sehen Sie alle Ihre vorherigen Parkstandorte. Tippen Sie auf einen Eintrag, um ihn auf der Karte anzuzeigen.</string>
+    <string name="onboarding_share_title">Standort teilen</string>
+    <string name="onboarding_share_description">Teilen Sie den Standort Ihres Autos mit Freunden oder Familie, damit sie finden können, wo Sie geparkt haben.</string>
+    <string name="onboarding_shortcut_title">Schnellzugriff-Verknüpfung</string>
+    <string name="onboarding_shortcut_description">Fügen Sie eine Verknüpfung auf Ihrem Startbildschirm hinzu, um mit einem Tippen sofort zu Ihrem Auto zu navigieren. Halten Sie das App-Symbol lange gedrückt, um sie zu erstellen.</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">Berechtigungen erforderlich</string>
+    <string name="permissions_required_description">Aktivieren Sie den Standort auf \"Immer\" mit genauem Standort und die Bluetooth-Berechtigung.</string>
+    <string name="grant_permissions">Berechtigungen erteilen</string>
+</resources>

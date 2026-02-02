@@ -1,0 +1,102 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Место парковки</string>
+    <string name="notification_channel_description">Уведомления при сохранении местоположения автомобиля</string>
+    <string name="notification_title">Сохранение местоположения</string>
+    <string name="notification_text">Сохранение местоположения вашего автомобиля…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">Ваш автомобиль</string>
+    <string name="parked_at">Припаркован</string>
+    <string name="navigate_button">Навигация в Google Maps</string>
+    <string name="clear_button">Удалить местоположение</string>
+    <string name="center_map">Центрировать карту</string>
+    <string name="reset_orientation">Сбросить ориентацию</string>
+    <string name="share_location">Поделиться местоположением</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">Нет сохранённого местоположения</string>
+    <string name="no_location_description">Местоположение вашего автомобиля будет сохранено автоматически при отключении от Bluetooth вашего автомобиля.</string>
+    <string name="save_location_button">Сохранить текущее местоположение</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">Транспортное средство не настроено</string>
+    <string name="vehicles_title">Транспортные средства</string>
+    <string name="add_vehicle">Добавить транспортное средство</string>
+    <string name="edit_vehicle">Редактировать транспортное средство</string>
+    <string name="vehicle_name">Название транспортного средства</string>
+    <string name="vehicle_name_hint">напр. Мой автомобиль</string>
+    <string name="bluetooth_device">Bluetooth-устройство</string>
+    <string name="select_bluetooth_device">Выбрать Bluetooth-устройство</string>
+    <string name="no_paired_devices">Нет сопряжённых устройств. Сначала выполните сопряжение с автомобилем в настройках Bluetooth.</string>
+    <string name="save">Сохранить</string>
+    <string name="cancel">Отмена</string>
+    <string name="no_vehicles">Транспортные средства ещё не настроены</string>
+    <string name="tap_to_activate">Нажмите для активации</string>
+    <string name="active">Активно</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">Мониторинг Bluetooth</string>
+    <string name="bluetooth_monitor_channel_description">Определяет отключение от Bluetooth вашего автомобиля</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">Мониторинг Bluetooth автомобиля</string>
+
+    <!-- History -->
+    <string name="history_title">История</string>
+    <string name="no_history">Нет истории парковок</string>
+    <string name="clear_all">Очистить всё</string>
+    <string name="delete">Удалить</string>
+    <string name="back_to_latest">Вернуться к последнему</string>
+
+    <!-- Relative time -->
+    <string name="just_now">Только что</string>
+    <plurals name="minutes_ago">
+        <item quantity="one">%d минуту назад</item>
+        <item quantity="few">%d минуты назад</item>
+        <item quantity="many">%d минут назад</item>
+        <item quantity="other">%d минут назад</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="one">%d час назад</item>
+        <item quantity="few">%d часа назад</item>
+        <item quantity="many">%d часов назад</item>
+        <item quantity="other">%d часов назад</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">Добавить ярлык</string>
+    <string name="shortcut_label">Найти мой автомобиль</string>
+    <string name="shortcut_long_label">Навигация к моему автомобилю</string>
+    <string name="shortcut_long_label_vehicle">Навигация к %s</string>
+    <string name="shortcut_not_supported">Ярлыки не поддерживаются</string>
+    <string name="no_location_saved">Местоположение не сохранено</string>
+    <string name="maps_not_found">Google Maps не найден</string>
+    <string name="select_vehicle_shortcut">Выбрать транспортное средство для ярлыка</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Пропустить</string>
+    <string name="onboarding_back">Назад</string>
+    <string name="onboarding_next">Далее</string>
+    <string name="onboarding_start">Начать</string>
+    <string name="onboarding_welcome_title">Добро пожаловать в AutoSpot</string>
+    <string name="onboarding_welcome_description">Больше никогда не забывайте, где припаркован ваш автомобиль. Это приложение автоматически сохраняет место парковки.</string>
+    <string name="onboarding_bluetooth_title">Подключите ваш автомобиль</string>
+    <string name="onboarding_bluetooth_description">Добавьте Bluetooth-устройство вашего автомобиля. Приложение определит момент отключения и сохранит местоположение.</string>
+    <string name="onboarding_auto_save_title">Автоматическое сохранение</string>
+    <string name="onboarding_auto_save_description">При отключении от Bluetooth автомобиля приложение автоматически сохраняет место парковки. Никаких ручных действий не требуется.</string>
+    <string name="onboarding_navigate_title">Навигация к автомобилю</string>
+    <string name="onboarding_navigate_description">Нажмите кнопку навигации, чтобы открыть Google Maps с маршрутом к вашему припаркованному автомобилю.</string>
+    <string name="onboarding_history_title">История парковок</string>
+    <string name="onboarding_history_description">Просматривайте все предыдущие места парковки. Нажмите на запись, чтобы увидеть её на карте.</string>
+    <string name="onboarding_share_title">Поделитесь местоположением</string>
+    <string name="onboarding_share_description">Поделитесь местоположением автомобиля с друзьями или семьёй, чтобы они могли найти, где вы припарковались.</string>
+    <string name="onboarding_shortcut_title">Быстрый доступ</string>
+    <string name="onboarding_shortcut_description">Добавьте ярлык на главный экран для мгновенной навигации к автомобилю одним нажатием. Удерживайте значок приложения, чтобы создать его.</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">Требуются разрешения</string>
+    <string name="permissions_required_description">Включите геолокацию \"Всегда\" с точным местоположением и разрешение Bluetooth.</string>
+    <string name="grant_permissions">Предоставить разрешения</string>
+</resources>

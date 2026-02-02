@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<data-extraction-rules>
+    <cloud-backup>
+        <!-- Backup Room database with vehicles and locations -->
+        <include domain="database" path="parking_database" />
+        <include domain="database" path="parking_database-shm" />
+        <include domain="database" path="parking_database-wal" />
+    </cloud-backup>
+    <device-transfer>
+        <!-- Transfer Room database when switching devices -->
+        <include domain="database" path="parking_database" />
+        <include domain="database" path="parking_database-shm" />
+        <include domain="database" path="parking_database-wal" />
+    </device-transfer>
+</data-extraction-rules>

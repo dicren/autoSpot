@@ -1,0 +1,96 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">주차 위치</string>
+    <string name="notification_channel_description">자동차 위치 저장 시 알림</string>
+    <string name="notification_title">위치 저장 중</string>
+    <string name="notification_text">자동차 위치를 저장하고 있습니다…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">내 차</string>
+    <string name="parked_at">주차됨</string>
+    <string name="navigate_button">Google 지도로 내비게이션</string>
+    <string name="clear_button">위치 삭제</string>
+    <string name="center_map">지도 중앙으로</string>
+    <string name="reset_orientation">방향 초기화</string>
+    <string name="share_location">위치 공유</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">저장된 위치 없음</string>
+    <string name="no_location_description">자동차 블루투스 연결이 끊어지면 자동차 위치가 자동으로 저장됩니다.</string>
+    <string name="save_location_button">현재 위치 저장</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">구성된 차량 없음</string>
+    <string name="vehicles_title">차량</string>
+    <string name="add_vehicle">차량 추가</string>
+    <string name="edit_vehicle">차량 편집</string>
+    <string name="vehicle_name">차량 이름</string>
+    <string name="vehicle_name_hint">예: 내 차</string>
+    <string name="bluetooth_device">블루투스 기기</string>
+    <string name="select_bluetooth_device">블루투스 기기 선택</string>
+    <string name="no_paired_devices">페어링된 기기가 없습니다. 먼저 블루투스 설정에서 자동차를 페어링하세요.</string>
+    <string name="save">저장</string>
+    <string name="cancel">취소</string>
+    <string name="no_vehicles">아직 구성된 차량이 없습니다</string>
+    <string name="tap_to_activate">탭하여 활성화</string>
+    <string name="active">활성</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">블루투스 모니터링</string>
+    <string name="bluetooth_monitor_channel_description">자동차 블루투스 연결 해제를 감지합니다</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">자동차 블루투스 모니터링 중</string>
+
+    <!-- History -->
+    <string name="history_title">기록</string>
+    <string name="no_history">주차 기록 없음</string>
+    <string name="clear_all">모두 삭제</string>
+    <string name="delete">삭제</string>
+    <string name="back_to_latest">최신으로 돌아가기</string>
+
+    <!-- Relative time -->
+    <string name="just_now">방금</string>
+    <plurals name="minutes_ago">
+        <item quantity="other">%d분 전</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="other">%d시간 전</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">바로가기 추가</string>
+    <string name="shortcut_label">내 차 찾기</string>
+    <string name="shortcut_long_label">내 차로 내비게이션</string>
+    <string name="shortcut_long_label_vehicle">%s로 내비게이션</string>
+    <string name="shortcut_not_supported">바로가기가 지원되지 않습니다</string>
+    <string name="no_location_saved">저장된 위치 없음</string>
+    <string name="maps_not_found">Google 지도를 찾을 수 없습니다</string>
+    <string name="select_vehicle_shortcut">바로가기용 차량 선택</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">건너뛰기</string>
+    <string name="onboarding_back">뒤로</string>
+    <string name="onboarding_next">다음</string>
+    <string name="onboarding_start">시작</string>
+    <string name="onboarding_welcome_title">AutoSpot에 오신 것을 환영합니다</string>
+    <string name="onboarding_welcome_description">더 이상 주차 위치를 잊지 마세요. 이 앱은 자동으로 주차 위치를 저장합니다.</string>
+    <string name="onboarding_bluetooth_title">차량 연결</string>
+    <string name="onboarding_bluetooth_description">자동차의 블루투스 기기를 추가하세요. 앱이 연결 해제를 감지하여 위치를 저장합니다.</string>
+    <string name="onboarding_auto_save_title">자동 저장</string>
+    <string name="onboarding_auto_save_description">자동차 블루투스 연결이 끊어지면 앱이 자동으로 주차 위치를 저장합니다. 수동 조작이 필요 없습니다.</string>
+    <string name="onboarding_navigate_title">차로 내비게이션</string>
+    <string name="onboarding_navigate_description">내비게이션 버튼을 탭하면 주차된 차까지의 경로를 Google 지도로 엽니다.</string>
+    <string name="onboarding_history_title">주차 기록</string>
+    <string name="onboarding_history_description">이전 주차 위치를 모두 확인하세요. 항목을 탭하면 지도에서 볼 수 있습니다.</string>
+    <string name="onboarding_share_title">위치 공유</string>
+    <string name="onboarding_share_description">친구나 가족과 자동차 위치를 공유하여 주차 위치를 찾을 수 있게 하세요.</string>
+    <string name="onboarding_shortcut_title">빠른 접근 바로가기</string>
+    <string name="onboarding_shortcut_description">홈 화면에 바로가기를 추가하여 한 번의 탭으로 차로 즉시 내비게이션하세요. 앱 아이콘을 길게 눌러 생성하세요.</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">권한 필요</string>
+    <string name="permissions_required_description">위치를 \"항상\"으로 설정하고 정확한 위치를 활성화하고 블루투스 권한을 허용하세요.</string>
+    <string name="grant_permissions">권한 부여</string>
+</resources>

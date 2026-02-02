@@ -1,0 +1,98 @@
+<resources>
+    <string name="app_name">AutoSpot</string>
+
+    <!-- Notification -->
+    <string name="notification_channel_name">Ubicación de aparcamiento</string>
+    <string name="notification_channel_description">Notificaciones al guardar la ubicación del coche</string>
+    <string name="notification_title">Guardando ubicación</string>
+    <string name="notification_text">Guardando la ubicación de tu coche…</string>
+
+    <!-- Parking Screen -->
+    <string name="marker_title">Tu coche</string>
+    <string name="parked_at">Aparcado</string>
+    <string name="navigate_button">Navegar con Google Maps</string>
+    <string name="clear_button">Borrar ubicación</string>
+    <string name="center_map">Centrar mapa</string>
+    <string name="reset_orientation">Restablecer orientación</string>
+    <string name="share_location">Compartir ubicación</string>
+
+    <!-- No Location -->
+    <string name="no_location_title">Sin ubicación guardada</string>
+    <string name="no_location_description">La ubicación de tu coche se guardará automáticamente cuando te desconectes del Bluetooth del coche.</string>
+    <string name="save_location_button">Guardar ubicación actual</string>
+
+    <!-- Vehicle Configuration -->
+    <string name="no_vehicle_configured">Sin vehículo configurado</string>
+    <string name="vehicles_title">Vehículos</string>
+    <string name="add_vehicle">Añadir vehículo</string>
+    <string name="edit_vehicle">Editar vehículo</string>
+    <string name="vehicle_name">Nombre del vehículo</string>
+    <string name="vehicle_name_hint">ej. Mi Coche</string>
+    <string name="bluetooth_device">Dispositivo Bluetooth</string>
+    <string name="select_bluetooth_device">Seleccionar dispositivo Bluetooth</string>
+    <string name="no_paired_devices">No hay dispositivos emparejados. Empareja primero tu coche en Ajustes de Bluetooth.</string>
+    <string name="save">Guardar</string>
+    <string name="cancel">Cancelar</string>
+    <string name="no_vehicles">Aún no hay vehículos configurados</string>
+    <string name="tap_to_activate">Toca para activar</string>
+    <string name="active">Activo</string>
+
+    <!-- Bluetooth Monitor Service -->
+    <string name="bluetooth_monitor_channel_name">Monitoreo de Bluetooth</string>
+    <string name="bluetooth_monitor_channel_description">Detecta cuando te desconectas del Bluetooth del coche</string>
+    <string name="bluetooth_monitor_notification_title">AutoSpot</string>
+    <string name="bluetooth_monitor_notification_text">Monitoreando Bluetooth del coche</string>
+
+    <!-- History -->
+    <string name="history_title">Historial</string>
+    <string name="no_history">Sin historial de aparcamiento</string>
+    <string name="clear_all">Borrar todo</string>
+    <string name="delete">Eliminar</string>
+    <string name="back_to_latest">Volver al más reciente</string>
+
+    <!-- Relative time -->
+    <string name="just_now">Ahora mismo</string>
+    <plurals name="minutes_ago">
+        <item quantity="one">Hace %d minuto</item>
+        <item quantity="other">Hace %d minutos</item>
+    </plurals>
+    <plurals name="hours_ago">
+        <item quantity="one">Hace %d hora</item>
+        <item quantity="other">Hace %d horas</item>
+    </plurals>
+
+    <!-- Shortcut -->
+    <string name="add_shortcut">Añadir acceso directo</string>
+    <string name="shortcut_label">Encontrar coche</string>
+    <string name="shortcut_long_label">Navegar a mi coche</string>
+    <string name="shortcut_long_label_vehicle">Navegar a %s</string>
+    <string name="shortcut_not_supported">Accesos directos no soportados</string>
+    <string name="no_location_saved">No hay ubicación guardada</string>
+    <string name="maps_not_found">Google Maps no encontrado</string>
+    <string name="select_vehicle_shortcut">Seleccionar vehículo para acceso directo</string>
+
+    <!-- Onboarding -->
+    <string name="onboarding_skip">Omitir</string>
+    <string name="onboarding_back">Atrás</string>
+    <string name="onboarding_next">Siguiente</string>
+    <string name="onboarding_start">Empezar</string>
+    <string name="onboarding_welcome_title">Bienvenido a AutoSpot</string>
+    <string name="onboarding_welcome_description">No vuelvas a olvidar dónde aparcaste. Esta aplicación guarda automáticamente la ubicación de tu coche.</string>
+    <string name="onboarding_bluetooth_title">Conecta Tu Vehículo</string>
+    <string name="onboarding_bluetooth_description">Añade el dispositivo Bluetooth de tu coche. La app detectará cuando te desconectes de él para guardar tu ubicación.</string>
+    <string name="onboarding_auto_save_title">Guardado Automático</string>
+    <string name="onboarding_auto_save_description">Cuando te desconectes del Bluetooth de tu coche, la app guardará automáticamente dónde aparcaste. Sin acción manual.</string>
+    <string name="onboarding_navigate_title">Navega Hasta Tu Coche</string>
+    <string name="onboarding_navigate_description">Pulsa el botón de navegación para abrir Google Maps con las indicaciones hasta tu coche aparcado.</string>
+    <string name="onboarding_history_title">Historial de Aparcamientos</string>
+    <string name="onboarding_history_description">Consulta todas tus ubicaciones de aparcamiento anteriores. Toca cualquier entrada para verla en el mapa.</string>
+    <string name="onboarding_share_title">Comparte Tu Ubicación</string>
+    <string name="onboarding_share_description">Comparte la ubicación de tu coche con amigos o familiares para que puedan encontrar dónde aparcaste.</string>
+    <string name="onboarding_shortcut_title">Acceso Directo Rápido</string>
+    <string name="onboarding_shortcut_description">Añade un acceso directo en tu pantalla de inicio para navegar a tu coche con un solo toque. Mantén pulsado el icono de la app para crearlo.</string>
+
+    <!-- Permissions -->
+    <string name="permissions_required">Permisos necesarios</string>
+    <string name="permissions_required_description">Activa la ubicación como \"Siempre\" con ubicación precisa, y el permiso de Bluetooth.</string>
+    <string name="grant_permissions">Dar permisos</string>
+</resources>
