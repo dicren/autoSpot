@@ -44,7 +44,12 @@ jobs:
       - name: Check that Room schemas are committed
         run: |
           ./gradlew :app:kspDebugKotlin --configuration-cache
-          git diff --exit-code -- app/schemas
+          changes="$(git status --porcelain -- app/schemas)"
+          if [ -n "$changes" ]; then
+            echo "$changes"
+            echo "Room schemas changed; commit app/schemas."
+            exit 1
+          fi
 
       - name: Assemble debug
         run: ./gradlew assembleDebug --configuration-cache
