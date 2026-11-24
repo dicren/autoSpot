@@ -36,11 +36,12 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberModalBottomSheetState
+import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -127,8 +128,8 @@ fun ParkingScreen(
     var showVehiclesSheet by remember { mutableStateOf(false) }
     var showHistorySheet by remember { mutableStateOf(false) }
     var confirmClearHistory by remember { mutableStateOf(false) }
-    val vehiclesSheetState = rememberModalBottomSheetState()
-    val historySheetState = rememberModalBottomSheetState()
+    val vehiclesSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    val historySheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val cameraPositionState = rememberCameraPositionState()
 
     // Permissions can change while the app is in the background (user went to Settings).
