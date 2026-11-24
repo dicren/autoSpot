@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "ParkRemember"
+rootProject.name = "AutoSpot"
 include(":app")
  

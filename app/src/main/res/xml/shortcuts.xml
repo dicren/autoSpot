@@ -8,7 +8,7 @@
         android:shortcutLongLabel="@string/shortcut_long_label">
         <intent
             android:action="android.intent.action.VIEW"
-            android:targetPackage="com.dicren.parkremember"
-            android:targetClass="com.dicren.parkremember.NavigateActivity" />
+            android:targetPackage="com.dicren.autospot"
+            android:targetClass="com.dicren.autospot.NavigateActivity" />
     </shortcut>
 </shortcuts>
