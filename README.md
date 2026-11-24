@@ -45,7 +45,7 @@ The app runs a background service that monitors Bluetooth connections. When it d
 
 ### Prerequisites
 
-- Android Studio (latest stable) or newer
+- Android Studio (latest stable)
 - JDK 17 or higher
 - Google Maps API key
 
