@@ -106,7 +106,7 @@
     <string name="not_now">Не сейчас</string>
     <string name="location_permission_missing">Нет разрешения на геолокацию. Разрешите его, чтобы сохранить место парковки.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">Это Bluetooth-устройство уже настроено.</string>
     <string name="vehicle_update_conflict">Другое транспортное средство уже использует это Bluetooth-устройство.</string>
     <string name="delete_vehicle_message">%1$s будет удалён вместе с историей парковок.</string>

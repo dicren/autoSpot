@@ -54,7 +54,7 @@ The app runs a background service that monitors Bluetooth connections. When it d
 1. Clone the repository:
    ```bash
    git clone https://github.com/dicren/autoSpot.git
-   cd autospot
+   cd autoSpot
    ```
 
 2. Create a `local.properties` file in the project root (if not exists) and add your Google Maps API key:
@@ -76,6 +76,13 @@ The app runs a background service that monitors Bluetooth connections. When it d
 3. Enable the "Maps SDK for Android" API
 4. Create credentials (API key)
 5. Restrict the API key to your app's package name and SHA-1 certificate
+
+### Release signing
+
+Copy `keystore.properties.example` to `keystore.properties` (both at the repo root) and fill in
+`storeFile`, `storePassword`, `keyAlias` and `keyPassword`. When that file exists,
+`assembleRelease` and `bundleRelease` are signed automatically. Without it, release builds are
+unsigned and only debug builds are usable. Neither the keystore nor its passwords are versioned.
 
 ## Project Structure
 
@@ -110,13 +117,13 @@ baselineprofile/                 # Startup baseline profile generator (macrobenc
 ## Tests
 
 The project has unit tests for the pure logic, the Room layer (including migrations) and the
-Compose components:
+Compose components, plus an instrumented smoke test that launches the real activity:
 
 ```bash
 ./gradlew testDebugUnitTest   # unit + Robolectric + Compose tests
 ./gradlew lintDebug           # Android Lint
 ./gradlew spotlessCheck       # ktlint via Spotless
-./gradlew connectedAndroidTest # instrumented tests (device required)
+./gradlew connectedAndroidTest # instrumented launch test (device required)
 ./gradlew :app:generateBaselineProfile # startup profile (device, API 33+)
 ```
 

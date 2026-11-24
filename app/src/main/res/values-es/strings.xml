@@ -104,7 +104,7 @@
     <string name="not_now">Ahora no</string>
     <string name="location_permission_missing">Falta el permiso de ubicación. Actívalo para guardar tu plaza.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">Ese dispositivo Bluetooth ya está configurado.</string>
     <string name="vehicle_update_conflict">Otro vehículo ya usa ese dispositivo Bluetooth.</string>
     <string name="delete_vehicle_message">Se borrará %1$s, incluido su historial de aparcamientos.</string>

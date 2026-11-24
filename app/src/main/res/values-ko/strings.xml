@@ -100,7 +100,7 @@
     <string name="not_now">나중에</string>
     <string name="location_permission_missing">위치 권한이 없습니다. 주차 위치를 저장하려면 허용해 주세요.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">이 Bluetooth 기기는 이미 설정되어 있습니다.</string>
     <string name="vehicle_update_conflict">다른 차량이 이미 이 Bluetooth 기기를 사용하고 있습니다.</string>
     <string name="delete_vehicle_message">%1$s을(를) 삭제합니다. 주차 기록도 삭제됩니다.</string>

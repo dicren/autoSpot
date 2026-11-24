@@ -100,7 +100,7 @@
     <string name="not_now">後で</string>
     <string name="location_permission_missing">位置情報の権限がありません。駐車場所を保存するには許可してください。</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">このBluetooth機器はすでに設定されています。</string>
     <string name="vehicle_update_conflict">別の車がこのBluetooth機器を使用しています。</string>
     <string name="delete_vehicle_message">%1$sを削除します。駐車履歴も削除されます。</string>

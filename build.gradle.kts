@@ -1,3 +1,5 @@
+import com.diffplug.gradle.spotless.SpotlessExtension
+
 // Top-level build file. AGP 9 compiles Kotlin itself (built-in Kotlin), so the
 // `org.jetbrains.kotlin.android` plugin must NOT be applied anywhere. The
 // classpath entries below exist only to pin KGP and KSP above the versions AGP
@@ -21,4 +23,22 @@ plugins {
     alias(libs.plugins.spotless) apply false
     alias(libs.plugins.android.test) apply false
     alias(libs.plugins.baselineprofile) apply false
+}
+
+// One formatting rule set for the whole build; applied to every module that opts into Spotless.
+subprojects {
+    plugins.withId("com.diffplug.spotless") {
+        extensions.configure<SpotlessExtension> {
+            kotlin {
+                target("src/**/*.kt")
+                ktlint(libs.versions.ktlint.get()).editorConfigOverride(
+                    mapOf(
+                        // Test names are backticked sentences; Compose state/api names are descriptive.
+                        "ktlint_standard_function-naming" to "disabled",
+                        "ktlint_standard_class-naming" to "disabled",
+                    ),
+                )
+            }
+        }
+    }
 }

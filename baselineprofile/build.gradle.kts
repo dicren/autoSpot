@@ -32,10 +32,3 @@ dependencies {
 baselineProfile {
     useConnectedDevices = true
 }
-
-spotless {
-    kotlin {
-        target("src/**/*.kt")
-        ktlint(libs.versions.ktlint.get())
-    }
-}

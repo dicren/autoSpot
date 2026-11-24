@@ -104,7 +104,7 @@
     <string name="not_now">Plus tard</string>
     <string name="location_permission_missing">L\'autorisation de localisation est manquante. Autorisez-la pour enregistrer votre place.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">Cet appareil Bluetooth est déjà configuré.</string>
     <string name="vehicle_update_conflict">Un autre véhicule utilise déjà cet appareil Bluetooth.</string>
     <string name="delete_vehicle_message">%1$s sera supprimé, y compris son historique de stationnement.</string>

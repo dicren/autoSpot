@@ -102,7 +102,7 @@
     <string name="not_now">Not now</string>
     <string name="location_permission_missing">Location permission is missing. Allow it to save your parking spot.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">That Bluetooth device is already configured.</string>
     <string name="vehicle_update_conflict">Another vehicle already uses that Bluetooth device.</string>
     <string name="delete_vehicle_message">%1$s will be deleted, including its parking history.</string>

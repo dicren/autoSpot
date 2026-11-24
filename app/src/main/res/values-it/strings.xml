@@ -104,7 +104,7 @@
     <string name="not_now">Non ora</string>
     <string name="location_permission_missing">Manca l\'autorizzazione alla posizione. Consentila per salvare il parcheggio.</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">Quel dispositivo Bluetooth è già configurato.</string>
     <string name="vehicle_update_conflict">Un altro veicolo usa già quel dispositivo Bluetooth.</string>
     <string name="delete_vehicle_message">%1$s verrà eliminato, inclusa la cronologia dei parcheggi.</string>

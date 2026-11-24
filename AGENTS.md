@@ -73,7 +73,7 @@ Run from the repo root:
 ./gradlew testDebugUnitTest      # unit + Robolectric + Compose tests
 ./gradlew spotlessApply          # format Kotlin with ktlint
 ./gradlew :app:generateBaselineProfile  # regenerate the startup profile (device, API 33+)
-./gradlew connectedAndroidTest   # instrumented tests (device required)
+./gradlew connectedAndroidTest   # launcher smoke test (device required)
 ```
 
 Use JDK 17 or newer (JBR 21 is installed on this machine). The Android SDK path comes from
@@ -127,14 +127,15 @@ signed automatically. Without it, release builds are unsigned — only debug bui
 
 ### Entry points
 
-- **`MainActivity`** — launcher. Requests `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`,
-  then `BLUETOOTH_CONNECT` (API 31+). It deliberately does **not** request
-  `ACCESS_BACKGROUND_LOCATION`: on Android 11+ that request sends the user to a system settings
-  page, so `ParkingScreen` explains the "Allow all the time" requirement first
-  (`needsBackgroundLocationRationale`) and only then launches it. It only asks on the first
-  creation of the activity, so denying does not re-prompt on rotation. The onboarding flag is
-  collected as `Boolean?`: `null` (not read yet) shows an empty themed surface instead of flashing
-  the map before onboarding.
+- **`MainActivity`** — launcher. Asks for `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION` and
+  `BLUETOOTH_CONNECT` (API 31+) only once the onboarding flag is true, so the first system dialog
+  does not appear before the intro. `rememberSaveable` keeps a denial from re-prompting on
+  rotation; a later cold start asks again if a permission is still missing. It deliberately does
+  **not** request `ACCESS_BACKGROUND_LOCATION`: on Android 11+ that request sends the user to a
+  system settings page, so `ParkingScreen` explains the "Allow all the time" requirement first
+  (once, persisted in DataStore, and only when a vehicle exists) and only then launches it. The
+  onboarding flag is collected as `Boolean?`: `null` (not read yet) shows an empty themed surface
+  instead of flashing the map before onboarding.
 - **`NavigateActivity`** — headless (`Theme.AutoSpot.Translucent`, `excludeFromRecents`) target of
   the "Navigate to my car" shortcuts. Reads an optional `vehicle_id` extra, falls back to the
   active vehicle, queries Room from a `lifecycleScope` coroutine, and fires
@@ -157,13 +158,14 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   there is no concurrent access to shared state. It calls `stopSelf()` when
   `Permissions.canMonitor` is false and catches `SecurityException` from `startForeground`. Its
   notification is built by `AppNotifications` (`bluetooth_monitor_channel_v2`, `IMPORTANCE_MIN`,
-  monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted on
-  startup because Android ignores importance changes on an existing channel.
+  monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted when
+  the channels are created because Android ignores importance changes on an existing channel.
 - **`LocationSaveService`** — one-shot foreground service. Refuses to start without location
   permission, then runs `SaveParkingLocationUseCase`: a fresh high-accuracy fix bounded by a 15 s
-  timeout, falling back to `lastLocation` only if it is younger than 5 minutes. Saves are
-  serialised with a `Mutex` and each start stops with `stopSelfResult(startId)`. A failed save
-  posts a notification instead of failing silently.
+  timeout, falling back to `lastLocation` only if it is younger than 5 minutes. The two sources
+  are asked independently: an exception from the fresh fix (Play Services unavailable) still
+  tries the last known one. Saves are serialised with a `Mutex` and each start stops with
+  `stopSelfResult(startId)`. A failed save posts a notification instead of failing silently.
 - **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
   an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
   **and** `Permissions.canMonitor` is true. It logs `ForegroundServiceStartNotAllowedException`
@@ -175,7 +177,9 @@ required permission is granted, and stops it when the last vehicle is removed. I
 `ParkingUiState.isReady` (the first real repository emission) before doing either: acting on the
 default state would stop the monitor that `BootReceiver` had just started. When monitoring starts
 and `POST_NOTIFICATIONS` is missing (Android 13+), the screen asks for it; denying it only hides
-the ongoing notification, the service keeps running.
+the ongoing notification, the service keeps running. The "Allow all the time" rationale is only
+shown after precise location is granted and a vehicle exists, is recorded in DataStore so it is
+not repeated on every launch, and hides the permission banner while the dialog is on screen.
 
 ### UI
 
@@ -184,7 +188,8 @@ All UI is Compose, split in `ui/`:
 - `ui/parking/ParkingScreen.kt` — orchestrator: top banners, vehicle card, compass and navigate
   FABs, location card and snackbars. It reads `ParkingViewModel.uiState` and sends user actions to
   the ViewModel; it also starts/stops the monitor, requests `POST_NOTIFICATIONS`, explains the
-  background-location requirement and opens the Bluetooth device list for the sheet.
+  background-location requirement, reads the paired Bluetooth devices on `Dispatchers.IO`, and
+  keeps the relative "parked at" text fresh with a one-minute ticker (`rememberNow`).
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs.
 - `ui/parking/ParkingViewModel.kt` + `ParkingUiState.kt` — `StateFlow<ParkingUiState>` built from
@@ -230,8 +235,10 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `INSERT OR IGNORE` on the unique Bluetooth address and returns `Added`/`Duplicate` without
   depending on a driver-specific exception; deleting the active vehicle activates another; the
   history is capped at 100 rows per vehicle.
-- **`SettingsRepository`** wraps the `settings` DataStore and treats an `IOException` (corrupt
-  file) as "not onboarded" instead of crashing.
+- **`SettingsRepository`** wraps the `settings` DataStore. It treats an `IOException` (corrupt
+  file) as "not onboarded" instead of crashing, and persists the onboarding flag plus the fact
+  that the background-location rationale was already shown. Writes are best effort: a failed
+  write must not crash the app.
 - Cloud backup / device transfer rules (`res/xml/backup_rules.xml`,
   `res/xml/data_extraction_rules.xml`) include the three database files and the DataStore
   preferences (`datastore/settings.preferences_pb`) so the onboarding flag survives a restore.

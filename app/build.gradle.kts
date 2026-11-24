@@ -151,16 +151,3 @@ dependencies {
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
 }
-
-spotless {
-    kotlin {
-        target("src/**/*.kt")
-        ktlint(libs.versions.ktlint.get()).editorConfigOverride(
-            mapOf(
-                // Test names are backticked sentences; Compose state/api names are descriptive.
-                "ktlint_standard_function-naming" to "disabled",
-                "ktlint_standard_class-naming" to "disabled",
-            )
-        )
-    }
-}

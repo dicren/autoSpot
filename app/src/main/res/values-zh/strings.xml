@@ -100,7 +100,7 @@
     <string name="not_now">以后再说</string>
     <string name="location_permission_missing">缺少位置权限。请允许以保存停车位置。</string>
 
-    <!-- Refactor additions -->
+    <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">该蓝牙设备已配置。</string>
     <string name="vehicle_update_conflict">另一辆车已使用该蓝牙设备。</string>
     <string name="delete_vehicle_message">将删除 %1$s 及其停车记录。</string>
