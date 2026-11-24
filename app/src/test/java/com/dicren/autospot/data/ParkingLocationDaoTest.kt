@@ -80,6 +80,17 @@ class ParkingLocationDaoTest {
         }
 
     @Test
+    fun `entries with the same timestamp are ordered by id`() =
+        runTest {
+            val first = dao.insertLocation(location(100))
+            val second = dao.insertLocation(location(100))
+
+            assertEquals(listOf(second, first), dao.getLocationsByVehicle(vehicleId).first().map { it.id })
+            assertEquals(second, dao.getLatestLocationByVehicleOnce(vehicleId)?.id)
+            assertEquals(second, dao.getLatestLocationByVehicle(vehicleId).first()?.id)
+        }
+
+    @Test
     fun `an empty history returns null`() =
         runTest {
             assertNull(dao.getLatestLocationByVehicleOnce(vehicleId))

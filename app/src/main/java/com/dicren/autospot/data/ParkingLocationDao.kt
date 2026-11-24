@@ -8,13 +8,13 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ParkingLocationDao {
-    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC")
+    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC")
     fun getLocationsByVehicle(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
-    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC LIMIT 1")
+    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC LIMIT 1")
     fun getLatestLocationByVehicle(vehicleId: Long): Flow<ParkingLocationEntity?>
 
-    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC LIMIT 1")
+    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC LIMIT 1")
     suspend fun getLatestLocationByVehicleOnce(vehicleId: Long): ParkingLocationEntity?
 
     @Insert
@@ -34,7 +34,7 @@ interface ParkingLocationDao {
           AND id NOT IN (
               SELECT id FROM parking_locations
               WHERE vehicleId = :vehicleId
-              ORDER BY timestamp DESC
+              ORDER BY timestamp DESC, id DESC
               LIMIT :keep
           )
         """,
