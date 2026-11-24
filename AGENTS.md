@@ -116,7 +116,7 @@ signed automatically. Without it, release builds are unsigned — only debug bui
 ### Services
 
 - **`BluetoothMonitorService`** — sticky foreground service (`foregroundServiceType="location"`)
-  that registers a runtime, **not exported** receiver for `ACTION_ACL_CONNECTED/DISCONNECTED`,
+  that registers a runtime receiver for `ACTION_ACL_CONNECTED/DISCONNECTED`,
   `BluetoothA2dp`/`BluetoothHeadset` connection-state changes, and adapter state changes.
   `bluetooth/BluetoothIntents` reduces the broadcast to a `BluetoothEvent`; the service then looks
   the MAC up in Room and, if it belongs to a vehicle, starts `LocationSaveService` with that id.
@@ -214,7 +214,11 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 Traps and limitations verified in the current tree. Fix them deliberately, not as a side effect.
 
-1. **Static shortcut is package-bound:** `res/xml/shortcuts.xml` hardcodes
+1. **The Bluetooth receiver must stay `RECEIVER_EXPORTED`.** The Bluetooth stack is a separate
+   system app, not the system UID, so a `RECEIVER_NOT_EXPORTED` receiver never sees
+   `ACL_CONNECTED/DISCONNECTED` and the app silently stops saving locations. Verified on Android
+   16. These actions are protected broadcasts, so other apps cannot spoof them.
+2. **Static shortcut is package-bound:** `res/xml/shortcuts.xml` hardcodes
    `com.dicren.autospot.NavigateActivity`. If the Android package ever changes, update it there
    too; dynamic shortcuts built by `CreateShortcutActivity` follow the code automatically.
 2. **Release builds need `keystore.properties`:** without it they come out unsigned and the store
@@ -228,7 +232,8 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
    Every schema bump must keep the exported JSON committed, or `MigrationTest` fails.
 5. **No Bluetooth on the emulator:** the app is only meaningfully testable on a physical device
    with a paired car. Use `adb logcat -s BluetoothMonitorService LocationSaveService BootReceiver`
-   to follow the flow.
+   to follow the flow. You can also simulate a disconnection by adding a connected device (watch,
+   earbuds) as a vehicle and turning Bluetooth off with `adb shell cmd bluetooth_manager disable`.
 6. **Release artifacts** (`app/release/app-release.aab`) and `local.properties` are gitignored;
    do not add them back to version control.
 

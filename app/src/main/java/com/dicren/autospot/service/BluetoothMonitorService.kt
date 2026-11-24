@@ -120,7 +120,7 @@ class BluetoothMonitorService : Service() {
         }
     }
 
-    @SuppressLint("InlinedApi") // RECEIVER_NOT_EXPORTED is inlined (value 4), safe on API 31+.
+    @SuppressLint("InlinedApi") // RECEIVER_EXPORTED is inlined (value 2), safe on API 31+.
     override fun onCreate() {
         super.onCreate()
         notifications = AppNotifications(this)
@@ -134,8 +134,10 @@ class BluetoothMonitorService : Service() {
                 addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
                 addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
             }
-        // These are protected system broadcasts, so no other app can spoof them.
-        registerReceiver(bluetoothReceiver, filter, RECEIVER_NOT_EXPORTED)
+        // Must be EXPORTED: the Bluetooth stack app (not the system UID) sends these broadcasts, so
+        // a NOT_EXPORTED receiver never sees them. Verified on Android 16. They are protected
+        // broadcasts, so no other app can spoof them.
+        registerReceiver(bluetoothReceiver, filter, RECEIVER_EXPORTED)
 
         Log.d(TAG, "BluetoothMonitorService created and receiver registered")
     }
