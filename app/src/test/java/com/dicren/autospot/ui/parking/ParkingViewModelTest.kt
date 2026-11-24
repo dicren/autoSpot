@@ -130,7 +130,7 @@ class ParkingViewModelTest {
                     state = awaitItem()
                 }
                 viewModel.selectLocation(state.locations.first())
-                state = awaitItem()
+                while (state.selectedLocationId == null) state = awaitItem()
                 assertTrue(state.isShowingHistory)
 
                 vehicles.activateVehicle(first)
@@ -248,11 +248,12 @@ class ParkingViewModelTest {
                 while (state.locations.size != 2) state = awaitItem()
 
                 viewModel.selectLocation(location)
-                state = awaitItem()
-                assertTrue(state.isShowingHistory)
+                while (state.selectedLocationId != location.id) state = awaitItem()
 
                 viewModel.deleteLocation(location)
-                while (state.locations.size != 1) state = awaitItem()
+                while (state.locations.size != 1 || state.selectedLocationId != null) {
+                    state = awaitItem()
+                }
 
                 assertNull(state.selectedLocationId)
                 cancelAndIgnoreRemainingEvents()
@@ -271,7 +272,9 @@ class ParkingViewModelTest {
                 monitoringPermission = false
                 gpsEnabled = false
                 viewModel.refreshEnvironment()
-                state = awaitItem()
+                while (state.hasMonitoringPermission || state.isLocationEnabled) {
+                    state = awaitItem()
+                }
                 assertFalse(state.hasMonitoringPermission)
                 assertFalse(state.isLocationEnabled)
                 cancelAndIgnoreRemainingEvents()

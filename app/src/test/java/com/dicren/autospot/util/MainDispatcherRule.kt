@@ -1,6 +1,7 @@
 package com.dicren.autospot.util
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -9,6 +10,7 @@ import org.junit.rules.TestWatcher
 import org.junit.runner.Description
 
 /** Replaces Dispatchers.Main so viewModelScope works in JVM tests. */
+@OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(
     private val dispatcher: TestDispatcher = UnconfinedTestDispatcher(),
 ) : TestWatcher() {
