@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(
     entities = [ParkingLocationEntity::class, VehicleEntity::class],
     version = 3,
-    exportSchema = false
+    exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
 
@@ -26,7 +26,9 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "parking_database"
                 )
-                    .fallbackToDestructiveMigration()
+                    // Pre-v3 schemas are unknown, so drop them. From v3 onward every version
+                    // bump must ship an explicit Migration; schemas live in app/schemas/.
+                    .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()
                 INSTANCE = instance
                 instance
