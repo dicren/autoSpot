@@ -38,4 +38,15 @@ class OnboardingScreenTest {
 
         assertTrue(finished)
     }
+
+    @Test
+    @Config(sdk = [34], qualifiers = "w320dp-h480dp")
+    fun `very small screens still show the page and the navigation`() {
+        composeRule.setContent {
+            AutoSpotTheme { OnboardingScreen(onFinish = {}) }
+        }
+
+        composeRule.onNodeWithText("Welcome to AutoSpot").assertIsDisplayed()
+        composeRule.onNodeWithText("Next").assertIsDisplayed()
+    }
 }
