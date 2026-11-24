@@ -1,6 +1,6 @@
 # Privacy Policy for AutoSpot
 
-**Last updated:** February 2026
+**Last updated:** November 2026
 
 ## Introduction
 
@@ -12,13 +12,13 @@ AutoSpot ("we", "our", or "us") is committed to protecting your privacy. This Pr
 - **What:** Your precise GPS location (latitude and longitude)
 - **When:** When you disconnect from your vehicle's Bluetooth, or when you manually save your location
 - **Why:** To save and display your parking location so you can navigate back to your car
-- **Storage:** Stored locally on your device only
+- **Storage:** Stored locally on your device. The location database is excluded from Android cloud backup.
 
 ### Bluetooth Device Information
 - **What:** Bluetooth device name and MAC address of your paired vehicles
 - **When:** When you configure a vehicle in the app
 - **Why:** To detect when you disconnect from your car and automatically save your location
-- **Storage:** Stored locally on your device only
+- **Storage:** Stored locally on your device. The vehicle database is excluded from Android cloud backup.
 
 ## How We Use Your Information
 
@@ -30,9 +30,9 @@ We use the collected information solely to:
 
 ## Data Storage and Security
 
-- **Local Storage Only:** All your data is stored locally on your device
+- **Local Storage Only:** Your vehicles and parking history are stored locally on your device
 - **No Server Transmission:** We do not transmit your personal data to any external servers
-- **Google Backup:** If you have Google Backup enabled on your device, your app data may be included in your device backup to your Google account
+- **Google Backup:** The parking database (vehicles and location history) is excluded from Android cloud backup. Only the onboarding flag is eligible for cloud backup; it contains no personal data. A direct device-to-device transfer still copies the database between your own devices.
 - **Encryption:** Data stored on your device is protected by your device's security measures
 
 ## Third-Party Services
@@ -84,7 +84,7 @@ We may update this Privacy Policy from time to time. We will notify you of any c
 
 If you have questions about this Privacy Policy, please contact us at:
 
-**Email:** [me@dicren.com]
+**Email:** me@dicren.com
 
 ---
 
@@ -92,9 +92,9 @@ If you have questions about this Privacy Policy, please contact us at:
 
 | Data Type | Collected | Stored | Shared | Purpose |
 |-----------|-----------|--------|--------|---------|
-| GPS Location | Yes | Locally only | Only when you choose | Save parking spot |
-| Bluetooth info | Yes | Locally only | No | Detect car disconnect |
+| GPS Location | Yes | Locally only; excluded from cloud backup | Only when you choose | Save parking spot |
+| Bluetooth info | Yes | Locally only; excluded from cloud backup | No | Detect car disconnect |
 | Personal info | No | - | - | - |
 | Usage analytics | No | - | - | - |
 
-**AutoSpot respects your privacy. Your data stays on your device.**
+**AutoSpot respects your privacy. Your parking history stays on your device.**

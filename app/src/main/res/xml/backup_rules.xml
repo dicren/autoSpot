@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <full-backup-content>
-    <!-- Backup Room database with vehicles and locations -->
-    <include domain="database" path="parking_database" />
-    <include domain="database" path="parking_database-shm" />
-    <include domain="database" path="parking_database-wal" />
-    <!-- Keep the onboarding flag when the user restores a backup -->
+    <!--
+      The parking database contains the vehicle list and the location history. It is deliberately
+      kept out of Android cloud backup: the privacy policy promises that this data stays on the
+      device. A direct device-to-device transfer still copies it (see data_extraction_rules.xml).
+      Declaring only the onboarding flag as an include is what excludes the rest.
+    -->
     <include domain="file" path="datastore/settings.preferences_pb" />
 </full-backup-content>

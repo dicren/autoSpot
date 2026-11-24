@@ -132,6 +132,7 @@ Compose components, plus an instrumented smoke test that launches the real activ
 AutoSpot respects your privacy:
 
 - **No data collection** - All data is stored locally on your device
+- **No cloud copy of your parking history** - The vehicle and location database is excluded from Android cloud backup. Only the onboarding flag, which contains no personal data, can be backed up. A direct device-to-device transfer still copies the database.
 - **No analytics** - We don't track how you use the app
 - **No ads** - The app is completely ad-free
 - **No accounts** - No sign-up required
