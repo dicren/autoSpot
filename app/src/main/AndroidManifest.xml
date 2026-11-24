@@ -40,10 +40,12 @@
                 android:resource="@xml/shortcuts" />
         </activity>
 
+        <!-- Translucent, not Theme.NoDisplay: the activity reads Room before finishing, and an
+             invisible activity must finish before onResume completes or Android crashes. -->
         <activity
             android:name=".NavigateActivity"
             android:exported="true"
-            android:theme="@android:style/Theme.NoDisplay"
+            android:theme="@style/Theme.AutoSpot.Translucent"
             android:excludeFromRecents="true">
         </activity>
 

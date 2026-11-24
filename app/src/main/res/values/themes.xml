@@ -12,4 +12,18 @@
         <item name="android:windowIsTranslucent">true</item>
         <item name="android:backgroundDimEnabled">true</item>
     </style>
+
+    <!--
+      Headless activities (shortcuts) must NOT use android:Theme.NoDisplay: Android throws
+      "did not call finish() prior to onResume() completing" when the activity cannot finish
+      synchronously, and these activities read from Room first. A transparent, non-floating
+      window stays invisible to the user and keeps the activity "visible" to the framework.
+    -->
+    <style name="Theme.AutoSpot.Translucent" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowIsTranslucent">true</item>
+        <item name="android:windowBackground">@android:color/transparent</item>
+        <item name="android:windowNoDisplay">false</item>
+        <item name="android:backgroundDimEnabled">false</item>
+        <item name="android:windowAnimationStyle">@null</item>
+    </style>
 </resources>
