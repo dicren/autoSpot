@@ -1,6 +1,6 @@
 package com.dicren.autospot.data
 
-import android.database.sqlite.SQLiteConstraintException
+import android.database.SQLException
 import kotlinx.coroutines.flow.Flow
 
 sealed interface AddVehicleResult {
@@ -52,26 +52,22 @@ class RoomVehicleRepository(
         bluetoothAddress: String,
         bluetoothName: String,
     ): AddVehicleResult {
-        dao.getVehicleByBluetoothAddress(bluetoothAddress)?.let {
-            return AddVehicleResult.Duplicate(it.id)
-        }
+        val id =
+            dao.insertVehicleAndActivate(
+                VehicleEntity(
+                    name = name.trim(),
+                    bluetoothAddress = bluetoothAddress,
+                    bluetoothName = bluetoothName,
+                    isActive = false,
+                ),
+            )
+        if (id != -1L) return AddVehicleResult.Added(id)
 
-        return try {
-            val id =
-                dao.insertVehicleAndActivate(
-                    VehicleEntity(
-                        name = name.trim(),
-                        bluetoothAddress = bluetoothAddress,
-                        bluetoothName = bluetoothName,
-                        isActive = false,
-                    ),
-                )
-            AddVehicleResult.Added(id)
-        } catch (e: SQLiteConstraintException) {
-            // The unique index is the real guard; a concurrent insert can still lose the race.
-            val existing = dao.getVehicleByBluetoothAddress(bluetoothAddress)
-            if (existing != null) AddVehicleResult.Duplicate(existing.id) else throw e
-        }
+        // The insert was ignored because the unique index already owns this address.
+        val existing =
+            dao.getVehicleByBluetoothAddress(bluetoothAddress)
+                ?: error("Insert was ignored but no vehicle owns $bluetoothAddress")
+        return AddVehicleResult.Duplicate(existing.id)
     }
 
     override suspend fun updateVehicle(vehicle: VehicleEntity): Boolean {
@@ -81,7 +77,10 @@ class RoomVehicleRepository(
         return try {
             dao.updateVehicle(vehicle)
             true
-        } catch (e: SQLiteConstraintException) {
+        } catch (e: SQLException) {
+            // The unique index is the real guard; a concurrent update can still lose the race.
+            // Both SQLite drivers surface it as android.database.SQLException, which also covers
+            // the platform's SQLiteConstraintException.
             false
         }
     }

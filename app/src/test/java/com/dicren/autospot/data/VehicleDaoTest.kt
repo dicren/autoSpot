@@ -1,7 +1,6 @@
 package com.dicren.autospot.data
 
 import android.content.Context
-import android.database.sqlite.SQLiteConstraintException
 import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
@@ -65,14 +64,27 @@ class VehicleDaoTest {
     @Test
     fun `the same bluetooth address cannot be stored twice`() =
         runTest {
-            dao.insertVehicle(vehicle(address = "AA:BB:CC:DD:EE:01"))
+            val first = dao.insertVehicle(vehicle(address = "AA:BB:CC:DD:EE:01"))
 
-            val error =
-                runCatching {
-                    dao.insertVehicle(vehicle(name = "Other", address = "AA:BB:CC:DD:EE:01"))
-                }.exceptionOrNull()
+            val duplicate = dao.insertVehicle(vehicle(name = "Other", address = "AA:BB:CC:DD:EE:01"))
 
-            assertTrue("Expected a constraint failure, got $error", error is SQLiteConstraintException)
+            assertEquals(-1L, duplicate)
+            assertEquals(first, dao.getVehicleById(first)?.id)
+            assertEquals(1, dao.getAllVehiclesOnce().size)
+        }
+
+    @Test
+    fun `inserting a duplicate address does not change the active vehicle`() =
+        runTest {
+            val first = dao.insertVehicleAndActivate(vehicle(name = "A", address = "AA:BB:CC:DD:EE:01"))
+
+            val duplicate =
+                dao.insertVehicleAndActivate(vehicle(name = "B", address = "AA:BB:CC:DD:EE:01"))
+
+            assertEquals(-1L, duplicate)
+            assertEquals(first, dao.getActiveVehicleOnce()?.id)
+            assertEquals(1, dao.getAllVehiclesOnce().count { it.isActive })
+            assertEquals(1, dao.getAllVehiclesOnce().size)
         }
 
     @Test

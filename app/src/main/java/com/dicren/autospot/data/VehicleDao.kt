@@ -2,6 +2,7 @@ package com.dicren.autospot.data
 
 import androidx.room3.Dao
 import androidx.room3.Insert
+import androidx.room3.OnConflictStrategy
 import androidx.room3.Query
 import androidx.room3.Transaction
 import androidx.room3.Update
@@ -33,7 +34,14 @@ interface VehicleDao {
     @Query("SELECT * FROM vehicles ORDER BY name ASC LIMIT 1")
     suspend fun firstVehicle(): VehicleEntity?
 
-    @Insert
+    /**
+     * Returns the new row id, or -1 when the Bluetooth address already exists.
+     *
+     * `INSERT OR IGNORE` is deliberate: the constraint failure comes from the configured
+     * SQLite driver, and the bundled driver does not throw `SQLiteConstraintException` like the
+     * platform one. Ignoring the row keeps duplicate detection driver-independent.
+     */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertVehicle(vehicle: VehicleEntity): Long
 
     @Update
@@ -55,10 +63,11 @@ interface VehicleDao {
         activateVehicle(id)
     }
 
-    /** Inserts the vehicle and makes it active, all in one transaction. */
+    /** Inserts the vehicle and makes it active, all in one transaction. Returns -1 on conflict. */
     @Transaction
     suspend fun insertVehicleAndActivate(vehicle: VehicleEntity): Long {
         val id = insertVehicle(vehicle)
+        if (id == -1L) return -1L
         activateOnly(id)
         return id
     }
