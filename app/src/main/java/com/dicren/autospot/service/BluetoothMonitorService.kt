@@ -23,6 +23,7 @@ import com.dicren.autospot.core.DefaultClock
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.Permissions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -119,6 +120,8 @@ class BluetoothMonitorService : Service() {
                 } else {
                     Log.d(TAG, "Disconnected device $deviceAddress is not a configured vehicle")
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error handling disconnection", e)
             }
@@ -178,7 +181,8 @@ class BluetoothMonitorService : Service() {
         super.onDestroy()
         try {
             unregisterReceiver(bluetoothReceiver)
-        } catch (e: Exception) {
+        } catch (e: IllegalArgumentException) {
+            // The receiver was never registered or was already removed.
             Log.e(TAG, "Error unregistering receiver", e)
         }
         serviceScope.cancel()

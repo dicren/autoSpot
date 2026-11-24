@@ -9,6 +9,7 @@ import com.google.android.gms.tasks.CancellationTokenSource
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Play Services implementation of [LocationSource].
@@ -16,6 +17,10 @@ import kotlinx.coroutines.withTimeout
  * `getCurrentLocation` can take much longer than expected, so it is bounded by a timeout and the
  * request is cancelled when it expires. Without this the foreground service (and its "saving
  * location" notification) could stay alive indefinitely.
+ *
+ * Any other failure is reported as "no fix" instead of an exception: the caller falls back to the
+ * last known location, which is still better than losing the save. Cancellation is rethrown so the
+ * service can shut down immediately.
  */
 class FusedLocationSource(
     context: Context,
@@ -36,7 +41,9 @@ class FusedLocationSource(
         } catch (e: TimeoutCancellationException) {
             cancellation.cancel()
             null
-        } catch (e: SecurityException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             null
         } finally {
             cancellation.cancel()
@@ -47,7 +54,9 @@ class FusedLocationSource(
     override suspend fun lastLocation(): LocationFix? =
         try {
             client.lastLocation.await()?.toFix()
-        } catch (e: SecurityException) {
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
             null
         }
 

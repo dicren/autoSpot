@@ -36,10 +36,18 @@ class SaveParkingLocationUseCaseTest {
     private class FakeLocationSource : LocationSource {
         var current: LocationFix? = null
         var last: LocationFix? = null
+        var currentError: Exception? = null
+        var lastError: Exception? = null
 
-        override suspend fun currentLocation(): LocationFix? = current
+        override suspend fun currentLocation(): LocationFix? {
+            currentError?.let { throw it }
+            return current
+        }
 
-        override suspend fun lastLocation(): LocationFix? = last
+        override suspend fun lastLocation(): LocationFix? {
+            lastError?.let { throw it }
+            return last
+        }
     }
 
     private class FailingParkingRepository(
@@ -191,6 +199,51 @@ class SaveParkingLocationUseCaseTest {
 
             assertEquals(SaveResult.NoFix, useCase().save(id))
             assertTrue(parking.latestLocationOnce(id) == null)
+        }
+
+    @Test
+    fun `a failing current fix still uses the last known one`() =
+        runTest {
+            val id = addVehicle()
+            source.currentError = IllegalStateException("Play Services unavailable")
+            source.last = fix(latitude = 45.0)
+
+            val result = useCase().save(id)
+
+            assertEquals(45.0, (result as SaveResult.Saved).latitude, 0.0)
+            assertTrue(parking.latestLocationOnce(id) != null)
+        }
+
+    @Test
+    fun `a failing current fix with no usable fallback is an error`() =
+        runTest {
+            val id = addVehicle()
+            source.currentError = IllegalStateException("Play Services unavailable")
+            source.last = fix(time = NOW - 20 * 60_000L)
+
+            assertTrue(useCase().save(id) is SaveResult.Error)
+        }
+
+    @Test
+    fun `when both sources fail the error is reported`() =
+        runTest {
+            val id = addVehicle()
+            source.currentError = IllegalStateException("first")
+            source.lastError = IllegalStateException("second")
+
+            assertTrue(useCase().save(id) is SaveResult.Error)
+            assertTrue(parking.latestLocationOnce(id) == null)
+        }
+
+    @Test
+    fun `cancellation is not turned into a save failure`() =
+        runTest {
+            val id = addVehicle()
+            source.currentError = kotlinx.coroutines.CancellationException("stopping")
+
+            val thrown = runCatching { useCase().save(id) }.exceptionOrNull()
+
+            assertTrue(thrown is kotlinx.coroutines.CancellationException)
         }
 
     @Test

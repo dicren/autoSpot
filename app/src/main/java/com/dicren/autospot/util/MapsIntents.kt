@@ -60,5 +60,8 @@ object MapsIntents {
             true
         } catch (e: ActivityNotFoundException) {
             false
+        } catch (e: SecurityException) {
+            // A work profile or a disabled Maps app can refuse the launch.
+            false
         }
 }

@@ -48,6 +48,16 @@ class MapsIntentsTest {
     }
 
     @Test
+    fun `navigation refused by the system returns false instead of throwing`() {
+        val started =
+            MapsIntents.startNavigation(42.5, -5.6) {
+                throw SecurityException("Google Maps is disabled")
+            }
+
+        assertFalse(started)
+    }
+
+    @Test
     fun `navigation with Maps returns true`() {
         var launched: Intent? = null
 

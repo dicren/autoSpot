@@ -5,6 +5,7 @@ import com.dicren.autospot.data.ParkingRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Obtains a location and stores it for a vehicle.
@@ -14,6 +15,8 @@ import com.dicren.autospot.location.LocationSource
  *   another vehicle.
  * - A fresh fix is preferred. If it is unavailable, a last-known fix is accepted only while it is
  *   younger than [maxFixAgeMillis]: a ten-minute-old fix can be many kilometres away.
+ * - Each source is asked independently. A failure while requesting the fresh fix must not skip
+ *   the last known one: Play Services can reject the request while still holding a usable fix.
  */
 class SaveParkingLocationUseCase(
     private val vehicleRepository: VehicleRepository,
@@ -34,13 +37,13 @@ class SaveParkingLocationUseCase(
             }
 
         val now = clock.nowMillis()
-        val fix =
-            try {
-                usable(locationSource.currentLocation(), now)
-                    ?: usable(locationSource.lastLocation(), now)
-            } catch (e: Exception) {
-                return SaveResult.Error(e)
-            } ?: return SaveResult.NoFix
+        val current = fetchFix(now) { locationSource.currentLocation() }
+        val last = if (current.getOrNull() == null) fetchFix(now) { locationSource.lastLocation() } else null
+        val fix = current.getOrNull() ?: last?.getOrNull()
+        if (fix == null) {
+            val error = last?.exceptionOrNull() ?: current.exceptionOrNull()
+            return if (error != null) SaveResult.Error(error) else SaveResult.NoFix
+        }
 
         return try {
             parkingRepository.saveLocation(vehicle.id, fix.latitude, fix.longitude)
@@ -50,10 +53,28 @@ class SaveParkingLocationUseCase(
                 longitude = fix.longitude,
                 accuracyMeters = fix.accuracyMeters,
             )
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             SaveResult.Error(e)
         }
     }
+
+    /**
+     * Requests one fix, turning an expected failure into an empty result instead of aborting the
+     * whole save. Cancellation is never swallowed: the caller is being torn down.
+     */
+    private suspend fun fetchFix(
+        now: Long,
+        fetch: suspend () -> LocationFix?,
+    ): Result<LocationFix?> =
+        try {
+            Result.success(usable(fetch(), now))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
 
     private fun usable(
         fix: LocationFix?,

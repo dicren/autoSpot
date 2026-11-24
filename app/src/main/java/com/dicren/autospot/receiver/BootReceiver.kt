@@ -9,6 +9,7 @@ import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.util.Permissions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -33,6 +34,8 @@ class BootReceiver : BroadcastReceiver() {
                     vehicles = context.appContainer.vehicleRepository.getAllVehiclesOnce(),
                     canMonitor = Permissions.canMonitor(context),
                 )
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking vehicle config", e)
             } finally {
