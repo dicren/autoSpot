@@ -5,5 +5,11 @@ import com.dicren.autospot.di.AppContainer
 import com.dicren.autospot.di.DefaultAppContainer
 
 class AutoSpotApp : Application() {
-    val container: AppContainer by lazy { DefaultAppContainer(this) }
+    private val defaultContainer: AppContainer by lazy { DefaultAppContainer(this) }
+
+    /** Test seam: services and screens read the container through this getter. */
+    internal var containerOverride: AppContainer? = null
+
+    val container: AppContainer
+        get() = containerOverride ?: defaultContainer
 }

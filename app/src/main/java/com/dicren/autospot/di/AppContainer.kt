@@ -12,6 +12,8 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.data.settingsDataStore
+import com.dicren.autospot.location.FusedLocationSource
+import com.dicren.autospot.location.LocationSource
 
 /**
  * Tiny manual service locator. Deliberately not Hilt: there is one activity, two services and
@@ -19,6 +21,7 @@ import com.dicren.autospot.data.settingsDataStore
  */
 interface AppContainer {
     val clock: Clock
+    val locationSource: LocationSource
     val vehicleRepository: VehicleRepository
     val parkingRepository: ParkingRepository
     val settingsRepository: SettingsRepository
@@ -27,10 +30,17 @@ interface AppContainer {
 class DefaultAppContainer(
     context: Context,
     override val clock: Clock = DefaultClock,
+    databaseOverride: AppDatabase? = null,
 ) : AppContainer {
     private val appContext = context.applicationContext
 
-    private val database: AppDatabase by lazy { AppDatabase.getDatabase(appContext) }
+    private val database: AppDatabase by lazy {
+        databaseOverride ?: AppDatabase.getDatabase(appContext)
+    }
+
+    override val locationSource: LocationSource by lazy {
+        FusedLocationSource(appContext)
+    }
 
     override val vehicleRepository: VehicleRepository by lazy {
         RoomVehicleRepository(database.vehicleDao())

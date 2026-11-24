@@ -9,7 +9,6 @@ import androidx.core.app.ServiceCompat
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
-import com.dicren.autospot.location.FusedLocationSource
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -41,7 +40,7 @@ class LocationSaveService : Service() {
             SaveParkingLocationUseCase(
                 vehicleRepository = container.vehicleRepository,
                 parkingRepository = container.parkingRepository,
-                locationSource = FusedLocationSource(this),
+                locationSource = container.locationSource,
                 clock = container.clock,
                 hasLocationPermission = { Permissions.hasLocation(this) },
             )

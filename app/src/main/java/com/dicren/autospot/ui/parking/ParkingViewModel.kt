@@ -15,7 +15,6 @@ import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
-import com.dicren.autospot.location.FusedLocationSource
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -207,7 +206,7 @@ class ParkingViewModel(
                             SaveParkingLocationUseCase(
                                 vehicleRepository = container.vehicleRepository,
                                 parkingRepository = container.parkingRepository,
-                                locationSource = FusedLocationSource(appContext),
+                                locationSource = container.locationSource,
                                 clock = container.clock,
                                 hasLocationPermission = { Permissions.hasLocation(appContext) },
                             ),
