@@ -1,9 +1,10 @@
 package com.dicren.autospot.data
 
 import android.content.Context
-import androidx.room.Database
-import androidx.room.Room
-import androidx.room.RoomDatabase
+import androidx.room3.Database
+import androidx.room3.Room
+import androidx.room3.RoomDatabase
+import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 
 @Database(
     entities = [ParkingLocationEntity::class, VehicleEntity::class],
@@ -30,10 +31,13 @@ abstract class AppDatabase : RoomDatabase() {
                             AppDatabase::class.java,
                             DATABASE_NAME,
                         )
+                        // Bundled driver: same SQLite build on every device, independent of the
+                        // platform's SQLite version.
+                        .setDriver(BundledSQLiteDriver())
                         // Pre-v3 schemas are unknown, so drop them. From v3 onward every version
                         // bump must ship an explicit Migration; schemas live in app/schemas/.
                         .addMigrations(MIGRATION_3_4)
-                        .fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)
+                        .fallbackToDestructiveMigrationFrom(true, 1, 2)
                         .build()
                 instance = database
                 database

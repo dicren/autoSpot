@@ -1,7 +1,8 @@
 package com.dicren.autospot.domain
 
 import android.content.Context
-import androidx.room.Room
+import androidx.room3.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import com.dicren.autospot.core.Clock
 import com.dicren.autospot.data.AddVehicleResult
@@ -65,7 +66,8 @@ class SaveParkingLocationUseCaseTest {
                 .inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext<Context>(),
                     AppDatabase::class.java,
-                ).allowMainThreadQueries()
+                ).setDriver(AndroidSQLiteDriver())
+                .allowMainThreadQueries()
                 .build()
         vehicles = RoomVehicleRepository(db.vehicleDao())
         parking = RoomParkingRepository(db.parkingLocationDao(), clock)

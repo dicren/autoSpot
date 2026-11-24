@@ -30,7 +30,7 @@ a different app on the Play Store and orphan existing installs.
 - **UI:** Jetpack Compose, Material 3, `material-icons-extended`; Compose BOM `2026.11.01`
 - **Maps:** Google Maps SDK + `maps-compose` 9.0.1
 - **Location:** `play-services-location` 21.4.0 (FusedLocationProviderClient)
-- **Persistence:** Room 2.8.5 (KSP) + DataStore Preferences 1.3.0
+- **Persistence:** Room 3.0.3 (KSP, `androidx.room3`) + DataStore Preferences 1.3.0
 - **Build:** Gradle 9.7.1 wrapper, AGP 9.5.2, KSP 2.3.14, `compileSdk` 37.1
 - **SDK:** `compileSdk` 37.1, `targetSdk` 37, `minSdk` 31 (Android 12)
 - **DI / architecture:** manual DI (`AutoSpotApp` + `di/AppContainer`), one ViewModel per
@@ -164,12 +164,15 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 ### Data layer
 
-- **`AppDatabase`** — Room, version **4**, database name `parking_database`, singleton via
-  `getDatabase(context)`, `exportSchema = true`. Schemas are generated into `app/schemas/` (KSP
-  `room.schemaLocation`) and committed. `MIGRATION_3_4` adds the unique Bluetooth index and
-  repairs duplicates; `fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)` covers the
-  unknown legacy schemas only. From v3 onward every version bump must ship an explicit
-  `Migration`, or the app crashes on upgrade.
+- **`AppDatabase`** — Room **3** (`androidx.room3`), version **4**, database name
+  `parking_database`, singleton via `getDatabase(context)`, `exportSchema = true`. Schemas are
+  generated into `app/schemas/` (KSP `room.schemaLocation`) and committed. The builder sets
+  `BundledSQLiteDriver()` on devices (same SQLite build everywhere); migrations are `suspend` and
+  use `SQLiteConnection` + `androidx.sqlite.async.executeSQL`. `MIGRATION_3_4` adds the unique
+  Bluetooth index and repairs duplicates;
+  `fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)` covers the unknown legacy
+  schemas only. From v3 onward every version bump must ship an explicit `Migration`, or the app
+  crashes on upgrade. The Room 3 package and the Room 2 one are different: never mix them.
 - **`VehicleEntity`** — `vehicles` table: name, Bluetooth MAC address (**unique index**), Bluetooth
   display name, and a single `isActive` flag. Room cannot express a partial unique index for the
   active flag, so `VehicleDao` keeps the invariant with `@Transaction` methods.
@@ -231,6 +234,8 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
 4. **Migration schemas are test assets:** `app/build.gradle.kts` adds `app/schemas` to the **debug**
    assets so `MigrationTestHelper` can read them under Robolectric. They never ship in release.
    Every schema bump must keep the exported JSON committed, or `MigrationTest` fails.
+   Unit tests use `AndroidSQLiteDriver`, not the bundled one: `BundledSQLiteDriver` needs the
+   `sqliteJni` native library, which is not available on the JVM test host.
 5. **No Bluetooth on the emulator:** the app is only meaningfully testable on a physical device
    with a paired car. Use `adb logcat -s BluetoothMonitorService LocationSaveService BootReceiver`
    to follow the flow. You can also simulate a disconnection by adding a connected device (watch,

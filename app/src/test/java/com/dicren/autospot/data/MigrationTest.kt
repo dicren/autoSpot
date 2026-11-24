@@ -1,29 +1,51 @@
 package com.dicren.autospot.data
 
-import androidx.room.testing.MigrationTestHelper
+import android.content.Context
+import androidx.room3.testing.MigrationTestHelper
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.async.executeSQL
+import androidx.sqlite.driver.AndroidSQLiteDriver
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
+import java.io.File
+import java.util.UUID
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class MigrationTest {
+    private val databaseFile =
+        File(
+            ApplicationProvider.getApplicationContext<Context>().cacheDir,
+            "migration-${UUID.randomUUID()}.db",
+        )
+
     @get:Rule
     val helper =
         MigrationTestHelper(
             InstrumentationRegistry.getInstrumentation(),
-            AppDatabase::class.java,
+            databaseFile,
+            AndroidSQLiteDriver(),
+            AppDatabase::class,
         )
 
+    private fun SQLiteConnection.scalarLong(sql: String): Long =
+        prepare(sql).use { statement ->
+            assertTrue(statement.step())
+            statement.getLong(0)
+        }
+
     /** Inserts a v3 database with duplicate Bluetooth addresses and their history. */
-    private fun createV3WithDuplicates(): androidx.sqlite.db.SupportSQLiteDatabase {
-        val db = helper.createDatabase(AppDatabase.DATABASE_NAME, 3)
-        db.execSQL(
+    private suspend fun createV3WithDuplicates(): SQLiteConnection {
+        val db = helper.createDatabase(3)
+        db.executeSQL(
             """
             INSERT INTO vehicles (id, name, bluetoothAddress, bluetoothName, isActive) VALUES
                 (1, 'First',  'AA:BB:CC:DD:EE:01', 'Car', 0),
@@ -31,7 +53,7 @@ class MigrationTest {
                 (3, 'Other',  'AA:BB:CC:DD:EE:02', 'Other', 1)
             """.trimIndent(),
         )
-        db.execSQL(
+        db.executeSQL(
             """
             INSERT INTO parking_locations (vehicleId, latitude, longitude, timestamp) VALUES
                 (1, 1.0, 1.0, 100),
@@ -42,89 +64,65 @@ class MigrationTest {
     }
 
     @Test
-    fun `v3 to v4 merges duplicate vehicles and keeps their history`() {
-        val v3 = createV3WithDuplicates()
-        v3.close()
+    fun `v3 to v4 merges duplicate vehicles and keeps their history`() =
+        runTest {
+            val v3 = createV3WithDuplicates()
+            v3.close()
 
-        val migrated =
-            helper.runMigrationsAndValidate(
-                AppDatabase.DATABASE_NAME,
-                4,
-                true,
-                MIGRATION_3_4,
+            val migrated = helper.runMigrationsAndValidate(4, listOf(MIGRATION_3_4))
+
+            assertEquals(2L, migrated.scalarLong("SELECT COUNT(*) FROM vehicles"))
+            assertEquals(2L, migrated.scalarLong("SELECT COUNT(*) FROM parking_locations"))
+
+            // Both locations now belong to the surviving row (lowest id).
+            assertEquals(
+                2L,
+                migrated.scalarLong("SELECT COUNT(*) FROM parking_locations WHERE vehicleId = 1"),
             )
 
-        migrated.query("SELECT COUNT(*) FROM vehicles").use { cursor ->
-            cursor.moveToFirst()
-            assertEquals(2, cursor.getInt(0))
-        }
+            // Only one vehicle remains active after the migration.
+            assertEquals(1L, migrated.scalarLong("SELECT COUNT(*) FROM vehicles WHERE isActive = 1"))
 
-        // The two locations now belong to the surviving row (lowest id).
-        migrated.query("SELECT vehicleId FROM parking_locations ORDER BY timestamp").use { cursor ->
-            cursor.moveToFirst()
-            assertEquals(1, cursor.getInt(0))
-            cursor.moveToNext()
-            assertEquals(1, cursor.getInt(0))
-        }
+            // The unique index is in place.
+            assertEquals(
+                1L,
+                migrated.scalarLong(
+                    "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' " +
+                        "AND name = 'index_vehicles_bluetoothAddress'",
+                ),
+            )
 
-        // Only one vehicle remains active after the migration.
-        migrated.query("SELECT COUNT(*) FROM vehicles WHERE isActive = 1").use { cursor ->
-            cursor.moveToFirst()
-            assertEquals(1, cursor.getInt(0))
+            migrated.close()
         }
-
-        // The unique index is in place.
-        migrated
-            .query(
-                "SELECT COUNT(*) FROM sqlite_master WHERE type = 'index' " +
-                    "AND name = 'index_vehicles_bluetoothAddress'",
-            ).use { cursor ->
-                cursor.moveToFirst()
-                assertEquals(1, cursor.getInt(0))
-            }
-    }
 
     @Test
-    fun `v3 to v4 activates a vehicle when none was active`() {
-        val v3 = helper.createDatabase(AppDatabase.DATABASE_NAME, 3)
-        v3.execSQL(
-            "INSERT INTO vehicles (id, name, bluetoothAddress, bluetoothName, isActive) " +
-                "VALUES (7, 'Only', 'AA:BB:CC:DD:EE:09', 'Car', 0)",
-        )
-        v3.close()
-
-        val migrated =
-            helper.runMigrationsAndValidate(
-                AppDatabase.DATABASE_NAME,
-                4,
-                true,
-                MIGRATION_3_4,
+    fun `v3 to v4 activates a vehicle when none was active`() =
+        runTest {
+            val v3 = helper.createDatabase(3)
+            v3.executeSQL(
+                "INSERT INTO vehicles (id, name, bluetoothAddress, bluetoothName, isActive) " +
+                    "VALUES (7, 'Only', 'AA:BB:CC:DD:EE:09', 'Car', 0)",
             )
+            v3.close()
 
-        migrated.query("SELECT id, isActive FROM vehicles").use { cursor ->
-            cursor.moveToFirst()
-            assertEquals(7, cursor.getInt(0))
-            assertEquals(1, cursor.getInt(1))
+            val migrated = helper.runMigrationsAndValidate(4, listOf(MIGRATION_3_4))
+
+            assertEquals(7L, migrated.scalarLong("SELECT id FROM vehicles"))
+            assertEquals(1L, migrated.scalarLong("SELECT isActive FROM vehicles"))
+
+            migrated.close()
         }
-    }
 
     @Test
-    fun `v3 with no vehicles migrates without inventing one`() {
-        val v3 = helper.createDatabase(AppDatabase.DATABASE_NAME, 3)
-        v3.close()
+    fun `v3 with no vehicles migrates without inventing one`() =
+        runTest {
+            val v3 = helper.createDatabase(3)
+            v3.close()
 
-        val migrated =
-            helper.runMigrationsAndValidate(
-                AppDatabase.DATABASE_NAME,
-                4,
-                true,
-                MIGRATION_3_4,
-            )
+            val migrated = helper.runMigrationsAndValidate(4, listOf(MIGRATION_3_4))
 
-        migrated.query("SELECT COUNT(*) FROM vehicles").use { cursor ->
-            cursor.moveToFirst()
-            assertEquals(0, cursor.getInt(0))
+            assertEquals(0L, migrated.scalarLong("SELECT COUNT(*) FROM vehicles"))
+
+            migrated.close()
         }
-        assertNotNull(migrated)
-    }
 }

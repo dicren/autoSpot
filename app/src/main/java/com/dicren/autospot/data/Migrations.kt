@@ -1,7 +1,8 @@
 package com.dicren.autospot.data
 
-import androidx.room.migration.Migration
-import androidx.sqlite.db.SupportSQLiteDatabase
+import androidx.room3.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.async.executeSQL
 
 /**
  * v3 → v4: the Bluetooth address becomes unique and the "one active vehicle" invariant is
@@ -12,9 +13,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
  */
 val MIGRATION_3_4 =
     object : Migration(3, 4) {
-        override fun migrate(db: SupportSQLiteDatabase) {
+        override suspend fun migrate(connection: SQLiteConnection) {
             // 1. Reassign the history of duplicate vehicles to the survivor (lowest id per address).
-            db.execSQL(
+            connection.executeSQL(
                 """
                 UPDATE parking_locations
                 SET vehicleId = (
@@ -33,7 +34,7 @@ val MIGRATION_3_4 =
             )
 
             // 2. Drop the duplicate vehicles.
-            db.execSQL(
+            connection.executeSQL(
                 """
                 DELETE FROM vehicles
                 WHERE id NOT IN (SELECT MIN(id) FROM vehicles GROUP BY bluetoothAddress)
@@ -41,13 +42,13 @@ val MIGRATION_3_4 =
             )
 
             // 3. Enforce uniqueness from now on.
-            db.execSQL(
+            connection.executeSQL(
                 "CREATE UNIQUE INDEX IF NOT EXISTS `index_vehicles_bluetoothAddress` " +
                     "ON `vehicles` (`bluetoothAddress`)",
             )
 
             // 4. Keep at most one active vehicle.
-            db.execSQL(
+            connection.executeSQL(
                 """
                 UPDATE vehicles SET isActive = 0
                 WHERE isActive = 1
@@ -56,7 +57,7 @@ val MIGRATION_3_4 =
             )
 
             // 5. If there are vehicles but none is active, activate the first one.
-            db.execSQL(
+            connection.executeSQL(
                 """
                 UPDATE vehicles SET isActive = 1
                 WHERE id = (SELECT MIN(id) FROM vehicles)

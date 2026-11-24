@@ -1,7 +1,8 @@
 package com.dicren.autospot.ui.parking
 
 import android.content.Context
-import androidx.room.Room
+import androidx.room3.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import app.cash.turbine.test
 import com.dicren.autospot.core.Clock
@@ -58,7 +59,8 @@ class ParkingViewModelTest {
                 .inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext<Context>(),
                     AppDatabase::class.java,
-                ).allowMainThreadQueries()
+                ).setDriver(AndroidSQLiteDriver())
+                .allowMainThreadQueries()
                 .build()
         vehicles = RoomVehicleRepository(db.vehicleDao())
         parking = RoomParkingRepository(db.parkingLocationDao(), Clock { NOW })

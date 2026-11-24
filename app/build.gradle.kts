@@ -123,7 +123,8 @@ dependencies {
 
     // Room Database
     implementation(libs.room.runtime)
-    implementation(libs.room.ktx)
+    implementation(libs.sqlite.bundled)
+    implementation(libs.sqlite.async)
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
@@ -132,6 +133,7 @@ dependencies {
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.core.ktx)
     testImplementation(libs.room.testing)
+    testImplementation(libs.sqlite.framework)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.compose.ui.test.junit4)
 

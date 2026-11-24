@@ -2,7 +2,8 @@ package com.dicren.autospot.data
 
 import android.content.Context
 import android.database.sqlite.SQLiteConstraintException
-import androidx.room.Room
+import androidx.room3.Room
+import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
@@ -30,7 +31,8 @@ class VehicleDaoTest {
                 .inMemoryDatabaseBuilder(
                     ApplicationProvider.getApplicationContext<Context>(),
                     AppDatabase::class.java,
-                ).allowMainThreadQueries()
+                ).setDriver(AndroidSQLiteDriver())
+                .allowMainThreadQueries()
                 .build()
         dao = db.vehicleDao()
     }
