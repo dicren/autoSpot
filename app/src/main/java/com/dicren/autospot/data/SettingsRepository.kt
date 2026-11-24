@@ -1,6 +1,7 @@
 package com.dicren.autospot.data
 
 import android.content.Context
+import android.util.Log
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.MutablePreferences
 import androidx.datastore.preferences.core.Preferences
@@ -12,6 +13,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import java.io.IOException
+
+private const val TAG = "SettingsRepository"
 
 internal val Context.settingsDataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
 
@@ -59,6 +62,7 @@ class DataStoreSettingsRepository(
             dataStore.edit(change)
         } catch (e: IOException) {
             // Best effort: storage failures are rare and retrying on the next launch is enough.
+            Log.w(TAG, "Could not write settings", e)
         }
     }
 }

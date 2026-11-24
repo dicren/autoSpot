@@ -107,7 +107,8 @@ class SaveParkingLocationUseCaseTest {
         time: Long = NOW - 1_000L,
         latitude: Double = 42.0,
         longitude: Double = -5.0,
-    ) = LocationFix(latitude, longitude, time, accuracyMeters = 5f)
+        accuracy: Float? = 5f,
+    ) = LocationFix(latitude, longitude, time, accuracyMeters = accuracy)
 
     @Test
     fun `without permission nothing is saved`() =
@@ -253,6 +254,47 @@ class SaveParkingLocationUseCaseTest {
             source.current = fix(time = 0L)
 
             assertTrue(useCase().save(id) is SaveResult.Saved)
+        }
+
+    @Test
+    fun `a fix without accuracy is accepted`() =
+        runTest {
+            val id = addVehicle()
+            source.current = fix(accuracy = null)
+
+            assertTrue(useCase().save(id) is SaveResult.Saved)
+        }
+
+    @Test
+    fun `a fix exactly at the accuracy limit is accepted`() =
+        runTest {
+            val id = addVehicle()
+            source.current = fix(accuracy = SaveParkingLocationUseCase.DEFAULT_MAX_ACCURACY_METERS)
+
+            assertTrue(useCase().save(id) is SaveResult.Saved)
+        }
+
+    @Test
+    fun `a poor current fix falls back to a good last known fix`() =
+        runTest {
+            val id = addVehicle()
+            source.current = fix(accuracy = 500f)
+            source.last = fix(latitude = 46.0, accuracy = 10f)
+
+            val result = useCase().save(id)
+
+            assertEquals(46.0, (result as SaveResult.Saved).latitude, 0.0)
+        }
+
+    @Test
+    fun `poor fixes from both sources are not saved`() =
+        runTest {
+            val id = addVehicle()
+            source.current = fix(accuracy = 500f)
+            source.last = fix(accuracy = 200f)
+
+            assertEquals(SaveResult.NoFix, useCase().save(id))
+            assertTrue(parking.latestLocationOnce(id) == null)
         }
 
     @Test

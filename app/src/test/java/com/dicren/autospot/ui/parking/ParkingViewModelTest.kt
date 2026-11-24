@@ -8,14 +8,17 @@ import app.cash.turbine.test
 import com.dicren.autospot.core.Clock
 import com.dicren.autospot.data.AddVehicleResult
 import com.dicren.autospot.data.AppDatabase
+import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.ParkingRepository
 import com.dicren.autospot.data.RoomParkingRepository
 import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.util.FakeParkingRepository
 import com.dicren.autospot.util.FakeSettingsRepository
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
@@ -23,6 +26,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -74,15 +78,19 @@ class ParkingViewModelTest {
     @After
     fun tearDown() = db.close()
 
-    private fun viewModel(settings: SettingsRepository = FakeSettingsRepository()): ParkingViewModel =
+    private fun viewModel(
+        settings: SettingsRepository = FakeSettingsRepository(),
+        vehicleRepository: VehicleRepository = vehicles,
+        parkingRepository: ParkingRepository = parking,
+    ): ParkingViewModel =
         ParkingViewModel(
-            vehicleRepository = vehicles,
-            parkingRepository = parking,
+            vehicleRepository = vehicleRepository,
+            parkingRepository = parkingRepository,
             settingsRepository = settings,
             saveParkingLocation =
                 SaveParkingLocationUseCase(
-                    vehicleRepository = vehicles,
-                    parkingRepository = parking,
+                    vehicleRepository = vehicleRepository,
+                    parkingRepository = parkingRepository,
                     locationSource = source,
                     clock = Clock { NOW },
                     hasLocationPermission = { accuracy == LocationAccuracy.PRECISE },
@@ -92,6 +100,22 @@ class ParkingViewModelTest {
             hasBackgroundLocationPermission = { backgroundLocation },
             isLocationEnabled = { gpsEnabled },
         )
+
+    private class FailingVehicleRepository(
+        private val delegate: VehicleRepository,
+    ) : VehicleRepository by delegate {
+        override suspend fun addVehicle(
+            name: String,
+            bluetoothAddress: String,
+            bluetoothName: String,
+        ): AddVehicleResult = throw IllegalStateException("disk full")
+    }
+
+    private class FailingParkingRepository(
+        private val delegate: ParkingRepository,
+    ) : ParkingRepository by delegate {
+        override suspend fun deleteLocation(id: Long) = throw IllegalStateException("disk full")
+    }
 
     private suspend fun addVehicle(name: String = "Car"): Long {
         vehicleCount++
@@ -401,6 +425,55 @@ class ParkingViewModelTest {
             }
 
             assertEquals(1, vehicles.getAllVehiclesOnce().size)
+        }
+
+    @Test
+    fun `clearing the history uses the vehicle that was shown`() =
+        runTest {
+            val first = addVehicle("A")
+            val second = addVehicle("B")
+            val fakeParking =
+                FakeParkingRepository(
+                    mutableMapOf(
+                        first to listOf(ParkingLocationEntity(1, first, 1.0, 1.0, 1L)),
+                        second to listOf(ParkingLocationEntity(2, second, 2.0, 2.0, 2L)),
+                    ),
+                )
+            val viewModel = viewModel(parkingRepository = fakeParking)
+
+            viewModel.clearHistory(first)
+
+            assertNull(fakeParking.latestLocationOnce(first))
+            assertNotNull(fakeParking.latestLocationOnce(second))
+        }
+
+    @Test
+    fun `a failed add reports an operation failure`() =
+        runTest {
+            val viewModel = viewModel(vehicleRepository = FailingVehicleRepository(vehicles))
+
+            viewModel.events.test {
+                viewModel.addVehicle("B", "AA:BB:CC:DD:EE:77", "Car")
+
+                assertEquals(ParkingEvent.OperationFailed, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a failed delete reports an operation failure`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 1.0, 1.0)
+            val location = parking.latestLocationOnce(id)!!
+            val viewModel = viewModel(parkingRepository = FailingParkingRepository(parking))
+
+            viewModel.events.test {
+                viewModel.deleteLocation(location)
+
+                assertEquals(ParkingEvent.OperationFailed, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
         }
 
     private companion object {

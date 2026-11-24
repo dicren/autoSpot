@@ -2,6 +2,7 @@ package com.dicren.autospot.ui.parking
 
 import android.content.Context
 import android.location.LocationManager
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
@@ -18,6 +19,7 @@ import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.Permissions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -147,9 +149,9 @@ class ParkingViewModel(
     }
 
     fun saveCurrentLocation() {
-        if (isSaving.value) return
+        // compareAndSet closes the window where two taps in the same frame both saw false.
+        if (!isSaving.compareAndSet(false, true)) return
         viewModelScope.launch {
-            isSaving.value = true
             try {
                 val result = saveParkingLocation.save(null)
                 eventsFlow.emit(
@@ -174,7 +176,7 @@ class ParkingViewModel(
         /** Receives true when the vehicle was stored, false when the address was taken. */
         onResult: (Boolean) -> Unit = {},
     ) {
-        viewModelScope.launch {
+        launchAction {
             val result = vehicleRepository.addVehicle(name, bluetoothAddress, bluetoothName)
             if (result is AddVehicleResult.Duplicate) {
                 // The list and the active vehicle update themselves.
@@ -186,7 +188,7 @@ class ParkingViewModel(
 
     /** Records that the background-location explanation was shown, so it is not repeated. */
     fun markBackgroundRationaleShown() {
-        viewModelScope.launch { settingsRepository.setBackgroundLocationRationaleShown() }
+        launchAction { settingsRepository.setBackgroundLocationRationaleShown() }
     }
 
     /**
@@ -197,7 +199,7 @@ class ParkingViewModel(
         vehicle: VehicleEntity,
         onResult: (Boolean) -> Unit = {},
     ) {
-        viewModelScope.launch {
+        launchAction {
             val saved = vehicleRepository.updateVehicle(vehicle)
             if (!saved) eventsFlow.emit(ParkingEvent.VehicleUpdateConflict)
             onResult(saved)
@@ -205,29 +207,53 @@ class ParkingViewModel(
     }
 
     fun deleteVehicle(vehicle: VehicleEntity) {
-        viewModelScope.launch { vehicleRepository.deleteVehicle(vehicle.id) }
+        launchAction { vehicleRepository.deleteVehicle(vehicle.id) }
     }
 
     fun activateVehicle(vehicle: VehicleEntity) {
-        viewModelScope.launch { vehicleRepository.activateVehicle(vehicle.id) }
+        launchAction { vehicleRepository.activateVehicle(vehicle.id) }
     }
 
     fun deleteLocation(location: ParkingLocationEntity) {
-        viewModelScope.launch {
+        launchAction {
             parkingRepository.deleteLocation(location.id)
             if (selectedLocationId.value == location.id) selectedLocationId.value = null
         }
     }
 
-    fun clearHistory() {
+    /**
+     * Clears the history of [vehicleId], or of the active vehicle when no id is passed.
+     *
+     * The screen passes the vehicle it is showing: resolving the active vehicle here would clear
+     * the wrong history if the user switches vehicles while the confirmation dialog is open.
+     */
+    fun clearHistory(vehicleId: Long? = null) {
+        launchAction {
+            val id = vehicleId ?: vehicleRepository.getActiveVehicleOnce()?.id
+            if (id != null) parkingRepository.clearLocations(id)
+        }
+    }
+
+    /**
+     * Runs a repository action without letting a storage failure crash the app. Cancellation is
+     * rethrown so viewModelScope teardown still works.
+     */
+    private fun launchAction(action: suspend () -> Unit) {
         viewModelScope.launch {
-            // Not uiState.value: the state flow stops emitting while nobody is collecting.
-            val vehicleId = vehicleRepository.getActiveVehicleOnce()?.id ?: return@launch
-            parkingRepository.clearLocations(vehicleId)
+            try {
+                action()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Log.e(TAG, "Parking action failed", e)
+                eventsFlow.emit(ParkingEvent.OperationFailed)
+            }
         }
     }
 
     companion object {
+        private const val TAG = "ParkingViewModel"
+
         fun factory(context: Context): ViewModelProvider.Factory {
             val appContext = context.applicationContext
             return viewModelFactory {

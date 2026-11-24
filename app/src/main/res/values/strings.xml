@@ -105,6 +105,7 @@
     <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">That Bluetooth device is already configured.</string>
     <string name="vehicle_update_conflict">Another vehicle already uses that Bluetooth device.</string>
+    <string name="operation_failed">Something went wrong. Please try again.</string>
     <string name="delete_vehicle_message">%1$s will be deleted, including its parking history.</string>
     <string name="clear_all_message">Every saved location for %1$s will be deleted.</string>
     <string name="bluetooth_permission_required">Allow Bluetooth access to list your paired devices.</string>

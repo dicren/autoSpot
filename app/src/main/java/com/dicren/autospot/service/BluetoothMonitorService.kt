@@ -19,7 +19,6 @@ import androidx.core.content.IntentCompat
 import com.dicren.autospot.bluetooth.BluetoothEvent
 import com.dicren.autospot.bluetooth.BluetoothIntents
 import com.dicren.autospot.bluetooth.DisconnectionDebouncer
-import com.dicren.autospot.core.DefaultClock
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.Permissions
@@ -40,7 +39,10 @@ class BluetoothMonitorService : Service() {
     private val vehicleRepository: VehicleRepository by lazy {
         applicationContext.appContainer.vehicleRepository
     }
-    private val debouncer = DisconnectionDebouncer(DEBOUNCE_TIME_MS, DefaultClock)
+    private val debouncer by lazy {
+        // Use the container clock so tests can control the debounce window.
+        DisconnectionDebouncer(DEBOUNCE_TIME_MS, applicationContext.appContainer.clock)
+    }
     private lateinit var notifications: AppNotifications
 
     private val bluetoothReceiver =
@@ -102,6 +104,15 @@ class BluetoothMonitorService : Service() {
 
         serviceScope.launch {
             try {
+                // Permissions can be revoked while the service is running. Checking here, instead
+                // of only in onStartCommand, avoids a silent failure on the next disconnection.
+                if (!Permissions.canMonitor(this@BluetoothMonitorService)) {
+                    Log.w(TAG, "Monitoring permissions disappeared, stopping the monitor")
+                    notifications.notifySaveFailed()
+                    stopSelf()
+                    return@launch
+                }
+
                 val vehicle = vehicleRepository.getVehicleByBluetoothAddressOnce(deviceAddress)
 
                 if (vehicle != null) {
@@ -123,7 +134,10 @@ class BluetoothMonitorService : Service() {
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
+                // Android can refuse a foreground-service start from the background. Tell the
+                // user instead of losing the save without a trace.
                 Log.e(TAG, "Error handling disconnection", e)
+                notifications.notifySaveFailed()
             }
         }
     }
@@ -166,11 +180,12 @@ class BluetoothMonitorService : Service() {
                 this,
                 AppNotifications.MONITOR_NOTIFICATION_ID,
                 notifications.monitorNotification(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
             )
             START_STICKY
-        } catch (e: SecurityException) {
-            // The system refuses a location-typed foreground service without permission.
+        } catch (e: Exception) {
+            // SecurityException when a location permission is missing, and
+            // ForegroundServiceStartNotAllowedException when the system refuses the start.
             Log.e(TAG, "Cannot start foreground monitor", e)
             stopSelf()
             START_NOT_STICKY

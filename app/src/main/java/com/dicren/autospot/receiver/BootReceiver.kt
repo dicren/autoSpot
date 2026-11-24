@@ -12,6 +12,8 @@ import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 private const val TAG = "BootReceiver"
@@ -26,8 +28,9 @@ class BootReceiver : BroadcastReceiver() {
         Log.d(TAG, "Device booted or app updated, checking if any vehicle is configured")
 
         val pendingResult = goAsync()
+        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-        CoroutineScope(Dispatchers.IO).launch {
+        scope.launch {
             try {
                 startMonitorIfNeeded(
                     context = context,
@@ -40,6 +43,7 @@ class BootReceiver : BroadcastReceiver() {
                 Log.e(TAG, "Error checking vehicle config", e)
             } finally {
                 pendingResult.finish()
+                scope.cancel()
             }
         }
     }

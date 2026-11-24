@@ -9,36 +9,22 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Explore
-import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
@@ -52,19 +38,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.repeatOnLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dicren.autospot.R
-import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.parking.components.LocationCard
-import com.dicren.autospot.ui.parking.components.LocationServicesBanner
 import com.dicren.autospot.ui.parking.components.NoLocationCard
-import com.dicren.autospot.ui.parking.components.PermissionBanner
-import com.dicren.autospot.ui.parking.components.VehicleCard
 import com.dicren.autospot.util.BluetoothDeviceInfo
 import com.dicren.autospot.util.BluetoothDevices
 import com.dicren.autospot.util.MapsIntents
@@ -73,7 +53,6 @@ import com.dicren.autospot.util.openAppSettings
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.rememberCameraPositionState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -116,14 +95,10 @@ fun ParkingScreen(
             permissionMissing = stringResource(R.string.location_permission_missing),
             duplicateVehicle = stringResource(R.string.vehicle_duplicate),
             updateConflict = stringResource(R.string.vehicle_update_conflict),
+            operationFailed = stringResource(R.string.operation_failed),
             mapsNotInstalled = stringResource(R.string.maps_not_found),
             shareTitle = stringResource(R.string.share_location),
         )
-
-    val notificationPermissionLauncher =
-        rememberLauncherForActivityResult(
-            ActivityResultContracts.RequestPermission(),
-        ) { /* Notifications are optional: the services keep running without them. */ }
 
     // Android 11+ answers this request by sending the user to the system's location page; the
     // flags are refreshed on resume, and immediately here for the versions that answer inline.
@@ -151,61 +126,14 @@ fun ParkingScreen(
             }
     }
 
-    // Permissions can change while the app is in the background (user went to Settings).
-    LaunchedEffect(lifecycleOwner) {
-        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            viewModel.refreshEnvironment()
-        }
-    }
-
-    // Start the monitor only when there is something to monitor and every permission is in place.
-    // Waiting for `isReady` avoids stopping the monitor the boot receiver just started on the
-    // first composition, when every state value is still the default one.
-    LaunchedEffect(state.isReady, state.vehicles.isNotEmpty(), state.hasMonitoringPermission) {
-        if (!state.isReady) return@LaunchedEffect
-        val shouldMonitor = state.vehicles.isNotEmpty() && state.hasMonitoringPermission
-        if (shouldMonitor) {
-            try {
-                context.startForegroundService(
-                    Intent(context, BluetoothMonitorService::class.java),
-                )
-            } catch (e: Exception) {
-                Log.w(TAG, "Could not start the Bluetooth monitor", e)
-            }
-        } else {
-            context.stopService(Intent(context, BluetoothMonitorService::class.java))
-        }
-    }
-
-    // The ongoing notification is only visible with POST_NOTIFICATIONS on Android 13+.
-    LaunchedEffect(state.vehicles.isNotEmpty(), state.hasMonitoringPermission) {
-        if (state.vehicles.isNotEmpty() &&
-            state.hasMonitoringPermission &&
-            Permissions.needsNotificationPermission(context)
-        ) {
-            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-        }
-    }
-
-    // Explain the "Allow all the time" requirement before Android sends the user to its settings
-    // page. The fact that it was shown is persisted, so it is not repeated on every cold start.
-    LaunchedEffect(
-        state.isReady,
-        state.hasLocationPermission,
-        state.hasBackgroundLocationPermission,
-        state.vehicles.isNotEmpty(),
-    ) {
-        if (state.needsBackgroundLocationRationale) {
-            viewModel.markBackgroundRationaleShown()
-            showBackgroundRationale = true
-        }
-    }
-
-    // Coming back from the system settings page with the grant in place should close the
-    // explanation instead of leaving it on screen.
-    LaunchedEffect(state.hasBackgroundLocationPermission) {
-        if (state.hasBackgroundLocationPermission) showBackgroundRationale = false
-    }
+    ParkingEnvironmentEffect(viewModel = viewModel, lifecycleOwner = lifecycleOwner)
+    ParkingMonitorEffect(state = state, context = context)
+    ParkingBackgroundLocationEffect(
+        state = state,
+        viewModel = viewModel,
+        onShowRationale = { showBackgroundRationale = true },
+        onHideRationale = { showBackgroundRationale = false },
+    )
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
@@ -214,13 +142,7 @@ fun ParkingScreen(
     }
 
     val displayLocation = state.displayLocation
-    LaunchedEffect(displayLocation?.id) {
-        displayLocation?.let {
-            cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f),
-            )
-        }
-    }
+    ParkingCameraEffect(displayLocation = displayLocation, cameraPositionState = cameraPositionState)
 
     Box(modifier = modifier.fillMaxSize()) {
         if (displayLocation != null) {
@@ -232,40 +154,14 @@ fun ParkingScreen(
             )
         }
 
-        Column(
-            modifier =
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
-                        ),
-                    ).padding(16.dp),
-        ) {
-            if (state.isReady) {
-                // The rationale dialog already explains the missing background grant; showing the
-                // generic banner at the same time would ask for the same thing twice.
-                if (!state.hasMonitoringPermission && !showBackgroundRationale) {
-                    PermissionBanner(
-                        isApproximateOnly = state.isLocationApproximate,
-                        onGrantClick = { context.openAppSettings() },
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                if (!state.isLocationEnabled) {
-                    LocationServicesBanner(
-                        onSettingsClick = { context.openLocationSettings() },
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                }
-
-                VehicleCard(
-                    vehicle = state.activeVehicle,
-                    onSettingsClick = { showVehiclesSheet = true },
-                )
-            }
-        }
+        ParkingTopOverlay(
+            state = state,
+            showBackgroundRationale = showBackgroundRationale,
+            onGrantClick = { context.openAppSettings() },
+            onLocationSettingsClick = { context.openLocationSettings() },
+            onVehiclesClick = { showVehiclesSheet = true },
+            modifier = Modifier.align(Alignment.TopCenter),
+        )
 
         CompassFab(
             cameraPositionState = cameraPositionState,
@@ -295,7 +191,7 @@ fun ParkingScreen(
         )
 
         if (displayLocation != null) {
-            FloatingActionButton(
+            NavigateFab(
                 onClick = {
                     val opened =
                         MapsIntents.openNavigation(
@@ -309,7 +205,6 @@ fun ParkingScreen(
                         }
                     }
                 },
-                containerColor = MaterialTheme.colorScheme.primary,
                 modifier =
                     Modifier
                         .align(Alignment.BottomEnd)
@@ -318,13 +213,7 @@ fun ParkingScreen(
                                 WindowInsetsSides.Bottom + WindowInsetsSides.End,
                             ),
                         ).padding(end = 16.dp, bottom = 132.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Navigation,
-                    contentDescription = stringResource(R.string.navigate_button),
-                    tint = MaterialTheme.colorScheme.onPrimary,
-                )
-            }
+            )
 
             LocationCard(
                 location = displayLocation,
@@ -349,7 +238,10 @@ fun ParkingScreen(
                     coroutineScope.launch {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newLatLngZoom(
-                                LatLng(displayLocation.latitude, displayLocation.longitude),
+                                LatLng(
+                                    displayLocation.latitude,
+                                    displayLocation.longitude,
+                                ),
                                 17f,
                             ),
                         )
@@ -394,24 +286,29 @@ fun ParkingScreen(
         showVehicles = showVehiclesSheet,
         showHistory = showHistorySheet,
         confirmClearHistory = confirmClearHistory,
-        onDismissVehicles = { showVehiclesSheet = false },
-        onDismissHistory = { showHistorySheet = false },
-        onCancelClearHistory = { confirmClearHistory = false },
-        onSelectLocation = { location ->
-            viewModel.selectLocation(location)
-            showHistorySheet = false
-        },
-        onDeleteLocation = viewModel::deleteLocation,
-        onRequestClearHistory = { confirmClearHistory = true },
-        onClearHistory = {
-            viewModel.clearHistory()
-            confirmClearHistory = false
-            showHistorySheet = false
-        },
-        onActivateVehicle = viewModel::activateVehicle,
-        onAddVehicle = viewModel::addVehicle,
-        onEditVehicle = viewModel::updateVehicle,
-        onDeleteVehicle = viewModel::deleteVehicle,
+        callbacks =
+            ParkingSheetCallbacks(
+                onDismissVehicles = { showVehiclesSheet = false },
+                onDismissHistory = { showHistorySheet = false },
+                onCancelClearHistory = { confirmClearHistory = false },
+                onSelectLocation = { location ->
+                    viewModel.selectLocation(location)
+                    showHistorySheet = false
+                },
+                onDeleteLocation = viewModel::deleteLocation,
+                onRequestClearHistory = { confirmClearHistory = true },
+                onClearHistory = {
+                    // Pass the vehicle being shown, not whichever vehicle is active when the
+                    // coroutine eventually runs.
+                    viewModel.clearHistory(state.activeVehicle?.id)
+                    confirmClearHistory = false
+                    showHistorySheet = false
+                },
+                onActivateVehicle = viewModel::activateVehicle,
+                onAddVehicle = viewModel::addVehicle,
+                onEditVehicle = viewModel::updateVehicle,
+                onDeleteVehicle = viewModel::deleteVehicle,
+            ),
     )
 
     if (showBackgroundRationale) {
@@ -439,41 +336,6 @@ fun ParkingScreen(
 }
 
 /**
- * Own composable so the camera position is only read here: reading it in the screen body would
- * recompose the whole screen (map included) while the user pans or rotates the map.
- */
-@Composable
-private fun CompassFab(
-    cameraPositionState: CameraPositionState,
-    onReset: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val bearing by remember(cameraPositionState) {
-        derivedStateOf { cameraPositionState.position.bearing }
-    }
-
-    AnimatedVisibility(
-        visible = bearing != 0f,
-        enter = fadeIn(),
-        exit = fadeOut(),
-        modifier = modifier,
-    ) {
-        FloatingActionButton(
-            onClick = onReset,
-            modifier = Modifier.size(40.dp),
-            containerColor = MaterialTheme.colorScheme.surface,
-            contentColor = MaterialTheme.colorScheme.onSurface,
-        ) {
-            Icon(
-                imageVector = Icons.Default.Explore,
-                contentDescription = stringResource(R.string.reset_orientation),
-                modifier = Modifier.size(20.dp),
-            )
-        }
-    }
-}
-
-/**
  * A wall clock that advances once a minute. Reading the clock inside composition would freeze
  * "5 minutes ago" until some unrelated state changed, which is exactly what the card showed.
  */
@@ -495,6 +357,7 @@ private data class ParkingMessages(
     val permissionMissing: String,
     val duplicateVehicle: String,
     val updateConflict: String,
+    val operationFailed: String,
     val mapsNotInstalled: String,
     val shareTitle: String,
 ) {
@@ -506,6 +369,7 @@ private data class ParkingMessages(
             ParkingEvent.PermissionMissing -> permissionMissing
             ParkingEvent.DuplicateVehicle -> duplicateVehicle
             ParkingEvent.VehicleUpdateConflict -> updateConflict
+            ParkingEvent.OperationFailed -> operationFailed
         }
 }
 

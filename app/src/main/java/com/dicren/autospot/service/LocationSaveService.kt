@@ -45,6 +45,7 @@ class LocationSaveService : Service() {
     ): Int {
         if (!Permissions.hasLocation(this)) {
             Log.w(TAG, "Location permission not granted, not saving")
+            notifications.notifySaveFailed()
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -60,6 +61,7 @@ class LocationSaveService : Service() {
             // The system refuses a location-typed foreground service without permission, or when
             // started from the background without background location access.
             Log.e(TAG, "Cannot start foreground location service", e)
+            notifications.notifySaveFailed()
             stopSelf(startId)
             return START_NOT_STICKY
         }
@@ -81,6 +83,7 @@ class LocationSaveService : Service() {
 
                 SaveResult.NoPermission -> {
                     Log.w(TAG, "Location permission disappeared")
+                    notifications.notifySaveFailed()
                 }
 
                 SaveResult.NoVehicle -> {

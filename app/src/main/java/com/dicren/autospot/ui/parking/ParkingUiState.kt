@@ -66,4 +66,7 @@ sealed interface ParkingEvent {
     data object DuplicateVehicle : ParkingEvent
 
     data object VehicleUpdateConflict : ParkingEvent
+
+    /** A repository write failed (storage error, database closed, ...). */
+    data object OperationFailed : ParkingEvent
 }

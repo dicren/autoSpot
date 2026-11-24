@@ -149,23 +149,27 @@ signed automatically. Without it, release builds are unsigned — only debug bui
 
 ### Services
 
-- **`BluetoothMonitorService`** — sticky foreground service (`foregroundServiceType="location"`)
-  that registers a runtime receiver for `ACTION_ACL_CONNECTED/DISCONNECTED`,
+- **`BluetoothMonitorService`** — sticky foreground service
+  (`foregroundServiceType="connectedDevice"`, `FOREGROUND_SERVICE_CONNECTED_DEVICE`) that
+  registers a runtime receiver for `ACTION_ACL_CONNECTED/DISCONNECTED`,
   `BluetoothA2dp`/`BluetoothHeadset` connection-state changes, and adapter state changes.
   `bluetooth/BluetoothIntents` reduces the broadcast to a `BluetoothEvent`; the service then looks
   the MAC up in Room and, if it belongs to a vehicle, starts `LocationSaveService` with that id.
   Events pass through `DisconnectionDebouncer` (10 s per vehicle, `Mutex` + injected clock), so
   there is no concurrent access to shared state. It calls `stopSelf()` when
-  `Permissions.canMonitor` is false and catches `SecurityException` from `startForeground`. Its
+  `Permissions.canMonitor` is false at start **and again before every disconnection**, because
+  permissions can be revoked while it runs. It catches `Exception` from `startForeground` and
+  posts a failure notification instead of losing the save silently. Its
   notification is built by `AppNotifications` (`bluetooth_monitor_channel_v2`, `IMPORTANCE_MIN`,
   monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted when
   the channels are created because Android ignores importance changes on an existing channel.
 - **`LocationSaveService`** — one-shot foreground service. Refuses to start without location
   permission, then runs `SaveParkingLocationUseCase`: a fresh high-accuracy fix bounded by a 15 s
-  timeout, falling back to `lastLocation` only if it is younger than 5 minutes. The two sources
-  are asked independently: an exception from the fresh fix (Play Services unavailable) still
-  tries the last known one. Saves are serialised with a `Mutex` and each start stops with
-  `stopSelfResult(startId)`. A failed save posts a notification instead of failing silently.
+  timeout, falling back to `lastLocation` only if it is younger than 5 minutes and, like the fresh
+  fix, its reported accuracy is at most 100 m. The two sources are asked independently: an
+  exception from the fresh fix (Play Services unavailable) still tries the last known one. Saves
+  are serialised with a `Mutex` and each start stops with `stopSelfResult(startId)`. A failed save
+  posts a notification instead of failing silently.
 - **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
   an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
   **and** `Permissions.canMonitor` is true. It logs `ForegroundServiceStartNotAllowedException`
@@ -185,17 +189,22 @@ not repeated on every launch, and hides the permission banner while the dialog i
 
 All UI is Compose, split in `ui/`:
 
-- `ui/parking/ParkingScreen.kt` — orchestrator: top banners, vehicle card, compass and navigate
-  FABs, location card and snackbars. It reads `ParkingViewModel.uiState` and sends user actions to
-  the ViewModel; it also starts/stops the monitor, requests `POST_NOTIFICATIONS`, explains the
-  background-location requirement, reads the paired Bluetooth devices on `Dispatchers.IO`, and
+- `ui/parking/ParkingScreen.kt` — layout and state orchestration: map, overlays, cards, snackbar
+  and sheets. It reads `ParkingViewModel.uiState`, sends user actions to the ViewModel, and
   keeps the relative "parked at" text fresh with a one-minute ticker (`rememberNow`).
+- `ui/parking/ParkingEffects.kt` — the side effects: refresh on resume, start/stop the monitor,
+  request `POST_NOTIFICATIONS`, explain the background-location requirement and follow the
+  displayed spot with the camera.
+- `ui/parking/ParkingControls.kt` — the top banners/vehicle card, compass FAB and navigate FAB.
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
-- `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs.
+- `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
+  `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.
 - `ui/parking/ParkingViewModel.kt` + `ParkingUiState.kt` — `StateFlow<ParkingUiState>` built from
   the repositories (`combine` + `flatMapLatest`), one-shot `ParkingEvent`s for snackbars, and the
-  action methods. Switching the active vehicle clears the selected history item. `isReady` stays
-  false until the first real emission so the UI never acts on the defaults.
+  action methods. Repository writes are wrapped so a storage failure emits
+  `ParkingEvent.OperationFailed` instead of crashing the app. Switching the active vehicle clears
+  the selected history item. `isReady` stays false until the first real emission so the UI never
+  acts on the defaults.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`) that take state and
   callbacks, which is what the Compose tests render. `Previews.kt` holds the design-time previews.
@@ -240,14 +249,17 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   that the background-location rationale was already shown. Writes are best effort: a failed
   write must not crash the app.
 - Cloud backup / device transfer rules (`res/xml/backup_rules.xml`,
-  `res/xml/data_extraction_rules.xml`) include the three database files and the DataStore
-  preferences (`datastore/settings.preferences_pb`) so the onboarding flag survives a restore.
+  `res/xml/data_extraction_rules.xml`): **cloud backup includes only the DataStore preferences**
+  (`datastore/settings.preferences_pb`, i.e. the onboarding flag). The parking database is
+  deliberately excluded from the cloud, while `<device-transfer>` still copies it between the
+  user's own devices. Do not add the database back to `<cloud-backup>`: the privacy policy
+  promises that location history stays on the device.
 
 ## Conventions
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 82 strings plus 2 plurals (84 entries).
+  `ko`, `ru`, `zh`) and all currently carry the same 83 strings plus 2 plurals (85 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
   back to English. `LocaleResourcesTest` fails CI when the key sets differ. Spanish, French and
   Italian need a `quantity="many"` item in plurals or lint fails.
@@ -332,6 +344,12 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
 12. **Approximate location is not a usable permission.** If the user picks "Approximate" (Android
     12+), `hasLocation` is false, the monitor does not start and the manual save cannot work. The
     banner now says "Precise location required" instead of the generic permissions notice.
+13. **The monitor and the save service use different foreground-service types.** The monitor is
+    `connectedDevice` (it only watches Bluetooth); `LocationSaveService` is `location`. The save
+    service is started from the background while the monitor is running, which Android 14+
+    restricts, so this exact combination was verified on a Pixel 7 Pro (Android 16): app in the
+    background, paired A2DP speaker disconnected, `LocationSaveService` started and the location
+    was saved. Re-run that test before changing either type or merging the services.
 
 ## Working rules for agents
 

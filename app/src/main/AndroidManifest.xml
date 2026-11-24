@@ -6,6 +6,7 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -66,9 +67,11 @@
             android:foregroundServiceType="location"
             android:exported="false" />
 
+        <!-- The monitor only watches a Bluetooth device, so it uses the connectedDevice type.
+             LocationSaveService is the one that touches location. -->
         <service
             android:name=".service.BluetoothMonitorService"
-            android:foregroundServiceType="location"
+            android:foregroundServiceType="connectedDevice"
             android:exported="false" />
 
         <receiver

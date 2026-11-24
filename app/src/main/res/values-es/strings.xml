@@ -107,6 +107,7 @@
     <!-- Feedback and dialogs -->
     <string name="vehicle_duplicate">Ese dispositivo Bluetooth ya está configurado.</string>
     <string name="vehicle_update_conflict">Otro vehículo ya usa ese dispositivo Bluetooth.</string>
+    <string name="operation_failed">Algo ha ido mal. Inténtalo de nuevo.</string>
     <string name="delete_vehicle_message">Se borrará %1$s, incluido su historial de aparcamientos.</string>
     <string name="clear_all_message">Se borrarán todas las ubicaciones guardadas de %1$s.</string>
     <string name="bluetooth_permission_required">Permite el acceso a Bluetooth para ver tus dispositivos vinculados.</string>

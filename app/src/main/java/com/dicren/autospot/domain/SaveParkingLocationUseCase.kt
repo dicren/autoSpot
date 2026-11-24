@@ -15,6 +15,8 @@ import kotlin.coroutines.cancellation.CancellationException
  *   another vehicle.
  * - A fresh fix is preferred. If it is unavailable, a last-known fix is accepted only while it is
  *   younger than [maxFixAgeMillis]: a ten-minute-old fix can be many kilometres away.
+ * - A fix whose reported accuracy is worse than [maxAccuracyMeters] is discarded. Saving a
+ *   two-kilometre cell-tower fix as "where the car is" is worse than reporting a failure.
  * - Each source is asked independently. A failure while requesting the fresh fix must not skip
  *   the last known one: Play Services can reject the request while still holding a usable fix.
  */
@@ -25,6 +27,7 @@ class SaveParkingLocationUseCase(
     private val clock: Clock,
     private val hasLocationPermission: () -> Boolean,
     private val maxFixAgeMillis: Long = DEFAULT_MAX_FIX_AGE_MILLIS,
+    private val maxAccuracyMeters: Float = DEFAULT_MAX_ACCURACY_METERS,
 ) {
     suspend fun save(vehicleId: Long? = null): SaveResult {
         if (!hasLocationPermission()) return SaveResult.NoPermission
@@ -82,11 +85,14 @@ class SaveParkingLocationUseCase(
     ): LocationFix? {
         if (fix == null) return null
         // Unknown timestamps (some providers/mocks) are accepted rather than discarded.
-        if (fix.timeMillis <= 0L) return fix
-        return fix.takeIf { now - it.timeMillis <= maxFixAgeMillis }
+        if (fix.timeMillis > 0L && now - fix.timeMillis > maxFixAgeMillis) return null
+        // Unknown accuracy is accepted; a known poor accuracy is not.
+        if (fix.accuracyMeters != null && fix.accuracyMeters > maxAccuracyMeters) return null
+        return fix
     }
 
     companion object {
         const val DEFAULT_MAX_FIX_AGE_MILLIS = 5 * 60_000L
+        const val DEFAULT_MAX_ACCURACY_METERS = 100f
     }
 }
