@@ -11,7 +11,6 @@
     <string name="marker_title">내 차</string>
     <string name="parked_at">주차됨</string>
     <string name="navigate_button">Google 지도로 내비게이션</string>
-    <string name="clear_button">위치 삭제</string>
     <string name="center_map">지도 중앙으로</string>
     <string name="reset_orientation">방향 초기화</string>
     <string name="share_location">위치 공유</string>
@@ -34,7 +33,6 @@
     <string name="save">저장</string>
     <string name="cancel">취소</string>
     <string name="no_vehicles">아직 구성된 차량이 없습니다</string>
-    <string name="tap_to_activate">탭하여 활성화</string>
     <string name="active">활성</string>
 
     <!-- Bluetooth Monitor Service -->
@@ -60,11 +58,9 @@
     </plurals>
 
     <!-- Shortcut -->
-    <string name="add_shortcut">바로가기 추가</string>
     <string name="shortcut_label">내 차 찾기</string>
     <string name="shortcut_long_label">내 차로 내비게이션</string>
     <string name="shortcut_long_label_vehicle">%s로 내비게이션</string>
-    <string name="shortcut_not_supported">바로가기가 지원되지 않습니다</string>
     <string name="no_location_saved">저장된 위치 없음</string>
     <string name="maps_not_found">Google 지도를 찾을 수 없습니다</string>
     <string name="select_vehicle_shortcut">바로가기용 차량 선택</string>

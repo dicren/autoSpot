@@ -11,7 +11,6 @@
     <string name="marker_title">Your car</string>
     <string name="parked_at">Parked</string>
     <string name="navigate_button">Navigate with Google Maps</string>
-    <string name="clear_button">Clear location</string>
     <string name="center_map">Center map</string>
     <string name="reset_orientation">Reset orientation</string>
     <string name="share_location">Share location</string>
@@ -34,7 +33,6 @@
     <string name="save">Save</string>
     <string name="cancel">Cancel</string>
     <string name="no_vehicles">No vehicles configured yet</string>
-    <string name="tap_to_activate">Tap to activate</string>
     <string name="active">Active</string>
 
     <!-- Bluetooth Monitor Service -->
@@ -62,11 +60,9 @@
     </plurals>
 
     <!-- Shortcut -->
-    <string name="add_shortcut">Add shortcut</string>
     <string name="shortcut_label">Find my car</string>
     <string name="shortcut_long_label">Navigate to my car</string>
     <string name="shortcut_long_label_vehicle">Navigate to %s</string>
-    <string name="shortcut_not_supported">Shortcuts not supported</string>
     <string name="no_location_saved">No location saved</string>
     <string name="maps_not_found">Google Maps not found</string>
     <string name="select_vehicle_shortcut">Select vehicle for shortcut</string>

@@ -11,7 +11,6 @@
     <string name="marker_title">あなたの車</string>
     <string name="parked_at">駐車済み</string>
     <string name="navigate_button">Google Mapsでナビ</string>
-    <string name="clear_button">位置を消去</string>
     <string name="center_map">地図を中央に</string>
     <string name="reset_orientation">向きをリセット</string>
     <string name="share_location">位置を共有</string>
@@ -34,7 +33,6 @@
     <string name="save">保存</string>
     <string name="cancel">キャンセル</string>
     <string name="no_vehicles">車両がまだ設定されていません</string>
-    <string name="tap_to_activate">タップしてアクティブに</string>
     <string name="active">アクティブ</string>
 
     <!-- Bluetooth Monitor Service -->
@@ -60,11 +58,9 @@
     </plurals>
 
     <!-- Shortcut -->
-    <string name="add_shortcut">ショートカットを追加</string>
     <string name="shortcut_label">車を探す</string>
     <string name="shortcut_long_label">車へナビゲート</string>
     <string name="shortcut_long_label_vehicle">%sへナビゲート</string>
-    <string name="shortcut_not_supported">ショートカットはサポートされていません</string>
     <string name="no_location_saved">位置が保存されていません</string>
     <string name="maps_not_found">Google Mapsが見つかりません</string>
     <string name="select_vehicle_shortcut">ショートカット用の車両を選択</string>

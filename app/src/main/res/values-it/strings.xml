@@ -11,7 +11,6 @@
     <string name="marker_title">La tua auto</string>
     <string name="parked_at">Parcheggiato</string>
     <string name="navigate_button">Naviga con Google Maps</string>
-    <string name="clear_button">Cancella posizione</string>
     <string name="center_map">Centra mappa</string>
     <string name="reset_orientation">Reimposta orientamento</string>
     <string name="share_location">Condividi posizione</string>
@@ -34,7 +33,6 @@
     <string name="save">Salva</string>
     <string name="cancel">Annulla</string>
     <string name="no_vehicles">Nessun veicolo configurato</string>
-    <string name="tap_to_activate">Tocca per attivare</string>
     <string name="active">Attivo</string>
 
     <!-- Bluetooth Monitor Service -->
@@ -54,19 +52,19 @@
     <string name="just_now">Adesso</string>
     <plurals name="minutes_ago">
         <item quantity="one">%d minuto fa</item>
+        <item quantity="many">%d minuti fa</item>
         <item quantity="other">%d minuti fa</item>
     </plurals>
     <plurals name="hours_ago">
         <item quantity="one">%d ora fa</item>
+        <item quantity="many">%d ore fa</item>
         <item quantity="other">%d ore fa</item>
     </plurals>
 
     <!-- Shortcut -->
-    <string name="add_shortcut">Aggiungi collegamento</string>
     <string name="shortcut_label">Trova la mia auto</string>
     <string name="shortcut_long_label">Naviga alla mia auto</string>
     <string name="shortcut_long_label_vehicle">Naviga a %s</string>
-    <string name="shortcut_not_supported">Collegamenti non supportati</string>
     <string name="no_location_saved">Nessuna posizione salvata</string>
     <string name="maps_not_found">Google Maps non trovato</string>
     <string name="select_vehicle_shortcut">Seleziona veicolo per collegamento</string>

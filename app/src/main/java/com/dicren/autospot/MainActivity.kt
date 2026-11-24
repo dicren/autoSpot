@@ -2,7 +2,6 @@ package com.dicren.autospot
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -86,12 +85,10 @@ class MainActivity : ComponentActivity() {
         }
 
         // Bluetooth permission (Android 12+)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
-            }
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            permissionsToRequest.add(Manifest.permission.BLUETOOTH_CONNECT)
         }
 
         if (permissionsToRequest.isNotEmpty()) {
@@ -102,16 +99,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestBackgroundLocationPermission() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val backgroundPermission = ContextCompat.checkSelfPermission(
-                this,
+        val backgroundPermission = ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_BACKGROUND_LOCATION
+        )
+        if (backgroundPermission != PackageManager.PERMISSION_GRANTED) {
+            backgroundLocationPermissionRequest.launch(
                 Manifest.permission.ACCESS_BACKGROUND_LOCATION
             )
-            if (backgroundPermission != PackageManager.PERMISSION_GRANTED) {
-                backgroundLocationPermissionRequest.launch(
-                    Manifest.permission.ACCESS_BACKGROUND_LOCATION
-                )
-            }
         }
     }
 }

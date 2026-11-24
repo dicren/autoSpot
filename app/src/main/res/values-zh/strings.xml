@@ -11,7 +11,6 @@
     <string name="marker_title">您的汽车</string>
     <string name="parked_at">已停车</string>
     <string name="navigate_button">使用Google地图导航</string>
-    <string name="clear_button">清除位置</string>
     <string name="center_map">居中地图</string>
     <string name="reset_orientation">重置方向</string>
     <string name="share_location">分享位置</string>
@@ -34,7 +33,6 @@
     <string name="save">保存</string>
     <string name="cancel">取消</string>
     <string name="no_vehicles">尚未配置车辆</string>
-    <string name="tap_to_activate">点击激活</string>
     <string name="active">活跃</string>
 
     <!-- Bluetooth Monitor Service -->
@@ -60,11 +58,9 @@
     </plurals>
 
     <!-- Shortcut -->
-    <string name="add_shortcut">添加快捷方式</string>
     <string name="shortcut_label">找到我的车</string>
     <string name="shortcut_long_label">导航到我的车</string>
     <string name="shortcut_long_label_vehicle">导航到%s</string>
-    <string name="shortcut_not_supported">不支持快捷方式</string>
     <string name="no_location_saved">未保存位置</string>
     <string name="maps_not_found">找不到Google地图</string>
     <string name="select_vehicle_shortcut">选择快捷方式的车辆</string>
