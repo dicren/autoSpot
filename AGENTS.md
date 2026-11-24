@@ -128,16 +128,20 @@ signed automatically. Without it, release builds are unsigned — only debug bui
 ### Entry points
 
 - **`MainActivity`** — launcher. Requests `ACCESS_FINE_LOCATION` + `ACCESS_COARSE_LOCATION`,
-  then `BLUETOOTH_CONNECT` (API 31+); once fine location is granted it requests
-  `ACCESS_BACKGROUND_LOCATION` in a second, separate prompt (Android requires that order). It only
-  asks on the first creation of the activity, so denying does not re-prompt on rotation. The
-  onboarding flag is collected as `Boolean?`: `null` (not read yet) shows an empty themed surface
-  instead of flashing the map before onboarding.
-- **`NavigateActivity`** — headless (`Theme.NoDisplay`, `excludeFromRecents`) target of the
-  "Navigate to my car" shortcuts. Reads an optional `vehicle_id` extra, falls back to the active
-  vehicle, queries Room from a `lifecycleScope` coroutine, and fires
+  then `BLUETOOTH_CONNECT` (API 31+). It deliberately does **not** request
+  `ACCESS_BACKGROUND_LOCATION`: on Android 11+ that request sends the user to a system settings
+  page, so `ParkingScreen` explains the "Allow all the time" requirement first
+  (`needsBackgroundLocationRationale`) and only then launches it. It only asks on the first
+  creation of the activity, so denying does not re-prompt on rotation. The onboarding flag is
+  collected as `Boolean?`: `null` (not read yet) shows an empty themed surface instead of flashing
+  the map before onboarding.
+- **`NavigateActivity`** — headless (`Theme.AutoSpot.Translucent`, `excludeFromRecents`) target of
+  the "Navigate to my car" shortcuts. Reads an optional `vehicle_id` extra, falls back to the
+  active vehicle, queries Room from a `lifecycleScope` coroutine, and fires
   `google.navigation:q=<lat>,<lon>&mode=w` pinned to `com.google.android.apps.maps`. Shows a toast
-  and finishes if Maps is missing or there is no saved location.
+  and finishes if Maps is missing or there is no saved location. **Never use `Theme.NoDisplay`
+  here**: the activity suspends before finishing, and Android throws "did not call finish() prior
+  to onResume() completing" (see trap 10).
 - **`CreateShortcutActivity`** — handles `android.intent.action.CREATE_SHORTCUT` (launcher's
   "add to home screen"). Shows a vehicle picker and returns a pinned
   `ShortcutInfoCompat` (`navigate_to_<vehicleId>`) pointing at `NavigateActivity`.
@@ -160,10 +164,11 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   timeout, falling back to `lastLocation` only if it is younger than 5 minutes. Saves are
   serialised with a `Mutex` and each start stops with `stopSelfResult(startId)`. A failed save
   posts a notification instead of failing silently.
-- **`BootReceiver`** — on `BOOT_COMPLETED`, restarts `BluetoothMonitorService` only if at least
-  one vehicle is stored **and** `Permissions.canMonitor` is true. It logs
-  `ForegroundServiceStartNotAllowedException` explicitly: Android 12+ may refuse the start, and
-  the monitor then starts the next time the app is opened.
+- **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
+  an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
+  **and** `Permissions.canMonitor` is true. It logs `ForegroundServiceStartNotAllowedException`
+  explicitly: Android 12+ may refuse the start, and the monitor then starts the next time the app
+  is opened.
 
 `ParkingScreen` starts `BluetoothMonitorService` only when the vehicle list is non-empty and every
 required permission is granted, and stops it when the last vehicle is removed. It waits for
@@ -176,17 +181,21 @@ the ongoing notification, the service keeps running.
 
 All UI is Compose, split in `ui/`:
 
-- `ui/parking/ParkingScreen.kt` — orchestrator: full-screen `GoogleMap` with the latest (or
-  history-selected) marker, top banners, vehicle card, navigate FAB, location card, bottom sheets,
-  confirmation dialogs and snackbars. It reads `ParkingViewModel.uiState` and sends user actions to
-  the ViewModel; it also starts/stops the monitor and requests `POST_NOTIFICATIONS`.
+- `ui/parking/ParkingScreen.kt` — orchestrator: top banners, vehicle card, compass and navigate
+  FABs, location card and snackbars. It reads `ParkingViewModel.uiState` and sends user actions to
+  the ViewModel; it also starts/stops the monitor, requests `POST_NOTIFICATIONS`, explains the
+  background-location requirement and opens the Bluetooth device list for the sheet.
+- `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
+- `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs.
 - `ui/parking/ParkingViewModel.kt` + `ParkingUiState.kt` — `StateFlow<ParkingUiState>` built from
   the repositories (`combine` + `flatMapLatest`), one-shot `ParkingEvent`s for snackbars, and the
   action methods. Switching the active vehicle clears the selected history item. `isReady` stays
   false until the first real emission so the UI never acts on the defaults.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`) that take state and
-  callbacks, which is what the Compose tests render.
+  callbacks, which is what the Compose tests render. `Previews.kt` holds the design-time previews.
+  The edit dialog receives the paired-device list instead of reading the adapter, so it can be
+  tested without Bluetooth; only `ParkingScreen` touches `BluetoothDevices.paired`.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
   absolute fallback.
 - `OnboardingScreen.kt` — `HorizontalPager` intro; the final page writes the DataStore flag.
@@ -231,13 +240,19 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 77 strings. When adding or changing a
-  string, update **all nine** files; missing translations silently fall back to English. Spanish,
-  French and Italian need a `quantity="many"` item in plurals or lint fails.
+  `ko`, `ru`, `zh`) and all currently carry the same 82 strings plus 2 plurals (84 entries).
+  When adding or changing a string, update **all nine** files; missing translations silently fall
+  back to English. `LocaleResourcesTest` fails CI when the key sets differ. Spanish, French and
+  Italian need a `quantity="many"` item in plurals or lint fails.
 - **Permissions:** check runtime grants through `util/Permissions`, not raw
-  `checkSelfPermission`. Services must stop (`stopSelf`) instead of starting a location-typed
-  foreground service without permission. Reading `bondedDevices` must be wrapped: it throws
-  `SecurityException` without `BLUETOOTH_CONNECT`.
+  `checkSelfPermission`. `Permissions.locationAccuracy` distinguishes `NONE` / `COARSE` /
+  `PRECISE`: only precise is useful for a parking spot, and the banner names approximate access as
+  the cause. Services must stop (`stopSelf`) instead of starting a location-typed foreground
+  service without permission. Reading `bondedDevices` must be wrapped: it throws
+  `SecurityException` without `BLUETOOTH_CONNECT` (done in `util/BluetoothDevices`).
+- **Tests:** Robolectric tests that need a container use the shared doubles in
+  `app/src/test/java/com/dicren/autospot/util/TestDoubles.kt`. `FakeParkingRepository` suspends on
+  purpose so headless activities are tested with a real suspension.
 - **Code identifiers, comments and KDoc:** English. Committed docs: English.
 - **State:** screens collect a `StateFlow<UiState>` from their ViewModel with
   `collectAsStateWithLifecycle`; ViewModels never hold `Context` (the factory captures the
@@ -298,6 +313,18 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
    do not add them back to version control. Build outputs (`**/build/`) and `.kotlin/` are
    gitignored too; a baseline profile generation used to commit `baselineprofile/build/` by
    accident and that history was rewritten, so never force-add those paths.
+10. **`Theme.NoDisplay` crashes headless activities that suspend.** An invisible activity must
+    call `finish()` before `onResume()` completes (targetSdk > 22); `NavigateActivity` waits for a
+    Room query, so it always finished too late and crashed every time a shortcut was tapped.
+    Verified on an API 37 emulator and reproduced in `NavigateActivityTest`. Use
+    `Theme.AutoSpot.Translucent` (transparent window, `windowNoDisplay=false`) instead.
+11. **An app update kills the monitor.** The process dies and the foreground service does not come
+    back by itself, so auto-save used to stop silently until the app was opened.
+    `BootReceiver` also listens for `MY_PACKAGE_REPLACED`; verified on the emulator by reinstalling
+    the debug APK while the app was closed.
+12. **Approximate location is not a usable permission.** If the user picks "Approximate" (Android
+    12+), `hasLocation` is false, the monitor does not start and the manual save cannot work. The
+    banner now says "Precise location required" instead of the generic permissions notice.
 
 ## Working rules for agents
 

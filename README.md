@@ -30,13 +30,13 @@ The app runs a background service that monitors Bluetooth connections. When it d
 - Android 12 (API 31) or higher
 - Google Play Services (for Google Maps)
 - Bluetooth capability
-- Location permissions (including background location)
+- Precise location permission (including "Allow all the time" for background access)
 
 ## Permissions
 
 | Permission | Why it's needed |
 |------------|-----------------|
-| **Location (Always)** | To save your location when Bluetooth disconnects, even when the app is closed |
+| **Location (Always, precise)** | To save your location when Bluetooth disconnects, even when the app is closed |
 | **Bluetooth** | To detect when you disconnect from your car |
 | **Foreground Service** | To monitor Bluetooth in the background |
 | **Receive Boot Completed** | To restart the monitoring service after device reboot |
