@@ -27,6 +27,7 @@
     <string name="vehicles_title">車両</string>
     <string name="add_vehicle">車両を追加</string>
     <string name="edit_vehicle">車両を編集</string>
+    <string name="delete_vehicle">車を削除</string>
     <string name="vehicle_name">車両名</string>
     <string name="vehicle_name_hint">例：マイカー</string>
     <string name="bluetooth_device">Bluetoothデバイス</string>
@@ -91,4 +92,14 @@
     <string name="permissions_required">権限が必要です</string>
     <string name="permissions_required_description">位置情報を「常に許可」で正確な位置情報を有効にし、Bluetooth権限を許可してください。</string>
     <string name="grant_permissions">権限を付与</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">このBluetooth機器はすでに設定されています。</string>
+    <string name="vehicle_update_conflict">別の車がこのBluetooth機器を使用しています。</string>
+    <string name="delete_vehicle_message">駐車履歴も削除されます。</string>
+    <string name="clear_all_message">この車の保存済みの位置がすべて削除されます。</string>
+    <string name="bluetooth_permission_required">ペア設定済みの機器を表示するにはBluetoothへのアクセスを許可してください。</string>
+    <string name="location_services_disabled">駐車位置を保存するには位置情報サービスをオンにしてください。</string>
+    <string name="open_settings">設定を開く</string>
+    <string name="location_saved">駐車位置を保存しました。</string>
 </resources>

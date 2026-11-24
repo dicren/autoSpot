@@ -27,6 +27,7 @@
     <string name="vehicles_title">Транспортные средства</string>
     <string name="add_vehicle">Добавить транспортное средство</string>
     <string name="edit_vehicle">Редактировать транспортное средство</string>
+    <string name="delete_vehicle">Удалить автомобиль</string>
     <string name="vehicle_name">Название транспортного средства</string>
     <string name="vehicle_name_hint">напр. Мой автомобиль</string>
     <string name="bluetooth_device">Bluetooth-устройство</string>
@@ -97,4 +98,14 @@
     <string name="permissions_required">Требуются разрешения</string>
     <string name="permissions_required_description">Включите геолокацию \"Всегда\" с точным местоположением и разрешение Bluetooth.</string>
     <string name="grant_permissions">Предоставить разрешения</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">Это Bluetooth-устройство уже настроено.</string>
+    <string name="vehicle_update_conflict">Другое транспортное средство уже использует это Bluetooth-устройство.</string>
+    <string name="delete_vehicle_message">История парковок также будет удалена.</string>
+    <string name="clear_all_message">Все сохранённые места этого автомобиля будут удалены.</string>
+    <string name="bluetooth_permission_required">Разрешите доступ к Bluetooth, чтобы показать сопряжённые устройства.</string>
+    <string name="location_services_disabled">Включите геолокацию, чтобы сохранить место парковки.</string>
+    <string name="open_settings">Открыть настройки</string>
+    <string name="location_saved">Место парковки сохранено.</string>
 </resources>

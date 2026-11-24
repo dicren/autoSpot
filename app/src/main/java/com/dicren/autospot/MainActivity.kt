@@ -8,17 +8,15 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
-import com.dicren.autospot.data.LocationRepository
 import com.dicren.autospot.ui.OnboardingScreen
-import com.dicren.autospot.ui.ParkingScreen
+import com.dicren.autospot.ui.parking.ParkingScreen
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 import kotlinx.coroutines.launch
 
@@ -45,28 +43,36 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
-        requestPermissions()
+        // Asking again on every rotation would re-prompt after a denial.
+        if (savedInstanceState == null) {
+            requestPermissions()
+        }
+
+        val container = (application as AutoSpotApp).container
 
         setContent {
             AutoSpotTheme {
-                val repository = remember { LocationRepository(this) }
-                val isOnboardingCompleted by repository.isOnboardingCompleted.collectAsState(initial = true)
+                // null means "not read yet": show neither the map nor onboarding until DataStore
+                // answers, instead of flashing the wrong screen on first launch.
+                val onboardingCompleted by container.settingsRepository.isOnboardingCompleted
+                    .collectAsState(initial = null)
                 val coroutineScope = rememberCoroutineScope()
 
-                if (isOnboardingCompleted) {
-                    Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                        ParkingScreen(
-                            modifier = Modifier.padding(innerPadding)
-                        )
-                    }
-                } else {
-                    OnboardingScreen(
+                when (onboardingCompleted) {
+                    null -> Surface(
+                        modifier = Modifier.fillMaxSize(),
+                        color = MaterialTheme.colorScheme.background,
+                    ) {}
+
+                    true -> ParkingScreen(modifier = Modifier.fillMaxSize())
+
+                    false -> OnboardingScreen(
                         onFinish = {
                             coroutineScope.launch {
-                                repository.setOnboardingCompleted()
+                                container.settingsRepository.setOnboardingCompleted()
                             }
                         },
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
                     )
                 }
             }

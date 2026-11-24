@@ -33,7 +33,6 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
-import com.dicren.autospot.data.LocationRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 
@@ -83,8 +82,9 @@ private fun VehicleSelectionDialog(
     onDismiss: () -> Unit
 ) {
     val context = LocalContext.current
-    val repository = remember { LocationRepository(context) }
-    val vehicles by repository.allVehicles.collectAsState(initial = emptyList())
+    val app = remember(context) { context.applicationContext as AutoSpotApp }
+    val vehicles by app.container.vehicleRepository.vehicles
+        .collectAsState(initial = emptyList())
 
     Box(
         modifier = Modifier

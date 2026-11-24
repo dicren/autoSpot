@@ -4,6 +4,7 @@ import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.net.toUri
 
 /** Intents used to hand a saved location over to Google Maps or to another app. */
 object MapsIntents {
@@ -11,7 +12,7 @@ object MapsIntents {
     private const val MAPS_PACKAGE = "com.google.android.apps.maps"
 
     fun navigationUri(latitude: Double, longitude: Double): Uri =
-        Uri.parse("google.navigation:q=$latitude,$longitude&mode=w")
+        "google.navigation:q=$latitude,$longitude&mode=w".toUri()
 
     fun shareText(latitude: Double, longitude: Double): String =
         "https://maps.google.com/?q=$latitude,$longitude"

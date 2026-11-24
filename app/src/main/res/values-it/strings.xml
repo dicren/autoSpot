@@ -27,6 +27,7 @@
     <string name="vehicles_title">Veicoli</string>
     <string name="add_vehicle">Aggiungi veicolo</string>
     <string name="edit_vehicle">Modifica veicolo</string>
+    <string name="delete_vehicle">Elimina veicolo</string>
     <string name="vehicle_name">Nome veicolo</string>
     <string name="vehicle_name_hint">es. La mia auto</string>
     <string name="bluetooth_device">Dispositivo Bluetooth</string>
@@ -95,4 +96,14 @@
     <string name="permissions_required">Autorizzazioni richieste</string>
     <string name="permissions_required_description">Attiva la posizione su \"Sempre\" con posizione precisa e l\'autorizzazione Bluetooth.</string>
     <string name="grant_permissions">Concedi autorizzazioni</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">Quel dispositivo Bluetooth è già configurato.</string>
+    <string name="vehicle_update_conflict">Un altro veicolo usa già quel dispositivo Bluetooth.</string>
+    <string name="delete_vehicle_message">Verrà eliminata anche la cronologia dei parcheggi.</string>
+    <string name="clear_all_message">Verranno eliminate tutte le posizioni salvate per questo veicolo.</string>
+    <string name="bluetooth_permission_required">Consenti l\'accesso Bluetooth per elencare i dispositivi associati.</string>
+    <string name="location_services_disabled">Attiva la localizzazione per salvare il parcheggio.</string>
+    <string name="open_settings">Apri impostazioni</string>
+    <string name="location_saved">Parcheggio salvato.</string>
 </resources>

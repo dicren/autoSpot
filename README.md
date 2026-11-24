@@ -43,8 +43,8 @@ The app runs a background service that monitors Bluetooth connections. When it d
 
 ### Prerequisites
 
-- Android Studio Hedgehog (2023.1.1) or newer
-- JDK 11 or higher
+- Android Studio (latest stable) or newer
+- JDK 17 or higher
 - Google Maps API key
 
 ### Setup
@@ -79,25 +79,39 @@ The app runs a background service that monitors Bluetooth connections. When it d
 
 ```
 app/src/main/java/com/dicren/autospot/
-├── MainActivity.kt              # Main entry point
+├── AutoSpotApp.kt               # Application, owns the AppContainer
+├── MainActivity.kt              # Launcher, permissions, onboarding gate
 ├── CreateShortcutActivity.kt    # Handles shortcut creation
 ├── NavigateActivity.kt          # Handles navigation shortcuts
-├── data/
-│   ├── AppDatabase.kt           # Room database
-│   ├── LocationRepository.kt    # Data repository
-│   ├── ParkingLocationDao.kt    # Parking location DAO
-│   ├── ParkingLocationEntity.kt # Parking location entity
-│   ├── VehicleDao.kt            # Vehicle DAO
-│   └── VehicleEntity.kt         # Vehicle entity
-├── service/
-│   ├── BluetoothMonitorService.kt  # Background Bluetooth monitoring
-│   └── LocationSaveService.kt      # Location saving service
+├── bluetooth/                   # Broadcast → BluetoothEvent mapper, debouncer
+├── core/                        # Clock
+├── data/                        # Room database, DAOs, entities, migrations, repositories
+├── di/                          # Manual DI container
+├── domain/                      # SaveParkingLocationUseCase, SaveResult
+├── location/                    # LocationSource + Play Services implementation
 ├── receiver/
 │   └── BootReceiver.kt          # Restart service on boot
-└── ui/
-    ├── OnboardingScreen.kt      # Onboarding flow
-    ├── ParkingScreen.kt         # Main UI
-    └── theme/                   # App theme
+├── service/
+│   ├── AppNotifications.kt      # Channels and notifications
+│   ├── BluetoothMonitorService.kt  # Background Bluetooth monitoring
+│   └── LocationSaveService.kt      # Location saving service
+├── ui/
+│   ├── OnboardingScreen.kt      # Onboarding flow
+│   ├── format/                  # Relative time formatting
+│   ├── parking/                 # ParkingScreen, ViewModel, state, components
+│   └── theme/                   # App theme
+└── util/                        # Permissions, Maps intents, vehicle naming
+```
+
+## Tests
+
+The project has unit tests for the pure logic, the Room layer (including migrations) and the
+Compose components:
+
+```bash
+./gradlew testDebugUnitTest   # unit + Robolectric + Compose tests
+./gradlew lintDebug           # Android Lint
+./gradlew connectedAndroidTest # instrumented tests (device required)
 ```
 
 ## Privacy

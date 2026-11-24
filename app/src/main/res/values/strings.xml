@@ -27,6 +27,7 @@
     <string name="vehicles_title">Vehicles</string>
     <string name="add_vehicle">Add vehicle</string>
     <string name="edit_vehicle">Edit vehicle</string>
+    <string name="delete_vehicle">Delete vehicle</string>
     <string name="vehicle_name">Vehicle name</string>
     <string name="vehicle_name_hint">e.g. My Car</string>
     <string name="bluetooth_device">Bluetooth device</string>
@@ -93,4 +94,14 @@
     <string name="permissions_required">Permissions required</string>
     <string name="permissions_required_description">Enable location set to \"Always\" with precise location, and Bluetooth permission.</string>
     <string name="grant_permissions">Grant permissions</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">That Bluetooth device is already configured.</string>
+    <string name="vehicle_update_conflict">Another vehicle already uses that Bluetooth device.</string>
+    <string name="delete_vehicle_message">Its parking history will be deleted too.</string>
+    <string name="clear_all_message">Every saved location for this vehicle will be deleted.</string>
+    <string name="bluetooth_permission_required">Allow Bluetooth access to list your paired devices.</string>
+    <string name="location_services_disabled">Turn on location services so your parking spot can be saved.</string>
+    <string name="open_settings">Open settings</string>
+    <string name="location_saved">Parking spot saved.</string>
 </resources>

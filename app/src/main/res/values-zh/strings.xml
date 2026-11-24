@@ -27,6 +27,7 @@
     <string name="vehicles_title">车辆</string>
     <string name="add_vehicle">添加车辆</string>
     <string name="edit_vehicle">编辑车辆</string>
+    <string name="delete_vehicle">删除车辆</string>
     <string name="vehicle_name">车辆名称</string>
     <string name="vehicle_name_hint">例如：我的汽车</string>
     <string name="bluetooth_device">蓝牙设备</string>
@@ -91,4 +92,14 @@
     <string name="permissions_required">需要权限</string>
     <string name="permissions_required_description">请将位置权限设置为"始终"并启用精确位置，同时授予蓝牙权限。</string>
     <string name="grant_permissions">授予权限</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">该蓝牙设备已配置。</string>
+    <string name="vehicle_update_conflict">另一辆车已使用该蓝牙设备。</string>
+    <string name="delete_vehicle_message">其停车记录也会被删除。</string>
+    <string name="clear_all_message">该车辆的所有已保存位置都会被删除。</string>
+    <string name="bluetooth_permission_required">允许蓝牙访问以列出已配对的设备。</string>
+    <string name="location_services_disabled">开启定位服务以保存停车位置。</string>
+    <string name="open_settings">打开设置</string>
+    <string name="location_saved">停车位置已保存。</string>
 </resources>

@@ -27,6 +27,7 @@
     <string name="vehicles_title">Fahrzeuge</string>
     <string name="add_vehicle">Fahrzeug hinzufügen</string>
     <string name="edit_vehicle">Fahrzeug bearbeiten</string>
+    <string name="delete_vehicle">Fahrzeug löschen</string>
     <string name="vehicle_name">Fahrzeugname</string>
     <string name="vehicle_name_hint">z.B. Mein Auto</string>
     <string name="bluetooth_device">Bluetooth-Gerät</string>
@@ -93,4 +94,14 @@
     <string name="permissions_required">Berechtigungen erforderlich</string>
     <string name="permissions_required_description">Aktivieren Sie den Standort auf \"Immer\" mit genauem Standort und die Bluetooth-Berechtigung.</string>
     <string name="grant_permissions">Berechtigungen erteilen</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">Dieses Bluetooth-Gerät ist bereits eingerichtet.</string>
+    <string name="vehicle_update_conflict">Ein anderes Fahrzeug verwendet dieses Bluetooth-Gerät bereits.</string>
+    <string name="delete_vehicle_message">Der Parkverlauf wird ebenfalls gelöscht.</string>
+    <string name="clear_all_message">Alle gespeicherten Standorte dieses Fahrzeugs werden gelöscht.</string>
+    <string name="bluetooth_permission_required">Erlauben Sie den Bluetooth-Zugriff, um gekoppelte Geräte aufzulisten.</string>
+    <string name="location_services_disabled">Aktivieren Sie die Standortdienste, damit Ihr Parkplatz gespeichert werden kann.</string>
+    <string name="open_settings">Einstellungen öffnen</string>
+    <string name="location_saved">Parkplatz gespeichert.</string>
 </resources>

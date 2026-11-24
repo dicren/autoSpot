@@ -27,6 +27,7 @@
     <string name="vehicles_title">Vehículos</string>
     <string name="add_vehicle">Añadir vehículo</string>
     <string name="edit_vehicle">Editar vehículo</string>
+    <string name="delete_vehicle">Borrar vehículo</string>
     <string name="vehicle_name">Nombre del vehículo</string>
     <string name="vehicle_name_hint">ej. Mi Coche</string>
     <string name="bluetooth_device">Dispositivo Bluetooth</string>
@@ -95,4 +96,14 @@
     <string name="permissions_required">Permisos necesarios</string>
     <string name="permissions_required_description">Activa la ubicación como \"Siempre\" con ubicación precisa, y el permiso de Bluetooth.</string>
     <string name="grant_permissions">Dar permisos</string>
+
+    <!-- Refactor additions -->
+    <string name="vehicle_duplicate">Ese dispositivo Bluetooth ya está configurado.</string>
+    <string name="vehicle_update_conflict">Otro vehículo ya usa ese dispositivo Bluetooth.</string>
+    <string name="delete_vehicle_message">También se borrará su historial de aparcamientos.</string>
+    <string name="clear_all_message">Se borrarán todas las ubicaciones guardadas de este vehículo.</string>
+    <string name="bluetooth_permission_required">Permite el acceso a Bluetooth para ver tus dispositivos vinculados.</string>
+    <string name="location_services_disabled">Activa los servicios de ubicación para poder guardar tu plaza.</string>
+    <string name="open_settings">Abrir ajustes</string>
+    <string name="location_saved">Plaza guardada.</string>
 </resources>
