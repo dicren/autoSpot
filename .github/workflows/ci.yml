@@ -31,20 +31,27 @@ jobs:
         uses: gradle/actions/setup-gradle@v6
 
       - name: Check formatting
-        run: ./gradlew spotlessCheck
+        run: ./gradlew spotlessCheck --configuration-cache
 
       - name: Unit tests
-        run: ./gradlew testDebugUnitTest
+        run: ./gradlew testDebugUnitTest --configuration-cache
 
       - name: Lint
-        run: ./gradlew lintDebug lintVitalRelease
+        run: ./gradlew lintDebug lintVitalRelease --configuration-cache
+
+      # Room writes the exported schemas during KSP. A schema change without the committed JSON
+      # breaks MigrationTest on the next version bump, so fail here instead.
+      - name: Check that Room schemas are committed
+        run: |
+          ./gradlew :app:kspDebugKotlin --configuration-cache
+          git diff --exit-code -- app/schemas
 
       - name: Assemble debug
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDebug --configuration-cache
 
       # R8 can strip something Room, Compose or Maps need; catch it here.
       - name: Assemble release
-        run: ./gradlew assembleRelease
+        run: ./gradlew assembleRelease bundleRelease --configuration-cache
 
       - name: Upload test and lint reports
         if: failure()
