@@ -204,14 +204,7 @@ class ParkingViewModel(
                     ParkingViewModel(
                         vehicleRepository = container.vehicleRepository,
                         parkingRepository = container.parkingRepository,
-                        saveParkingLocation =
-                            SaveParkingLocationUseCase(
-                                vehicleRepository = container.vehicleRepository,
-                                parkingRepository = container.parkingRepository,
-                                locationSource = container.locationSource,
-                                clock = container.clock,
-                                hasLocationPermission = { Permissions.hasLocation(appContext) },
-                            ),
+                        saveParkingLocation = container.saveParkingLocationUseCase,
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
                         hasLocationPermission = { Permissions.hasLocation(appContext) },
                         isLocationEnabled = { isLocationEnabled(appContext) },

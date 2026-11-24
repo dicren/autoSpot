@@ -14,6 +14,7 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
 import kotlinx.coroutines.delay
@@ -58,6 +59,14 @@ class LocationSaveServiceTest {
         override val parkingRepository: ParkingRepository,
     ) : AppContainer {
         override val settingsRepository: SettingsRepository = TestSettingsRepository()
+        override val saveParkingLocationUseCase: SaveParkingLocationUseCase =
+            SaveParkingLocationUseCase(
+                vehicleRepository = vehicleRepository,
+                parkingRepository = parkingRepository,
+                locationSource = locationSource,
+                clock = clock,
+                hasLocationPermission = { true },
+            )
     }
 
     private lateinit var app: AutoSpotApp

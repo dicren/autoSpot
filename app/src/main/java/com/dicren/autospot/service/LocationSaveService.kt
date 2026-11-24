@@ -35,15 +35,7 @@ class LocationSaveService : Service() {
         notifications = AppNotifications(this)
         notifications.createChannels()
 
-        val container = applicationContext.appContainer
-        useCase =
-            SaveParkingLocationUseCase(
-                vehicleRepository = container.vehicleRepository,
-                parkingRepository = container.parkingRepository,
-                locationSource = container.locationSource,
-                clock = container.clock,
-                hasLocationPermission = { Permissions.hasLocation(this) },
-            )
+        useCase = applicationContext.appContainer.saveParkingLocationUseCase
     }
 
     override fun onStartCommand(
