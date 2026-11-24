@@ -75,7 +75,6 @@ class ParkingLocationDaoTest {
             dao.insertLocation(location(300))
             dao.insertLocation(location(200))
 
-            assertEquals(300L, dao.getLatestLocationByVehicle(vehicleId).first()?.timestamp)
             assertEquals(300L, dao.getLatestLocationByVehicleOnce(vehicleId)?.timestamp)
         }
 
@@ -87,7 +86,6 @@ class ParkingLocationDaoTest {
 
             assertEquals(listOf(second, first), dao.getLocationsByVehicle(vehicleId).first().map { it.id })
             assertEquals(second, dao.getLatestLocationByVehicleOnce(vehicleId)?.id)
-            assertEquals(second, dao.getLatestLocationByVehicle(vehicleId).first()?.id)
         }
 
     @Test

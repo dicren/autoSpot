@@ -12,9 +12,6 @@ interface ParkingLocationDao {
     fun getLocationsByVehicle(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
     @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC LIMIT 1")
-    fun getLatestLocationByVehicle(vehicleId: Long): Flow<ParkingLocationEntity?>
-
-    @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC LIMIT 1")
     suspend fun getLatestLocationByVehicleOnce(vehicleId: Long): ParkingLocationEntity?
 
     @Insert

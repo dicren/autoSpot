@@ -6,8 +6,6 @@ import kotlinx.coroutines.flow.Flow
 interface ParkingRepository {
     fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
-    fun latestLocation(vehicleId: Long): Flow<ParkingLocationEntity?>
-
     suspend fun saveLocation(
         vehicleId: Long,
         latitude: Double,
@@ -31,9 +29,6 @@ class RoomParkingRepository(
     private val clock: Clock,
 ) : ParkingRepository {
     override fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>> = dao.getLocationsByVehicle(vehicleId)
-
-    override fun latestLocation(vehicleId: Long): Flow<ParkingLocationEntity?> =
-        dao.getLatestLocationByVehicle(vehicleId)
 
     override suspend fun saveLocation(
         vehicleId: Long,
