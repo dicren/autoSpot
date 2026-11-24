@@ -20,13 +20,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Shortcut
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.automirrored.filled.Shortcut
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,67 +48,69 @@ import kotlinx.coroutines.launch
 data class OnboardingPage(
     val icon: ImageVector,
     val titleRes: Int,
-    val descriptionRes: Int
+    val descriptionRes: Int,
 )
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onFinish: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
-    val pages = listOf(
-        OnboardingPage(
-            icon = Icons.Default.DirectionsCar,
-            titleRes = R.string.onboarding_welcome_title,
-            descriptionRes = R.string.onboarding_welcome_description
-        ),
-        OnboardingPage(
-            icon = Icons.Default.Bluetooth,
-            titleRes = R.string.onboarding_bluetooth_title,
-            descriptionRes = R.string.onboarding_bluetooth_description
-        ),
-        OnboardingPage(
-            icon = Icons.Default.Map,
-            titleRes = R.string.onboarding_auto_save_title,
-            descriptionRes = R.string.onboarding_auto_save_description
-        ),
-        OnboardingPage(
-            icon = Icons.Default.Navigation,
-            titleRes = R.string.onboarding_navigate_title,
-            descriptionRes = R.string.onboarding_navigate_description
-        ),
-        OnboardingPage(
-            icon = Icons.Default.History,
-            titleRes = R.string.onboarding_history_title,
-            descriptionRes = R.string.onboarding_history_description
-        ),
-        OnboardingPage(
-            icon = Icons.Default.Share,
-            titleRes = R.string.onboarding_share_title,
-            descriptionRes = R.string.onboarding_share_description
-        ),
-        OnboardingPage(
-            icon = Icons.AutoMirrored.Filled.Shortcut,
-            titleRes = R.string.onboarding_shortcut_title,
-            descriptionRes = R.string.onboarding_shortcut_description
+    val pages =
+        listOf(
+            OnboardingPage(
+                icon = Icons.Default.DirectionsCar,
+                titleRes = R.string.onboarding_welcome_title,
+                descriptionRes = R.string.onboarding_welcome_description,
+            ),
+            OnboardingPage(
+                icon = Icons.Default.Bluetooth,
+                titleRes = R.string.onboarding_bluetooth_title,
+                descriptionRes = R.string.onboarding_bluetooth_description,
+            ),
+            OnboardingPage(
+                icon = Icons.Default.Map,
+                titleRes = R.string.onboarding_auto_save_title,
+                descriptionRes = R.string.onboarding_auto_save_description,
+            ),
+            OnboardingPage(
+                icon = Icons.Default.Navigation,
+                titleRes = R.string.onboarding_navigate_title,
+                descriptionRes = R.string.onboarding_navigate_description,
+            ),
+            OnboardingPage(
+                icon = Icons.Default.History,
+                titleRes = R.string.onboarding_history_title,
+                descriptionRes = R.string.onboarding_history_description,
+            ),
+            OnboardingPage(
+                icon = Icons.Default.Share,
+                titleRes = R.string.onboarding_share_title,
+                descriptionRes = R.string.onboarding_share_description,
+            ),
+            OnboardingPage(
+                icon = Icons.AutoMirrored.Filled.Shortcut,
+                titleRes = R.string.onboarding_shortcut_title,
+                descriptionRes = R.string.onboarding_shortcut_description,
+            ),
         )
-    )
 
     val pagerState = rememberPagerState(pageCount = { pages.size })
     val coroutineScope = rememberCoroutineScope()
 
     Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-            .windowInsetsPadding(WindowInsets.statusBars)
-            .padding(24.dp)
+        modifier =
+            modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .windowInsetsPadding(WindowInsets.statusBars)
+                .padding(24.dp),
     ) {
         // Skip button
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End
+            horizontalArrangement = Arrangement.End,
         ) {
             if (pagerState.currentPage < pages.size - 1) {
                 TextButton(onClick = onFinish) {
@@ -120,37 +122,40 @@ fun OnboardingScreen(
         // Pager content
         HorizontalPager(
             state = pagerState,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f),
         ) { page ->
             OnboardingPageContent(
                 page = pages[page],
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
             )
         }
 
         // Page indicators
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp),
-            horizontalArrangement = Arrangement.Center
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 16.dp),
+            horizontalArrangement = Arrangement.Center,
         ) {
             pages.forEachIndexed { index, _ ->
                 val isSelected = pagerState.currentPage == index
                 val color by animateColorAsState(
-                    targetValue = if (isSelected) {
-                        MaterialTheme.colorScheme.primary
-                    } else {
-                        MaterialTheme.colorScheme.outlineVariant
-                    },
-                    label = "indicator_color"
+                    targetValue =
+                        if (isSelected) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.outlineVariant
+                        },
+                    label = "indicator_color",
                 )
                 Box(
-                    modifier = Modifier
-                        .padding(horizontal = 4.dp)
-                        .size(if (isSelected) 10.dp else 8.dp)
-                        .clip(CircleShape)
-                        .background(color)
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 4.dp)
+                            .size(if (isSelected) 10.dp else 8.dp)
+                            .clip(CircleShape)
+                            .background(color),
                 )
             }
         }
@@ -158,7 +163,7 @@ fun OnboardingScreen(
         // Navigation buttons
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             if (pagerState.currentPage > 0) {
                 TextButton(
@@ -166,7 +171,7 @@ fun OnboardingScreen(
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage - 1)
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.onboarding_back))
                 }
@@ -180,7 +185,7 @@ fun OnboardingScreen(
                         coroutineScope.launch {
                             pagerState.animateScrollToPage(pagerState.currentPage + 1)
                         }
-                    }
+                    },
                 ) {
                     Text(stringResource(R.string.onboarding_next))
                 }
@@ -196,18 +201,18 @@ fun OnboardingScreen(
 @Composable
 private fun OnboardingPageContent(
     page: OnboardingPage,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+        verticalArrangement = Arrangement.Center,
     ) {
         Icon(
             imageVector = page.icon,
             contentDescription = null,
             modifier = Modifier.size(120.dp),
-            tint = MaterialTheme.colorScheme.primary
+            tint = MaterialTheme.colorScheme.primary,
         )
 
         Spacer(modifier = Modifier.height(40.dp))
@@ -216,7 +221,7 @@ private fun OnboardingPageContent(
             text = stringResource(page.titleRes),
             style = MaterialTheme.typography.headlineSmall,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onBackground,
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -226,7 +231,7 @@ private fun OnboardingPageContent(
             style = MaterialTheme.typography.bodyLarge,
             textAlign = TextAlign.Center,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier.padding(horizontal = 16.dp),
         )
     }
 }

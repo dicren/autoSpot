@@ -12,10 +12,10 @@ import androidx.room.PrimaryKey
             entity = VehicleEntity::class,
             parentColumns = ["id"],
             childColumns = ["vehicleId"],
-            onDelete = ForeignKey.CASCADE
-        )
+            onDelete = ForeignKey.CASCADE,
+        ),
     ],
-    indices = [Index("vehicleId")]
+    indices = [Index("vehicleId")],
 )
 data class ParkingLocationEntity(
     @PrimaryKey(autoGenerate = true)
@@ -23,5 +23,5 @@ data class ParkingLocationEntity(
     val vehicleId: Long,
     val latitude: Double,
     val longitude: Double,
-    val timestamp: Long
+    val timestamp: Long,
 )

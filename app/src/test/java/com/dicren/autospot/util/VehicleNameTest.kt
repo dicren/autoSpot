@@ -4,7 +4,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class VehicleNameTest {
-
     @Test
     fun `the user name wins`() {
         assertEquals("Mi coche", VehicleName.resolve("Mi coche", "Car Multimedia"))

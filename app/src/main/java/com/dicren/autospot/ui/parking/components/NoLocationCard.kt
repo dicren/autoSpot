@@ -32,9 +32,10 @@ fun NoLocationCard(
     Card(
         modifier = modifier.padding(32.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f)
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+            ),
     ) {
         Column(
             modifier = Modifier.padding(24.dp),
@@ -60,9 +61,10 @@ fun NoLocationCard(
             Button(onClick = onSaveLocationClick, enabled = !isSaving) {
                 if (isSaving) {
                     CircularProgressIndicator(
-                        modifier = Modifier
-                            .size(20.dp)
-                            .padding(end = 8.dp),
+                        modifier =
+                            Modifier
+                                .size(20.dp)
+                                .padding(end = 8.dp),
                         strokeWidth = 2.dp,
                     )
                 } else {

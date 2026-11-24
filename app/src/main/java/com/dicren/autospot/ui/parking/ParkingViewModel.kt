@@ -41,7 +41,6 @@ class ParkingViewModel(
     private val hasLocationPermission: () -> Boolean,
     private val isLocationEnabled: () -> Boolean,
 ) : ViewModel() {
-
     private data class Content(
         val vehicles: List<VehicleEntity>,
         val activeVehicle: VehicleEntity?,
@@ -58,14 +57,15 @@ class ParkingViewModel(
 
     private val selectedLocationId = MutableStateFlow<Long?>(null)
     private val isSaving = MutableStateFlow(false)
-    private val flags = MutableStateFlow(
-        Flags(
-            hasMonitoringPermission = hasMonitoringPermission(),
-            hasLocationPermission = hasLocationPermission(),
-            isLocationEnabled = isLocationEnabled(),
-            isSaving = false,
+    private val flags =
+        MutableStateFlow(
+            Flags(
+                hasMonitoringPermission = hasMonitoringPermission(),
+                hasLocationPermission = hasLocationPermission(),
+                isLocationEnabled = isLocationEnabled(),
+                isSaving = false,
+            ),
         )
-    )
 
     private val eventsFlow = MutableSharedFlow<ParkingEvent>(extraBufferCapacity = 4)
     val events = eventsFlow.asSharedFlow()
@@ -75,31 +75,33 @@ class ParkingViewModel(
             vehicle?.let { parkingRepository.locations(it.id) } ?: flowOf(emptyList())
         }
 
-    private val content: Flow<Content> = combine(
-        vehicleRepository.vehicles,
-        vehicleRepository.activeVehicle,
-        locations,
-        selectedLocationId,
-    ) { vehicles, active, locations, selected ->
-        Content(vehicles, active, locations, selected)
-    }
+    private val content: Flow<Content> =
+        combine(
+            vehicleRepository.vehicles,
+            vehicleRepository.activeVehicle,
+            locations,
+            selectedLocationId,
+        ) { vehicles, active, locations, selected ->
+            Content(vehicles, active, locations, selected)
+        }
 
-    val uiState: StateFlow<ParkingUiState> = combine(content, flags) { content, flags ->
-        ParkingUiState(
-            vehicles = content.vehicles,
-            activeVehicle = content.activeVehicle,
-            locations = content.locations,
-            selectedLocationId = content.selectedLocationId,
-            hasMonitoringPermission = flags.hasMonitoringPermission,
-            hasLocationPermission = flags.hasLocationPermission,
-            isLocationEnabled = flags.isLocationEnabled,
-            isSaving = flags.isSaving,
+    val uiState: StateFlow<ParkingUiState> =
+        combine(content, flags) { content, flags ->
+            ParkingUiState(
+                vehicles = content.vehicles,
+                activeVehicle = content.activeVehicle,
+                locations = content.locations,
+                selectedLocationId = content.selectedLocationId,
+                hasMonitoringPermission = flags.hasMonitoringPermission,
+                hasLocationPermission = flags.hasLocationPermission,
+                isLocationEnabled = flags.isLocationEnabled,
+                isSaving = flags.isSaving,
+            )
+        }.stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = ParkingUiState(),
         )
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.WhileSubscribed(5_000),
-        initialValue = ParkingUiState(),
-    )
 
     init {
         // A history item belongs to the vehicle that was active when it was picked; switching
@@ -114,11 +116,12 @@ class ParkingViewModel(
 
     /** Re-reads permissions and the system location switch; call on every resume. */
     fun refreshEnvironment() {
-        flags.value = flags.value.copy(
-            hasMonitoringPermission = hasMonitoringPermission(),
-            hasLocationPermission = hasLocationPermission(),
-            isLocationEnabled = isLocationEnabled(),
-        )
+        flags.value =
+            flags.value.copy(
+                hasMonitoringPermission = hasMonitoringPermission(),
+                hasLocationPermission = hasLocationPermission(),
+                isLocationEnabled = isLocationEnabled(),
+            )
     }
 
     fun selectLocation(location: ParkingLocationEntity) {
@@ -140,15 +143,21 @@ class ParkingViewModel(
                     is SaveResult.Saved -> ParkingEvent.LocationSaved
                     SaveResult.NoVehicle -> ParkingEvent.NoVehicle
                     SaveResult.NoPermission, SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
-                }
+                },
             )
         }
     }
 
-    fun addVehicle(name: String, bluetoothAddress: String, bluetoothName: String) {
+    fun addVehicle(
+        name: String,
+        bluetoothAddress: String,
+        bluetoothName: String,
+    ) {
         viewModelScope.launch {
             when (vehicleRepository.addVehicle(name, bluetoothAddress, bluetoothName)) {
-                is AddVehicleResult.Added -> Unit // The list and the active vehicle update themselves.
+                is AddVehicleResult.Added -> Unit
+
+                // The list and the active vehicle update themselves.
                 is AddVehicleResult.Duplicate -> eventsFlow.emit(ParkingEvent.DuplicateVehicle)
             }
         }
@@ -194,13 +203,14 @@ class ParkingViewModel(
                     ParkingViewModel(
                         vehicleRepository = container.vehicleRepository,
                         parkingRepository = container.parkingRepository,
-                        saveParkingLocation = SaveParkingLocationUseCase(
-                            vehicleRepository = container.vehicleRepository,
-                            parkingRepository = container.parkingRepository,
-                            locationSource = FusedLocationSource(appContext),
-                            clock = container.clock,
-                            hasLocationPermission = { Permissions.hasLocation(appContext) },
-                        ),
+                        saveParkingLocation =
+                            SaveParkingLocationUseCase(
+                                vehicleRepository = container.vehicleRepository,
+                                parkingRepository = container.parkingRepository,
+                                locationSource = FusedLocationSource(appContext),
+                                clock = container.clock,
+                                hasLocationPermission = { Permissions.hasLocation(appContext) },
+                            ),
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
                         hasLocationPermission = { Permissions.hasLocation(appContext) },
                         isLocationEnabled = { isLocationEnabled(appContext) },

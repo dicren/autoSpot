@@ -13,7 +13,6 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class MapsIntentsTest {
-
     @Test
     fun `navigation uri carries walking mode`() {
         assertEquals(
@@ -40,9 +39,10 @@ class MapsIntentsTest {
 
     @Test
     fun `navigation without Maps returns false instead of throwing`() {
-        val started = MapsIntents.startNavigation(42.5, -5.6) {
-            throw ActivityNotFoundException("Google Maps is not installed")
-        }
+        val started =
+            MapsIntents.startNavigation(42.5, -5.6) {
+                throw ActivityNotFoundException("Google Maps is not installed")
+            }
 
         assertFalse(started)
     }

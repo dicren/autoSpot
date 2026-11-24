@@ -14,30 +14,44 @@ import android.bluetooth.BluetoothProfile
  * "the car disconnected" lives here so it can be unit tested.
  */
 object BluetoothIntents {
-
     fun toEvent(
         action: String?,
         deviceAddress: String?,
         state: Int = Int.MIN_VALUE,
         previousState: Int = Int.MIN_VALUE,
-    ): BluetoothEvent? = when (action) {
-        BluetoothDevice.ACTION_ACL_DISCONNECTED -> BluetoothEvent.DeviceDisconnected(deviceAddress)
-
-        BluetoothDevice.ACTION_ACL_CONNECTED -> BluetoothEvent.DeviceConnected(deviceAddress)
-
-        BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED,
-        BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED,
-        BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED,
-        -> when {
-            state == BluetoothProfile.STATE_CONNECTED -> BluetoothEvent.DeviceConnected(deviceAddress)
-            // Only a real transition matters: some stacks deliver repeated DISCONNECTED states.
-            state == BluetoothProfile.STATE_DISCONNECTED &&
-                previousState == BluetoothProfile.STATE_CONNECTED ->
+    ): BluetoothEvent? =
+        when (action) {
+            BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                 BluetoothEvent.DeviceDisconnected(deviceAddress)
+            }
 
-            else -> null
+            BluetoothDevice.ACTION_ACL_CONNECTED -> {
+                BluetoothEvent.DeviceConnected(deviceAddress)
+            }
+
+            BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED,
+            BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED,
+            BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED,
+            -> {
+                when {
+                    state == BluetoothProfile.STATE_CONNECTED -> {
+                        BluetoothEvent.DeviceConnected(deviceAddress)
+                    }
+
+                    // Only a real transition matters: some stacks deliver repeated DISCONNECTED states.
+                    state == BluetoothProfile.STATE_DISCONNECTED &&
+                        previousState == BluetoothProfile.STATE_CONNECTED -> {
+                        BluetoothEvent.DeviceDisconnected(deviceAddress)
+                    }
+
+                    else -> {
+                        null
+                    }
+                }
+            }
+
+            else -> {
+                null
+            }
         }
-
-        else -> null
-    }
 }

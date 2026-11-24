@@ -12,28 +12,41 @@ import java.util.Locale
  * Time is injected instead of read from the system clock, and the date fallback follows the
  * app's locale instead of a hard-coded `dd/MM/yyyy` pattern.
  */
-class ParkingTimeFormatter(private val resources: Resources) {
-
-    fun format(timestamp: Long, now: Long): String {
+class ParkingTimeFormatter(
+    private val resources: Resources,
+) {
+    fun format(
+        timestamp: Long,
+        now: Long,
+    ): String {
         val diff = now - timestamp
         val minutes = diff / 60_000L
         val hours = diff / 3_600_000L
 
         return when {
-            minutes < 1 -> resources.getString(R.string.just_now)
-            hours < 1 -> resources.getQuantityString(
-                R.plurals.minutes_ago,
-                minutes.toInt(),
-                minutes.toInt(),
-            )
+            minutes < 1 -> {
+                resources.getString(R.string.just_now)
+            }
 
-            hours < 24 -> resources.getQuantityString(
-                R.plurals.hours_ago,
-                hours.toInt(),
-                hours.toInt(),
-            )
+            hours < 1 -> {
+                resources.getQuantityString(
+                    R.plurals.minutes_ago,
+                    minutes.toInt(),
+                    minutes.toInt(),
+                )
+            }
 
-            else -> dateFormat().format(Date(timestamp))
+            hours < 24 -> {
+                resources.getQuantityString(
+                    R.plurals.hours_ago,
+                    hours.toInt(),
+                    hours.toInt(),
+                )
+            }
+
+            else -> {
+                dateFormat().format(Date(timestamp))
+            }
         }
     }
 

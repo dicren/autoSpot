@@ -55,7 +55,7 @@ fun VehicleEditDialog(
     var name by remember { mutableStateOf(vehicle?.name ?: "") }
     var selectedBluetooth by remember {
         mutableStateOf(
-            vehicle?.let { BluetoothDeviceInfo(it.bluetoothName, it.bluetoothAddress) }
+            vehicle?.let { BluetoothDeviceInfo(it.bluetoothName, it.bluetoothAddress) },
         )
     }
     var showBluetoothPicker by remember { mutableStateOf(false) }
@@ -66,7 +66,7 @@ fun VehicleEditDialog(
         onDismissRequest = onDismiss,
         title = {
             Text(
-                stringResource(if (vehicle == null) R.string.add_vehicle else R.string.edit_vehicle)
+                stringResource(if (vehicle == null) R.string.add_vehicle else R.string.edit_vehicle),
             )
         },
         text = {
@@ -90,26 +90,33 @@ fun VehicleEditDialog(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 when {
-                    !canReadBluetooth -> BluetoothPermissionNotice(onGrantClick = {
-                        context.openAppSettings()
-                    })
+                    !canReadBluetooth -> {
+                        BluetoothPermissionNotice(onGrantClick = {
+                            context.openAppSettings()
+                        })
+                    }
 
-                    showBluetoothPicker -> BluetoothDevicePicker(
-                        devices = pairedDevices,
-                        onSelect = { device ->
-                            selectedBluetooth = device
-                            showBluetoothPicker = false
-                        },
-                    )
-
-                    else -> OutlinedButton(
-                        onClick = { showBluetoothPicker = true },
-                        modifier = Modifier.fillMaxWidth(),
-                    ) {
-                        Text(
-                            text = selectedBluetooth?.name
-                                ?: stringResource(R.string.select_bluetooth_device)
+                    showBluetoothPicker -> {
+                        BluetoothDevicePicker(
+                            devices = pairedDevices,
+                            onSelect = { device ->
+                                selectedBluetooth = device
+                                showBluetoothPicker = false
+                            },
                         )
+                    }
+
+                    else -> {
+                        OutlinedButton(
+                            onClick = { showBluetoothPicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(
+                                text =
+                                    selectedBluetooth?.name
+                                        ?: stringResource(R.string.select_bluetooth_device),
+                            )
+                        }
                     }
                 }
             }
@@ -159,9 +166,10 @@ private fun BluetoothDevicePicker(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
+        colors =
+            CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            ),
     ) {
         LazyColumn(modifier = Modifier.height(200.dp)) {
             if (devices.isEmpty()) {
@@ -176,10 +184,11 @@ private fun BluetoothDevicePicker(
             } else {
                 items(devices, key = { it.address }) { device ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onSelect(device) }
-                            .padding(12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onSelect(device) }
+                                .padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Column {
@@ -214,14 +223,15 @@ private fun readPairedDevices(
 
     val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
     return runCatching {
-        adapter?.bondedDevices.orEmpty()
+        adapter
+            ?.bondedDevices
+            .orEmpty()
             .map { device ->
                 BluetoothDeviceInfo(
                     name = device.name?.takeIf { it.isNotBlank() } ?: device.address,
                     address = device.address,
                 )
-            }
-            .sortedBy { it.name.lowercase() }
+            }.sortedBy { it.name.lowercase() }
     }.getOrDefault(emptyList())
 }
 
@@ -230,6 +240,6 @@ private fun Context.openAppSettings() {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", packageName, null)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        },
     )
 }

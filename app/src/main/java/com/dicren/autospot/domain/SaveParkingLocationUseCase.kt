@@ -23,23 +23,24 @@ class SaveParkingLocationUseCase(
     private val hasLocationPermission: () -> Boolean,
     private val maxFixAgeMillis: Long = DEFAULT_MAX_FIX_AGE_MILLIS,
 ) {
-
     suspend fun save(vehicleId: Long? = null): SaveResult {
         if (!hasLocationPermission()) return SaveResult.NoPermission
 
-        val vehicle = if (vehicleId != null) {
-            vehicleRepository.getVehicleByIdOnce(vehicleId) ?: return SaveResult.NoVehicle
-        } else {
-            vehicleRepository.getActiveVehicleOnce() ?: return SaveResult.NoVehicle
-        }
+        val vehicle =
+            if (vehicleId != null) {
+                vehicleRepository.getVehicleByIdOnce(vehicleId) ?: return SaveResult.NoVehicle
+            } else {
+                vehicleRepository.getActiveVehicleOnce() ?: return SaveResult.NoVehicle
+            }
 
         val now = clock.nowMillis()
-        val fix = try {
-            usable(locationSource.currentLocation(), now)
-                ?: usable(locationSource.lastLocation(), now)
-        } catch (e: Exception) {
-            return SaveResult.Error(e)
-        } ?: return SaveResult.NoFix
+        val fix =
+            try {
+                usable(locationSource.currentLocation(), now)
+                    ?: usable(locationSource.lastLocation(), now)
+            } catch (e: Exception) {
+                return SaveResult.Error(e)
+            } ?: return SaveResult.NoFix
 
         return try {
             parkingRepository.saveLocation(vehicle.id, fix.latitude, fix.longitude)
@@ -54,7 +55,10 @@ class SaveParkingLocationUseCase(
         }
     }
 
-    private fun usable(fix: LocationFix?, now: Long): LocationFix? {
+    private fun usable(
+        fix: LocationFix?,
+        now: Long,
+    ): LocationFix? {
         if (fix == null) return null
         // Unknown timestamps (some providers/mocks) are accepted rather than discarded.
         if (fix.timeMillis <= 0L) return fix

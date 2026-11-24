@@ -1,5 +1,7 @@
 # AutoSpot
 
+![CI](https://github.com/dicren/autoSpot/actions/workflows/ci.yml/badge.svg)
+
 **Never forget where you parked your car again.**
 
 AutoSpot is an open-source Android app that automatically saves your parking location when you disconnect from your car's Bluetooth. No manual action required - just park and go.
@@ -111,6 +113,7 @@ Compose components:
 ```bash
 ./gradlew testDebugUnitTest   # unit + Robolectric + Compose tests
 ./gradlew lintDebug           # Android Lint
+./gradlew spotlessCheck       # ktlint via Spotless
 ./gradlew connectedAndroidTest # instrumented tests (device required)
 ```
 

@@ -21,23 +21,24 @@ import com.dicren.autospot.ui.theme.AutoSpotTheme
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
-
     private val permissionsToRequest = mutableListOf<String>()
 
-    private val permissionRequest = registerForActivityResult(
-        ActivityResultContracts.RequestMultiplePermissions()
-    ) { permissions ->
-        val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-        if (fineLocationGranted) {
-            requestBackgroundLocationPermission()
+    private val permissionRequest =
+        registerForActivityResult(
+            ActivityResultContracts.RequestMultiplePermissions(),
+        ) { permissions ->
+            val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
+            if (fineLocationGranted) {
+                requestBackgroundLocationPermission()
+            }
         }
-    }
 
-    private val backgroundLocationPermissionRequest = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { _ ->
-        // Background permission handled
-    }
+    private val backgroundLocationPermissionRequest =
+        registerForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { _ ->
+            // Background permission handled
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,21 +60,27 @@ class MainActivity : ComponentActivity() {
                 val coroutineScope = rememberCoroutineScope()
 
                 when (onboardingCompleted) {
-                    null -> Surface(
-                        modifier = Modifier.fillMaxSize(),
-                        color = MaterialTheme.colorScheme.background,
-                    ) {}
+                    null -> {
+                        Surface(
+                            modifier = Modifier.fillMaxSize(),
+                            color = MaterialTheme.colorScheme.background,
+                        ) {}
+                    }
 
-                    true -> ParkingScreen(modifier = Modifier.fillMaxSize())
+                    true -> {
+                        ParkingScreen(modifier = Modifier.fillMaxSize())
+                    }
 
-                    false -> OnboardingScreen(
-                        onFinish = {
-                            coroutineScope.launch {
-                                container.settingsRepository.setOnboardingCompleted()
-                            }
-                        },
-                        modifier = Modifier.fillMaxSize(),
-                    )
+                    false -> {
+                        OnboardingScreen(
+                            onFinish = {
+                                coroutineScope.launch {
+                                    container.settingsRepository.setOnboardingCompleted()
+                                }
+                            },
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
                 }
             }
         }
@@ -105,13 +112,14 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun requestBackgroundLocationPermission() {
-        val backgroundPermission = ContextCompat.checkSelfPermission(
-            this,
-            Manifest.permission.ACCESS_BACKGROUND_LOCATION
-        )
+        val backgroundPermission =
+            ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
+            )
         if (backgroundPermission != PackageManager.PERMISSION_GRANTED) {
             backgroundLocationPermissionRequest.launch(
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
             )
         }
     }

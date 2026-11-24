@@ -8,20 +8,30 @@ import androidx.core.net.toUri
 
 /** Intents used to hand a saved location over to Google Maps or to another app. */
 object MapsIntents {
-
     private const val MAPS_PACKAGE = "com.google.android.apps.maps"
 
-    fun navigationUri(latitude: Double, longitude: Double): Uri =
-        "google.navigation:q=$latitude,$longitude&mode=w".toUri()
+    fun navigationUri(
+        latitude: Double,
+        longitude: Double,
+    ): Uri = "google.navigation:q=$latitude,$longitude&mode=w".toUri()
 
-    fun shareText(latitude: Double, longitude: Double): String =
-        "https://maps.google.com/?q=$latitude,$longitude"
+    fun shareText(
+        latitude: Double,
+        longitude: Double,
+    ): String = "https://maps.google.com/?q=$latitude,$longitude"
 
-    fun navigationIntent(latitude: Double, longitude: Double): Intent =
+    fun navigationIntent(
+        latitude: Double,
+        longitude: Double,
+    ): Intent =
         Intent(Intent.ACTION_VIEW, navigationUri(latitude, longitude))
             .setPackage(MAPS_PACKAGE)
 
-    fun shareIntent(latitude: Double, longitude: Double, title: String): Intent =
+    fun shareIntent(
+        latitude: Double,
+        longitude: Double,
+        title: String,
+    ): Intent =
         Intent.createChooser(
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -31,8 +41,11 @@ object MapsIntents {
         )
 
     /** Starts Maps, returning false when it is not installed instead of crashing the caller. */
-    fun openNavigation(context: Context, latitude: Double, longitude: Double): Boolean =
-        startNavigation(latitude, longitude) { intent -> context.startActivity(intent) }
+    fun openNavigation(
+        context: Context,
+        latitude: Double,
+        longitude: Double,
+    ): Boolean = startNavigation(latitude, longitude) { intent -> context.startActivity(intent) }
 
     /**
      * The launch itself is injected so the missing-app path can be tested without a device.
@@ -41,10 +54,11 @@ object MapsIntents {
         latitude: Double,
         longitude: Double,
         startActivity: (Intent) -> Unit,
-    ): Boolean = try {
-        startActivity(navigationIntent(latitude, longitude))
-        true
-    } catch (e: ActivityNotFoundException) {
-        false
-    }
+    ): Boolean =
+        try {
+            startActivity(navigationIntent(latitude, longitude))
+            true
+        } catch (e: ActivityNotFoundException) {
+            false
+        }
 }

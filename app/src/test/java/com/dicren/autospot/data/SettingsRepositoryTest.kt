@@ -18,7 +18,6 @@ import java.io.File
 import java.nio.file.Files
 
 class SettingsRepositoryTest {
-
     private val scope = CoroutineScope(UnconfinedTestDispatcher() + Job())
     private lateinit var directory: File
     private lateinit var file: File
@@ -43,24 +42,27 @@ class SettingsRepositoryTest {
     }
 
     @Test
-    fun `onboarding starts as not completed`() = runTest {
-        assertFalse(repository().isOnboardingCompleted.first())
-    }
+    fun `onboarding starts as not completed`() =
+        runTest {
+            assertFalse(repository().isOnboardingCompleted.first())
+        }
 
     @Test
-    fun `onboarding completion is persisted`() = runTest {
-        val repository = repository()
+    fun `onboarding completion is persisted`() =
+        runTest {
+            val repository = repository()
 
-        repository.setOnboardingCompleted()
+            repository.setOnboardingCompleted()
 
-        assertTrue(repository.isOnboardingCompleted.first())
-    }
+            assertTrue(repository.isOnboardingCompleted.first())
+        }
 
     @Test
-    fun `a corrupt preferences file does not crash the app`() = runTest {
-        file.parentFile?.mkdirs()
-        file.writeText("this is not a preferences file")
+    fun `a corrupt preferences file does not crash the app`() =
+        runTest {
+            file.parentFile?.mkdirs()
+            file.writeText("this is not a preferences file")
 
-        assertFalse(repository().isOnboardingCompleted.first())
-    }
+            assertFalse(repository().isOnboardingCompleted.first())
+        }
 }

@@ -23,29 +23,31 @@ import org.robolectric.annotation.Config
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
 class ParkingComponentsTest {
-
     @get:Rule
     val composeRule = createComposeRule()
 
-    private val formatter = ParkingTimeFormatter(
-        ApplicationProvider.getApplicationContext<android.content.Context>().resources
-    )
+    private val formatter =
+        ParkingTimeFormatter(
+            ApplicationProvider.getApplicationContext<android.content.Context>().resources,
+        )
 
-    private val vehicle = VehicleEntity(
-        id = 1,
-        name = "Mi coche",
-        bluetoothAddress = "AA:BB:CC:DD:EE:01",
-        bluetoothName = "R-LINK",
-        isActive = true,
-    )
+    private val vehicle =
+        VehicleEntity(
+            id = 1,
+            name = "Mi coche",
+            bluetoothAddress = "AA:BB:CC:DD:EE:01",
+            bluetoothName = "R-LINK",
+            isActive = true,
+        )
 
-    private val location = ParkingLocationEntity(
-        id = 10,
-        vehicleId = 1,
-        latitude = 42.0,
-        longitude = -5.0,
-        timestamp = System.currentTimeMillis() - 5 * 60_000L,
-    )
+    private val location =
+        ParkingLocationEntity(
+            id = 10,
+            vehicleId = 1,
+            latitude = 42.0,
+            longitude = -5.0,
+            timestamp = System.currentTimeMillis() - 5 * 60_000L,
+        )
 
     @Test
     fun `the empty state invites the user to save a location`() {
@@ -210,9 +212,10 @@ class ParkingComponentsTest {
         }
 
         composeRule.onNodeWithText("Save").assertIsNotEnabled()
-        composeRule.onNodeWithText(
-            "Allow Bluetooth access to list your paired devices."
-        ).assertIsDisplayed()
+        composeRule
+            .onNodeWithText(
+                "Allow Bluetooth access to list your paired devices.",
+            ).assertIsDisplayed()
     }
 
     @Test

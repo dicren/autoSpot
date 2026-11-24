@@ -9,7 +9,6 @@ import com.dicren.autospot.util.MapsIntents
 import kotlinx.coroutines.launch
 
 class NavigateActivity : ComponentActivity() {
-
     companion object {
         const val EXTRA_VEHICLE_ID = "vehicle_id"
     }
@@ -21,13 +20,15 @@ class NavigateActivity : ComponentActivity() {
 
         lifecycleScope.launch {
             val container = applicationContext.appContainer
-            val location = if (vehicleId > 0) {
-                container.parkingRepository.latestLocationOnce(vehicleId)
-            } else {
-                // Fallback to active vehicle if no specific vehicle ID
-                container.vehicleRepository.getActiveVehicleOnce()
-                    ?.let { container.parkingRepository.latestLocationOnce(it.id) }
-            }
+            val location =
+                if (vehicleId > 0) {
+                    container.parkingRepository.latestLocationOnce(vehicleId)
+                } else {
+                    // Fallback to active vehicle if no specific vehicle ID
+                    container.vehicleRepository
+                        .getActiveVehicleOnce()
+                        ?.let { container.parkingRepository.latestLocationOnce(it.id) }
+                }
 
             if (location != null) {
                 if (!MapsIntents.openNavigation(this@NavigateActivity, location.latitude, location.longitude)) {

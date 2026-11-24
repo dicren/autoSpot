@@ -28,9 +28,14 @@ data class ParkingUiState(
 /** One-shot things to tell the user, shown as a snackbar. */
 sealed interface ParkingEvent {
     data object LocationSaved : ParkingEvent
+
     data object SaveFailed : ParkingEvent
+
     data object NoVehicle : ParkingEvent
+
     data object DuplicateVehicle : ParkingEvent
+
     data object VehicleUpdateConflict : ParkingEvent
+
     data object MapsNotInstalled : ParkingEvent
 }

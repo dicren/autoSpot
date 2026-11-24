@@ -45,9 +45,14 @@ otherwise ships older versions.
 Dependencies are declared in the version catalog `gradle/libs.versions.toml`. Add new libraries
 there, not inline in `app/build.gradle.kts`.
 
-There is no CI and no linter config beyond Android Lint. The test suite is still the generated
-examples, plus the unit-test dependencies (`robolectric`, `turbine`, `coroutines-test`,
-`room-testing`) wired in `app/build.gradle.kts`.
+Formatting is enforced by **ktlint through Spotless** (`.editorconfig` holds the settings; the
+`function-naming` and `class-naming` rules are disabled because test names are backticked
+sentences). CI runs on GitHub Actions: `.github/workflows/ci.yml` runs `spotlessCheck`,
+`testDebugUnitTest`, `lintDebug`, `lintVitalRelease`, `assembleDebug` and `assembleRelease`.
+
+Release builds enable R8 and resource shrinking. `proguard-rules.pro` keeps Room entities and the
+Maps/Play Services bits; verify any R8 change with a release APK on a device, not just
+`assembleRelease`.
 
 ## Commands
 
@@ -57,10 +62,13 @@ Run from the repo root:
 ./gradlew assembleDebug          # build the debug APK
 ./gradlew compileDebugKotlin     # fast type-check
 ./gradlew installDebug           # install on a connected device/emulator
+./gradlew assembleRelease        # release APK (minified; signed if keystore.properties exists)
 ./gradlew bundleRelease          # release AAB (signed if keystore.properties exists)
-./gradlew lint                   # Android Lint
-./gradlew test                   # JVM unit tests (template only)
-./gradlew connectedAndroidTest   # instrumented tests (template only)
+./gradlew lintDebug              # Android Lint
+./gradlew lintVitalRelease       # release-only fatal lint checks
+./gradlew testDebugUnitTest      # unit + Robolectric + Compose tests
+./gradlew spotlessApply          # format Kotlin with ktlint
+./gradlew connectedAndroidTest   # instrumented tests (device required)
 ```
 
 Use JDK 17 or newer (JBR 21 is installed on this machine). The Android SDK path comes from
@@ -196,8 +204,8 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 - **Coroutines:** ViewModels own UI work through `viewModelScope`; services own a
   `CoroutineScope(SupervisorJob() + Dispatchers.IO)` and cancel it in `onDestroy`. Do not create
   ad-hoc `CoroutineScope`s for database writes. `rememberCoroutineScope` is only for animations.
-- **Versioning:** bump `versionCode` / `versionName` in `app/build.gradle.kts` (`1` / `1.0`
-  today) before a store release.
+- **Versioning:** bump `versionCode` / `versionName` in `app/build.gradle.kts` (`2` / `1.1`
+  today) before a store release. Release builds are minified by R8.
 - **Branding assets** live at the repo root: `logo.png`, `logo512.png`, `logo.xcf`,
   `claim.png`, `claim.xcf`, plus `app/src/main/ic_launcher-playstore.png`. `_config.yml` is a
   leftover GitHub Pages theme, not used by the Android build.

@@ -20,16 +20,17 @@ class DisconnectionDebouncer(
     private val lastHandledAt = mutableMapOf<Long, Long>()
 
     /** Returns true when the event should be handled, and records the time. */
-    suspend fun tryAcquire(vehicleId: Long): Boolean = mutex.withLock {
-        val now = clock.nowMillis()
-        val last = lastHandledAt[vehicleId]
-        if (last != null && now - last < windowMillis) {
-            false
-        } else {
-            lastHandledAt[vehicleId] = now
-            true
+    suspend fun tryAcquire(vehicleId: Long): Boolean =
+        mutex.withLock {
+            val now = clock.nowMillis()
+            val last = lastHandledAt[vehicleId]
+            if (last != null && now - last < windowMillis) {
+                false
+            } else {
+                lastHandledAt[vehicleId] = now
+                true
+            }
         }
-    }
 
     suspend fun clear() = mutex.withLock { lastHandledAt.clear() }
 }

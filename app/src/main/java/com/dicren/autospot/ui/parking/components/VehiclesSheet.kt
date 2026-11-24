@@ -54,9 +54,10 @@ fun VehiclesSheet(
     var deletingVehicle by remember { mutableStateOf<VehicleEntity?>(null) }
 
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -82,19 +83,21 @@ fun VehiclesSheet(
                 text = stringResource(R.string.no_vehicles),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
                 textAlign = TextAlign.Center,
             )
         } else {
             LazyColumn {
                 items(vehicles, key = { it.id }) { vehicle ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onVehicleClick(vehicle) }
-                            .padding(vertical = 12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onVehicleClick(vehicle) }
+                                .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -170,7 +173,7 @@ fun VehiclesSheet(
                         name = name,
                         bluetoothAddress = bluetoothAddress,
                         bluetoothName = bluetoothName,
-                    )
+                    ),
                 )
                 editingVehicle = null
             },

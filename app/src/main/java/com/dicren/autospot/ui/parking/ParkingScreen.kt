@@ -108,19 +108,21 @@ fun ParkingScreen(
     val timeFormatter = remember(resources) { ParkingTimeFormatter(resources) }
     val snackbarHostState = remember { SnackbarHostState() }
 
-    val messages = ParkingMessages(
-        saved = stringResource(R.string.location_saved),
-        saveFailed = stringResource(R.string.notification_save_failed_title),
-        noVehicle = stringResource(R.string.no_vehicle_configured),
-        duplicateVehicle = stringResource(R.string.vehicle_duplicate),
-        updateConflict = stringResource(R.string.vehicle_update_conflict),
-        mapsNotInstalled = stringResource(R.string.maps_not_found),
-        shareTitle = stringResource(R.string.share_location),
-    )
+    val messages =
+        ParkingMessages(
+            saved = stringResource(R.string.location_saved),
+            saveFailed = stringResource(R.string.notification_save_failed_title),
+            noVehicle = stringResource(R.string.no_vehicle_configured),
+            duplicateVehicle = stringResource(R.string.vehicle_duplicate),
+            updateConflict = stringResource(R.string.vehicle_update_conflict),
+            mapsNotInstalled = stringResource(R.string.maps_not_found),
+            shareTitle = stringResource(R.string.share_location),
+        )
 
-    val notificationPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { /* Notifications are optional: the services keep running without them. */ }
+    val notificationPermissionLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { /* Notifications are optional: the services keep running without them. */ }
 
     var showVehiclesSheet by remember { mutableStateOf(false) }
     var showHistorySheet by remember { mutableStateOf(false) }
@@ -142,7 +144,7 @@ fun ParkingScreen(
         if (shouldMonitor) {
             try {
                 context.startForegroundService(
-                    Intent(context, BluetoothMonitorService::class.java)
+                    Intent(context, BluetoothMonitorService::class.java),
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Could not start the Bluetooth monitor", e)
@@ -172,7 +174,7 @@ fun ParkingScreen(
     LaunchedEffect(displayLocation?.id) {
         displayLocation?.let {
             cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f)
+                CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f),
             )
         }
     }
@@ -185,15 +187,17 @@ fun ParkingScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                properties = MapProperties(
-                    // The Maps SDK throws SecurityException if the blue dot is enabled without
-                    // the location permission (e.g. after revoking it in Settings).
-                    isMyLocationEnabled = state.hasLocationPermission
-                ),
-                uiSettings = MapUiSettings(
-                    zoomControlsEnabled = false,
-                    myLocationButtonEnabled = false,
-                ),
+                properties =
+                    MapProperties(
+                        // The Maps SDK throws SecurityException if the blue dot is enabled without
+                        // the location permission (e.g. after revoking it in Settings).
+                        isMyLocationEnabled = state.hasLocationPermission,
+                    ),
+                uiSettings =
+                    MapUiSettings(
+                        zoomControlsEnabled = false,
+                        myLocationButtonEnabled = false,
+                    ),
             ) {
                 Marker(
                     state = rememberUpdatedMarkerState(position = position),
@@ -203,14 +207,14 @@ fun ParkingScreen(
         }
 
         Column(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Top + WindowInsetsSides.Horizontal
-                    )
-                )
-                .padding(16.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopCenter)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Top + WindowInsetsSides.Horizontal,
+                        ),
+                    ).padding(16.dp),
         ) {
             if (!state.hasMonitoringPermission) {
                 PermissionBanner(
@@ -236,27 +240,28 @@ fun ParkingScreen(
             visible = cameraPositionState.position.bearing != 0f,
             enter = fadeIn(),
             exit = fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopEnd)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Top + WindowInsetsSides.End
-                    )
-                )
-                .padding(top = 92.dp, end = 16.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.TopEnd)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Top + WindowInsetsSides.End,
+                        ),
+                    ).padding(top = 92.dp, end = 16.dp),
         ) {
             FloatingActionButton(
                 onClick = {
                     coroutineScope.launch {
                         cameraPositionState.animate(
                             CameraUpdateFactory.newCameraPosition(
-                                CameraPosition.Builder()
+                                CameraPosition
+                                    .Builder()
                                     .target(cameraPositionState.position.target)
                                     .zoom(cameraPositionState.position.zoom)
                                     .bearing(0f)
                                     .tilt(0f)
-                                    .build()
-                            )
+                                    .build(),
+                            ),
                         )
                     }
                 },
@@ -275,11 +280,12 @@ fun ParkingScreen(
         if (displayLocation != null) {
             FloatingActionButton(
                 onClick = {
-                    val opened = MapsIntents.openNavigation(
-                        context,
-                        displayLocation.latitude,
-                        displayLocation.longitude,
-                    )
+                    val opened =
+                        MapsIntents.openNavigation(
+                            context,
+                            displayLocation.latitude,
+                            displayLocation.longitude,
+                        )
                     if (!opened) {
                         coroutineScope.launch {
                             snackbarHostState.showSnackbar(messages.mapsNotInstalled)
@@ -287,14 +293,14 @@ fun ParkingScreen(
                     }
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.End
-                        )
-                    )
-                    .padding(end = 16.dp, bottom = 132.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomEnd)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Bottom + WindowInsetsSides.End,
+                            ),
+                        ).padding(end = 16.dp, bottom = 132.dp),
             ) {
                 Icon(
                     imageVector = Icons.Default.Navigation,
@@ -314,7 +320,7 @@ fun ParkingScreen(
                             displayLocation.latitude,
                             displayLocation.longitude,
                             messages.shareTitle,
-                        )
+                        ),
                     )
                 },
                 onHistoryClick = { showHistorySheet = true },
@@ -325,18 +331,18 @@ fun ParkingScreen(
                             CameraUpdateFactory.newLatLngZoom(
                                 LatLng(displayLocation.latitude, displayLocation.longitude),
                                 17f,
-                            )
+                            ),
                         )
                     }
                 },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-                        )
-                    )
-                    .padding(16.dp),
+                modifier =
+                    Modifier
+                        .align(Alignment.BottomCenter)
+                        .windowInsetsPadding(
+                            WindowInsets.safeDrawing.only(
+                                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                            ),
+                        ).padding(16.dp),
             )
         } else {
             NoLocationCard(
@@ -348,14 +354,14 @@ fun ParkingScreen(
 
         SnackbarHost(
             hostState = snackbarHostState,
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .windowInsetsPadding(
-                    WindowInsets.safeDrawing.only(
-                        WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal
-                    )
-                )
-                .padding(start = 16.dp, end = 16.dp, bottom = 120.dp),
+            modifier =
+                Modifier
+                    .align(Alignment.BottomCenter)
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(
+                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                        ),
+                    ).padding(start = 16.dp, end = 16.dp, bottom = 120.dp),
         )
     }
 
@@ -428,14 +434,15 @@ private data class ParkingMessages(
     val mapsNotInstalled: String,
     val shareTitle: String,
 ) {
-    fun forEvent(event: ParkingEvent): String = when (event) {
-        ParkingEvent.LocationSaved -> saved
-        ParkingEvent.SaveFailed -> saveFailed
-        ParkingEvent.NoVehicle -> noVehicle
-        ParkingEvent.DuplicateVehicle -> duplicateVehicle
-        ParkingEvent.VehicleUpdateConflict -> updateConflict
-        ParkingEvent.MapsNotInstalled -> mapsNotInstalled
-    }
+    fun forEvent(event: ParkingEvent): String =
+        when (event) {
+            ParkingEvent.LocationSaved -> saved
+            ParkingEvent.SaveFailed -> saveFailed
+            ParkingEvent.NoVehicle -> noVehicle
+            ParkingEvent.DuplicateVehicle -> duplicateVehicle
+            ParkingEvent.VehicleUpdateConflict -> updateConflict
+            ParkingEvent.MapsNotInstalled -> mapsNotInstalled
+        }
 }
 
 private fun Context.openAppSettings() {
@@ -443,7 +450,7 @@ private fun Context.openAppSettings() {
         Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
             data = Uri.fromParts("package", packageName, null)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
+        },
     )
 }
 
@@ -452,7 +459,7 @@ private fun Context.openLocationSettings() {
         startActivity(
             Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS).apply {
                 addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            }
+            },
         )
     } catch (e: ActivityNotFoundException) {
         Toast.makeText(this, R.string.location_services_disabled, Toast.LENGTH_LONG).show()

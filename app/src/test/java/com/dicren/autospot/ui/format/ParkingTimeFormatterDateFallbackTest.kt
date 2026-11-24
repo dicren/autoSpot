@@ -13,7 +13,6 @@ import java.util.Calendar
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class ParkingTimeFormatterDateFallbackTest {
-
     private val context = ApplicationProvider.getApplicationContext<Context>()
     private val formatter = ParkingTimeFormatter(context.resources)
     private val now = 1_000_000_000_000L

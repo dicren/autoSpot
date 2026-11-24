@@ -37,7 +37,6 @@ import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 
 class CreateShortcutActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
@@ -50,24 +49,27 @@ class CreateShortcutActivity : ComponentActivity() {
                     onDismiss = {
                         setResult(RESULT_CANCELED)
                         finish()
-                    }
+                    },
                 )
             }
         }
     }
 
     private fun createShortcutForVehicle(vehicle: VehicleEntity) {
-        val shortcutIntent = Intent(this, NavigateActivity::class.java).apply {
-            action = Intent.ACTION_VIEW
-            putExtra(NavigateActivity.EXTRA_VEHICLE_ID, vehicle.id)
-        }
+        val shortcutIntent =
+            Intent(this, NavigateActivity::class.java).apply {
+                action = Intent.ACTION_VIEW
+                putExtra(NavigateActivity.EXTRA_VEHICLE_ID, vehicle.id)
+            }
 
-        val shortcut = ShortcutInfoCompat.Builder(this, "navigate_to_${vehicle.id}")
-            .setShortLabel(vehicle.name)
-            .setLongLabel(getString(R.string.shortcut_long_label_vehicle, vehicle.name))
-            .setIcon(IconCompat.createWithResource(this, R.drawable.ic_shortcut_navigate))
-            .setIntent(shortcutIntent)
-            .build()
+        val shortcut =
+            ShortcutInfoCompat
+                .Builder(this, "navigate_to_${vehicle.id}")
+                .setShortLabel(vehicle.name)
+                .setLongLabel(getString(R.string.shortcut_long_label_vehicle, vehicle.name))
+                .setIcon(IconCompat.createWithResource(this, R.drawable.ic_shortcut_navigate))
+                .setIntent(shortcutIntent)
+                .build()
 
         val pinnedShortcutCallbackIntent = ShortcutManagerCompat.createShortcutResultIntent(this, shortcut)
 
@@ -79,7 +81,7 @@ class CreateShortcutActivity : ComponentActivity() {
 @Composable
 private fun VehicleSelectionDialog(
     onVehicleSelected: (VehicleEntity) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
     val app = remember(context) { context.applicationContext as AutoSpotApp }
@@ -87,24 +89,26 @@ private fun VehicleSelectionDialog(
         .collectAsState(initial = emptyList())
 
     Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .clickable(onClick = onDismiss),
-        contentAlignment = Alignment.Center
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .clickable(onClick = onDismiss),
+        contentAlignment = Alignment.Center,
     ) {
         Card(
-            modifier = Modifier
-                .widthIn(max = 320.dp)
-                .clickable(enabled = false, onClick = {}),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+            modifier =
+                Modifier
+                    .widthIn(max = 320.dp)
+                    .clickable(enabled = false, onClick = {}),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
         ) {
             Column(
-                modifier = Modifier.padding(16.dp)
+                modifier = Modifier.padding(16.dp),
             ) {
                 Text(
                     text = stringResource(R.string.select_vehicle_shortcut),
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(bottom = 16.dp)
+                    modifier = Modifier.padding(bottom = 16.dp),
                 )
 
                 if (vehicles.isEmpty()) {
@@ -112,32 +116,34 @@ private fun VehicleSelectionDialog(
                         text = stringResource(R.string.no_vehicles),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(vertical = 24.dp),
-                        textAlign = TextAlign.Center
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 24.dp),
+                        textAlign = TextAlign.Center,
                     )
                 } else {
                     LazyColumn(
-                        modifier = Modifier.heightIn(max = 300.dp)
+                        modifier = Modifier.heightIn(max = 300.dp),
                     ) {
                         items(vehicles) { vehicle ->
                             Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onVehicleSelected(vehicle) }
-                                    .padding(vertical = 12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .clickable { onVehicleSelected(vehicle) }
+                                        .padding(vertical = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
                                 Column {
                                     Text(
                                         text = vehicle.name,
-                                        style = MaterialTheme.typography.bodyLarge
+                                        style = MaterialTheme.typography.bodyLarge,
                                     )
                                     Text(
                                         text = vehicle.bluetoothName,
                                         style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
                                 }
                             }

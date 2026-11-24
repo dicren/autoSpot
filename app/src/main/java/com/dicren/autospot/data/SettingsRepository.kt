@@ -25,13 +25,12 @@ interface SettingsRepository {
 class DataStoreSettingsRepository(
     private val dataStore: DataStore<Preferences>,
 ) : SettingsRepository {
-
-    override val isOnboardingCompleted: Flow<Boolean> = dataStore.data
-        // A corrupt preferences file must not crash the app on every launch.
-        .catch { error ->
-            if (error is IOException) emit(emptyPreferences()) else throw error
-        }
-        .map { preferences -> preferences[ONBOARDING_COMPLETED] ?: false }
+    override val isOnboardingCompleted: Flow<Boolean> =
+        dataStore.data
+            // A corrupt preferences file must not crash the app on every launch.
+            .catch { error ->
+                if (error is IOException) emit(emptyPreferences()) else throw error
+            }.map { preferences -> preferences[ONBOARDING_COMPLETED] ?: false }
 
     override suspend fun setOnboardingCompleted() {
         dataStore.edit { preferences -> preferences[ONBOARDING_COMPLETED] = true }

@@ -6,7 +6,7 @@ import androidx.room.PrimaryKey
 
 @Entity(
     tableName = "vehicles",
-    indices = [Index(value = ["bluetoothAddress"], unique = true)]
+    indices = [Index(value = ["bluetoothAddress"], unique = true)],
 )
 data class VehicleEntity(
     @PrimaryKey(autoGenerate = true)
@@ -14,5 +14,5 @@ data class VehicleEntity(
     val name: String,
     val bluetoothAddress: String,
     val bluetoothName: String,
-    val isActive: Boolean = false
+    val isActive: Boolean = false,
 )

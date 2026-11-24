@@ -6,6 +6,7 @@ plugins {
     // its compiler plugin, whose version must match the Kotlin version.
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.spotless)
 }
 
 /** Reads the Maps key from `local.properties`, falling back to the committed template. */
@@ -32,8 +33,8 @@ android {
         applicationId = "com.dicren.autospot"
         minSdk = 31
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 2
+        versionName = "1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -59,8 +60,12 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
-            isShrinkResources = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
             signingConfig = signingConfigs.findByName("release")
         }
     }
@@ -142,4 +147,17 @@ dependencies {
 
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+spotless {
+    kotlin {
+        target("src/**/*.kt")
+        ktlint(libs.versions.ktlint.get()).editorConfigOverride(
+            mapOf(
+                // Test names are backticked sentences; Compose state/api names are descriptive.
+                "ktlint_standard_function-naming" to "disabled",
+                "ktlint_standard_class-naming" to "disabled",
+            )
+        )
+    }
 }

@@ -9,7 +9,6 @@ data class LocationFix(
 )
 
 interface LocationSource {
-
     /**
      * Requests a fresh fix. Returns null when no fix could be obtained within the timeout.
      */

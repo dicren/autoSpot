@@ -26,7 +26,6 @@ import kotlinx.coroutines.sync.withLock
  * (`stopSelfResult`) so an older request cannot kill a newer one.
  */
 class LocationSaveService : Service() {
-
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val saveMutex = Mutex()
     private lateinit var useCase: SaveParkingLocationUseCase
@@ -38,16 +37,21 @@ class LocationSaveService : Service() {
         notifications.createChannels()
 
         val container = applicationContext.appContainer
-        useCase = SaveParkingLocationUseCase(
-            vehicleRepository = container.vehicleRepository,
-            parkingRepository = container.parkingRepository,
-            locationSource = FusedLocationSource(this),
-            clock = container.clock,
-            hasLocationPermission = { Permissions.hasLocation(this) },
-        )
+        useCase =
+            SaveParkingLocationUseCase(
+                vehicleRepository = container.vehicleRepository,
+                parkingRepository = container.parkingRepository,
+                locationSource = FusedLocationSource(this),
+                clock = container.clock,
+                hasLocationPermission = { Permissions.hasLocation(this) },
+            )
     }
 
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    override fun onStartCommand(
+        intent: Intent?,
+        flags: Int,
+        startId: Int,
+    ): Int {
         if (!Permissions.hasLocation(this)) {
             Log.w(TAG, "Location permission not granted, not saving")
             stopSelf(startId)
@@ -76,14 +80,22 @@ class LocationSaveService : Service() {
             val result = saveMutex.withLock { useCase.save(vehicleId) }
 
             when (result) {
-                is SaveResult.Saved -> Log.d(
-                    TAG,
-                    "Location saved for vehicle ${result.vehicleId}: " +
-                        "${result.latitude}, ${result.longitude} (accuracy ${result.accuracyMeters})",
-                )
+                is SaveResult.Saved -> {
+                    Log.d(
+                        TAG,
+                        "Location saved for vehicle ${result.vehicleId}: " +
+                            "${result.latitude}, ${result.longitude} (accuracy ${result.accuracyMeters})",
+                    )
+                }
 
-                SaveResult.NoPermission -> Log.w(TAG, "Location permission disappeared")
-                SaveResult.NoVehicle -> Log.w(TAG, "No vehicle to save the location for")
+                SaveResult.NoPermission -> {
+                    Log.w(TAG, "Location permission disappeared")
+                }
+
+                SaveResult.NoVehicle -> {
+                    Log.w(TAG, "No vehicle to save the location for")
+                }
+
                 SaveResult.NoFix -> {
                     Log.w(TAG, "No usable location fix")
                     notifications.notifySaveFailed()

@@ -21,7 +21,6 @@ class FusedLocationSource(
     context: Context,
     private val timeoutMillis: Long = DEFAULT_TIMEOUT_MILLIS,
 ) : LocationSource {
-
     private val client = LocationServices.getFusedLocationProviderClient(context.applicationContext)
 
     @SuppressLint("MissingPermission") // Callers check the permission first.
@@ -29,7 +28,8 @@ class FusedLocationSource(
         val cancellation = CancellationTokenSource()
         return try {
             withTimeout(timeoutMillis) {
-                client.getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellation.token)
+                client
+                    .getCurrentLocation(Priority.PRIORITY_HIGH_ACCURACY, cancellation.token)
                     .await()
                     ?.toFix()
             }
@@ -44,18 +44,20 @@ class FusedLocationSource(
     }
 
     @SuppressLint("MissingPermission")
-    override suspend fun lastLocation(): LocationFix? = try {
-        client.lastLocation.await()?.toFix()
-    } catch (e: SecurityException) {
-        null
-    }
+    override suspend fun lastLocation(): LocationFix? =
+        try {
+            client.lastLocation.await()?.toFix()
+        } catch (e: SecurityException) {
+            null
+        }
 
-    private fun Location.toFix() = LocationFix(
-        latitude = latitude,
-        longitude = longitude,
-        timeMillis = time,
-        accuracyMeters = if (hasAccuracy()) accuracy else null,
-    )
+    private fun Location.toFix() =
+        LocationFix(
+            latitude = latitude,
+            longitude = longitude,
+            timeMillis = time,
+            accuracyMeters = if (hasAccuracy()) accuracy else null,
+        )
 
     companion object {
         const val DEFAULT_TIMEOUT_MILLIS = 15_000L

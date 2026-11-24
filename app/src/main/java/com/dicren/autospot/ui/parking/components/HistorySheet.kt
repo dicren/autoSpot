@@ -12,12 +12,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -39,9 +39,10 @@ fun HistorySheet(
     modifier: Modifier = Modifier,
 ) {
     Column(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(16.dp),
+        modifier =
+            modifier
+                .fillMaxWidth()
+                .padding(16.dp),
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -69,19 +70,21 @@ fun HistorySheet(
                 text = stringResource(R.string.no_history),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp),
+                modifier =
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
                 textAlign = TextAlign.Center,
             )
         } else {
             LazyColumn {
                 items(locations, key = { it.id }) { location ->
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable { onLocationSelected(location) }
-                            .padding(vertical = 12.dp),
+                        modifier =
+                            Modifier
+                                .fillMaxWidth()
+                                .clickable { onLocationSelected(location) }
+                                .padding(vertical = 12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
@@ -113,5 +116,7 @@ fun HistorySheet(
     }
 }
 
-private fun formatCoordinates(lat: Double, lon: Double): String =
-    String.format(Locale.US, "%.6f, %.6f", lat, lon)
+private fun formatCoordinates(
+    lat: Double,
+    lon: Double,
+): String = String.format(Locale.US, "%.6f, %.6f", lat, lon)

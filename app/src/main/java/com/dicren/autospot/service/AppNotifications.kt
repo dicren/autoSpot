@@ -17,8 +17,9 @@ import com.dicren.autospot.R
  * Everything uses the monochrome [R.drawable.ic_notification]: a coloured launcher icon renders
  * as a white blob in the status bar.
  */
-class AppNotifications(private val context: Context) {
-
+class AppNotifications(
+    private val context: Context,
+) {
     private val manager = context.getSystemService(NotificationManager::class.java)
 
     fun createChannels() {
@@ -32,7 +33,7 @@ class AppNotifications(private val context: Context) {
                 NotificationManager.IMPORTANCE_MIN,
             ).apply {
                 description = context.getString(R.string.bluetooth_monitor_channel_description)
-            }
+            },
         )
         manager.createNotificationChannel(
             NotificationChannel(
@@ -41,18 +42,20 @@ class AppNotifications(private val context: Context) {
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
                 description = context.getString(R.string.notification_channel_description)
-            }
+            },
         )
     }
 
     fun monitorNotification(): Notification {
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            Intent(context, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE,
-        )
-        return NotificationCompat.Builder(context, MONITOR_CHANNEL_ID)
+        val pendingIntent =
+            PendingIntent.getActivity(
+                context,
+                0,
+                Intent(context, MainActivity::class.java),
+                PendingIntent.FLAG_IMMUTABLE,
+            )
+        return NotificationCompat
+            .Builder(context, MONITOR_CHANNEL_ID)
             .setContentTitle(context.getString(R.string.bluetooth_monitor_notification_title))
             .setContentText(context.getString(R.string.bluetooth_monitor_notification_text))
             .setSmallIcon(R.drawable.ic_notification)
@@ -63,7 +66,8 @@ class AppNotifications(private val context: Context) {
     }
 
     fun savingNotification(): Notification =
-        NotificationCompat.Builder(context, SAVE_CHANNEL_ID)
+        NotificationCompat
+            .Builder(context, SAVE_CHANNEL_ID)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(context.getString(R.string.notification_text))
             .setSmallIcon(R.drawable.ic_notification)
@@ -73,21 +77,22 @@ class AppNotifications(private val context: Context) {
 
     /** Tells the user the automatic save failed, instead of failing silently. */
     fun notifySaveFailed() {
-        val notification = NotificationCompat.Builder(context, SAVE_CHANNEL_ID)
-            .setContentTitle(context.getString(R.string.notification_save_failed_title))
-            .setContentText(context.getString(R.string.notification_save_failed_text))
-            .setSmallIcon(R.drawable.ic_notification)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
-            .setAutoCancel(true)
-            .setContentIntent(
-                PendingIntent.getActivity(
-                    context,
-                    0,
-                    Intent(context, MainActivity::class.java),
-                    PendingIntent.FLAG_IMMUTABLE,
-                )
-            )
-            .build()
+        val notification =
+            NotificationCompat
+                .Builder(context, SAVE_CHANNEL_ID)
+                .setContentTitle(context.getString(R.string.notification_save_failed_title))
+                .setContentText(context.getString(R.string.notification_save_failed_text))
+                .setSmallIcon(R.drawable.ic_notification)
+                .setPriority(NotificationCompat.PRIORITY_LOW)
+                .setAutoCancel(true)
+                .setContentIntent(
+                    PendingIntent.getActivity(
+                        context,
+                        0,
+                        Intent(context, MainActivity::class.java),
+                        PendingIntent.FLAG_IMMUTABLE,
+                    ),
+                ).build()
 
         try {
             NotificationManagerCompat.from(context).notify(SAVE_FAILED_NOTIFICATION_ID, notification)

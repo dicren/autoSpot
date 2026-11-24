@@ -10,7 +10,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class BluetoothIntentsTest {
-
     private val address = "AA:BB:CC:DD:EE:FF"
 
     @Test

@@ -4,17 +4,25 @@ import android.database.sqlite.SQLiteConstraintException
 import kotlinx.coroutines.flow.Flow
 
 sealed interface AddVehicleResult {
-    data class Added(val id: Long) : AddVehicleResult
-    data class Duplicate(val existingId: Long) : AddVehicleResult
+    data class Added(
+        val id: Long,
+    ) : AddVehicleResult
+
+    data class Duplicate(
+        val existingId: Long,
+    ) : AddVehicleResult
 }
 
 interface VehicleRepository {
-
     val vehicles: Flow<List<VehicleEntity>>
     val activeVehicle: Flow<VehicleEntity?>
 
     /** Inserts the vehicle and makes it the active one, atomically. */
-    suspend fun addVehicle(name: String, bluetoothAddress: String, bluetoothName: String): AddVehicleResult
+    suspend fun addVehicle(
+        name: String,
+        bluetoothAddress: String,
+        bluetoothName: String,
+    ): AddVehicleResult
 
     /** Returns false when another vehicle already uses that Bluetooth address. */
     suspend fun updateVehicle(vehicle: VehicleEntity): Boolean
@@ -33,8 +41,9 @@ interface VehicleRepository {
     suspend fun getAllVehiclesOnce(): List<VehicleEntity>
 }
 
-class RoomVehicleRepository(private val dao: VehicleDao) : VehicleRepository {
-
+class RoomVehicleRepository(
+    private val dao: VehicleDao,
+) : VehicleRepository {
     override val vehicles: Flow<List<VehicleEntity>> = dao.getAllVehicles()
     override val activeVehicle: Flow<VehicleEntity?> = dao.getActiveVehicle()
 
@@ -48,14 +57,15 @@ class RoomVehicleRepository(private val dao: VehicleDao) : VehicleRepository {
         }
 
         return try {
-            val id = dao.insertVehicleAndActivate(
-                VehicleEntity(
-                    name = name.trim(),
-                    bluetoothAddress = bluetoothAddress,
-                    bluetoothName = bluetoothName,
-                    isActive = false,
+            val id =
+                dao.insertVehicleAndActivate(
+                    VehicleEntity(
+                        name = name.trim(),
+                        bluetoothAddress = bluetoothAddress,
+                        bluetoothName = bluetoothName,
+                        isActive = false,
+                    ),
                 )
-            )
             AddVehicleResult.Added(id)
         } catch (e: SQLiteConstraintException) {
             // The unique index is the real guard; a concurrent insert can still lose the race.

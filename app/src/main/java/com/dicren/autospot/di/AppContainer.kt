@@ -28,7 +28,6 @@ class DefaultAppContainer(
     context: Context,
     override val clock: Clock = DefaultClock,
 ) : AppContainer {
-
     private val appContext = context.applicationContext
 
     private val database: AppDatabase by lazy { AppDatabase.getDatabase(appContext) }

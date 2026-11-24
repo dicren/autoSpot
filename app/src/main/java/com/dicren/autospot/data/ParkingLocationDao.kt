@@ -8,7 +8,6 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ParkingLocationDao {
-
     @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC")
     fun getLocationsByVehicle(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
@@ -38,12 +37,18 @@ interface ParkingLocationDao {
               ORDER BY timestamp DESC
               LIMIT :keep
           )
-        """
+        """,
     )
-    suspend fun pruneTo(vehicleId: Long, keep: Int)
+    suspend fun pruneTo(
+        vehicleId: Long,
+        keep: Int,
+    )
 
     @Transaction
-    suspend fun insertAndPrune(location: ParkingLocationEntity, keep: Int): Long {
+    suspend fun insertAndPrune(
+        location: ParkingLocationEntity,
+        keep: Int,
+    ): Long {
         val id = insertLocation(location)
         pruneTo(location.vehicleId, keep)
         return id
