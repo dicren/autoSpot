@@ -140,7 +140,10 @@ fun ParkingScreen(
     }
 
     // Start the monitor only when there is something to monitor and every permission is in place.
-    LaunchedEffect(state.vehicles.isNotEmpty(), state.hasMonitoringPermission) {
+    // Waiting for `isReady` avoids stopping the monitor the boot receiver just started on the
+    // first composition, when every state value is still the default one.
+    LaunchedEffect(state.isReady, state.vehicles.isNotEmpty(), state.hasMonitoringPermission) {
+        if (!state.isReady) return@LaunchedEffect
         val shouldMonitor = state.vehicles.isNotEmpty() && state.hasMonitoringPermission
         if (shouldMonitor) {
             try {
@@ -217,24 +220,26 @@ fun ParkingScreen(
                         ),
                     ).padding(16.dp),
         ) {
-            if (!state.hasMonitoringPermission) {
-                PermissionBanner(
-                    onGrantClick = { context.openAppSettings() },
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+            if (state.isReady) {
+                if (!state.hasMonitoringPermission) {
+                    PermissionBanner(
+                        onGrantClick = { context.openAppSettings() },
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-            if (!state.isLocationEnabled) {
-                LocationServicesBanner(
-                    onSettingsClick = { context.openLocationSettings() },
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+                if (!state.isLocationEnabled) {
+                    LocationServicesBanner(
+                        onSettingsClick = { context.openLocationSettings() },
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
 
-            VehicleCard(
-                vehicle = state.activeVehicle,
-                onSettingsClick = { showVehiclesSheet = true },
-            )
+                VehicleCard(
+                    vehicle = state.activeVehicle,
+                    onSettingsClick = { showVehiclesSheet = true },
+                )
+            }
         }
 
         AnimatedVisibility(
@@ -345,7 +350,7 @@ fun ParkingScreen(
                             ),
                         ).padding(16.dp),
             )
-        } else {
+        } else if (state.isReady) {
             NoLocationCard(
                 isSaving = state.isSaving,
                 onSaveLocationClick = viewModel::saveCurrentLocation,
@@ -449,7 +454,6 @@ private data class ParkingMessages(
             ParkingEvent.NoVehicle -> noVehicle
             ParkingEvent.DuplicateVehicle -> duplicateVehicle
             ParkingEvent.VehicleUpdateConflict -> updateConflict
-            ParkingEvent.MapsNotInstalled -> mapsNotInstalled
         }
 }
 

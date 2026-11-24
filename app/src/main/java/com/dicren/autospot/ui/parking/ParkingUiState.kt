@@ -14,6 +14,8 @@ data class ParkingUiState(
     val hasLocationPermission: Boolean = false,
     val isLocationEnabled: Boolean = true,
     val isSaving: Boolean = false,
+    /** False until the first real emission; the defaults must not drive service or banners. */
+    val isReady: Boolean = false,
 ) {
     val latestLocation: ParkingLocationEntity? get() = locations.firstOrNull()
 
@@ -36,6 +38,4 @@ sealed interface ParkingEvent {
     data object DuplicateVehicle : ParkingEvent
 
     data object VehicleUpdateConflict : ParkingEvent
-
-    data object MapsNotInstalled : ParkingEvent
 }

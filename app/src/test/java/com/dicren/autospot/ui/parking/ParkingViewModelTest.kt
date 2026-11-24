@@ -102,6 +102,19 @@ class ParkingViewModelTest {
         )
 
     @Test
+    fun `the first real emission marks the state as ready`() =
+        runTest {
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (!state.isReady) state = awaitItem()
+                assertTrue(state.isReady)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
     fun `the active vehicle drives the visible locations`() =
         runTest {
             val id = addVehicle()

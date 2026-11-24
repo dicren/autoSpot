@@ -95,6 +95,8 @@ class ParkingViewModel(
                 hasLocationPermission = flags.hasLocationPermission,
                 isLocationEnabled = flags.isLocationEnabled,
                 isSaving = flags.isSaving,
+                // Reaching this block means the repository flows emitted at least once.
+                isReady = true,
             )
         }.stateIn(
             scope = viewModelScope,
