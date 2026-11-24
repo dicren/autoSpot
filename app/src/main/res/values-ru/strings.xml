@@ -6,6 +6,8 @@
     <string name="notification_channel_description">Уведомления при сохранении местоположения автомобиля</string>
     <string name="notification_title">Сохранение местоположения</string>
     <string name="notification_text">Сохранение местоположения вашего автомобиля…</string>
+    <string name="notification_save_failed_title">Не удалось сохранить место парковки</string>
+    <string name="notification_save_failed_text">Откройте AutoSpot и сохраните местоположение вручную.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Ваш автомобиль</string>

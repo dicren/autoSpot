@@ -6,6 +6,8 @@
     <string name="notification_channel_description">Notifications lors de l\'enregistrement de l\'emplacement de la voiture</string>
     <string name="notification_title">Enregistrement de l\'emplacement</string>
     <string name="notification_text">Enregistrement de l\'emplacement de votre voiture…</string>
+    <string name="notification_save_failed_title">Impossible d\'enregistrer votre place</string>
+    <string name="notification_save_failed_text">Ouvrez AutoSpot et enregistrez la position manuellement.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Votre voiture</string>

@@ -6,6 +6,8 @@
     <string name="notification_channel_description">자동차 위치 저장 시 알림</string>
     <string name="notification_title">위치 저장 중</string>
     <string name="notification_text">자동차 위치를 저장하고 있습니다…</string>
+    <string name="notification_save_failed_title">주차 위치를 저장하지 못했습니다</string>
+    <string name="notification_save_failed_text">AutoSpot을 열어 위치를 직접 저장하세요.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">내 차</string>

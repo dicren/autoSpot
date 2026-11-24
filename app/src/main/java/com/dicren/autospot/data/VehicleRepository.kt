@@ -26,6 +26,8 @@ interface VehicleRepository {
 
     suspend fun getActiveVehicleOnce(): VehicleEntity?
 
+    suspend fun getVehicleByIdOnce(id: Long): VehicleEntity?
+
     suspend fun getVehicleByBluetoothAddressOnce(address: String): VehicleEntity?
 
     suspend fun getAllVehiclesOnce(): List<VehicleEntity>
@@ -79,6 +81,8 @@ class RoomVehicleRepository(private val dao: VehicleDao) : VehicleRepository {
     override suspend fun activateVehicle(id: Long) = dao.activateOnly(id)
 
     override suspend fun getActiveVehicleOnce(): VehicleEntity? = dao.getActiveVehicleOnce()
+
+    override suspend fun getVehicleByIdOnce(id: Long): VehicleEntity? = dao.getVehicleById(id)
 
     override suspend fun getVehicleByBluetoothAddressOnce(address: String): VehicleEntity? =
         dao.getVehicleByBluetoothAddress(address)

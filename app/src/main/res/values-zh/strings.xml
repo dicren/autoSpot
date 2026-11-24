@@ -6,6 +6,8 @@
     <string name="notification_channel_description">保存汽车位置时的通知</string>
     <string name="notification_title">正在保存位置</string>
     <string name="notification_text">正在保存您的汽车位置…</string>
+    <string name="notification_save_failed_title">无法保存停车位置</string>
+    <string name="notification_save_failed_text">打开 AutoSpot 并手动保存位置。</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">您的汽车</string>

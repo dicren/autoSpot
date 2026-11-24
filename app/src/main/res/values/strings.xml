@@ -6,6 +6,8 @@
     <string name="notification_channel_description">Notifications when saving car location</string>
     <string name="notification_title">Saving location</string>
     <string name="notification_text">Saving your car location…</string>
+    <string name="notification_save_failed_title">Couldn\'t save your parking spot</string>
+    <string name="notification_save_failed_text">Open AutoSpot and save your location manually.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Your car</string>

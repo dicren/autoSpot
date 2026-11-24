@@ -6,6 +6,8 @@
     <string name="notification_channel_description">Notifiche durante il salvataggio della posizione dell\'auto</string>
     <string name="notification_title">Salvataggio posizione</string>
     <string name="notification_text">Salvataggio della posizione della tua auto…</string>
+    <string name="notification_save_failed_title">Impossibile salvare il parcheggio</string>
+    <string name="notification_save_failed_text">Apri AutoSpot e salva la posizione manualmente.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">La tua auto</string>

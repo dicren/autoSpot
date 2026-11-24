@@ -6,6 +6,8 @@
     <string name="notification_channel_description">Benachrichtigungen beim Speichern des Autostandorts</string>
     <string name="notification_title">Standort speichern</string>
     <string name="notification_text">Ihr Autostandort wird gespeichert…</string>
+    <string name="notification_save_failed_title">Parkplatz konnte nicht gespeichert werden</string>
+    <string name="notification_save_failed_text">Öffnen Sie AutoSpot und speichern Sie den Standort manuell.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Ihr Auto</string>

@@ -1,5 +1,6 @@
 package com.dicren.autospot.receiver
 
+import android.app.ForegroundServiceStartNotAllowedException
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -35,6 +36,12 @@ class BootReceiver : BroadcastReceiver() {
                 } else {
                     Log.d(TAG, "No vehicles configured or permissions missing, not starting service")
                 }
+            } catch (e: ForegroundServiceStartNotAllowedException) {
+                // Android 12+ can refuse a background foreground-service start. The monitor will
+                // be started again the next time the app is opened.
+                Log.w(TAG, "System refused to start the monitor after boot", e)
+            } catch (e: SecurityException) {
+                Log.w(TAG, "Missing permission to start the monitor after boot", e)
             } catch (e: Exception) {
                 Log.e(TAG, "Error checking vehicle config", e)
             } finally {

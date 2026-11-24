@@ -1,10 +1,6 @@
 package com.dicren.autospot.service
 
 import android.annotation.SuppressLint
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.bluetooth.BluetoothA2dp
 import android.bluetooth.BluetoothAdapter
@@ -18,10 +14,8 @@ import android.content.IntentFilter
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import androidx.core.content.IntentCompat
-import com.dicren.autospot.MainActivity
-import com.dicren.autospot.R
 import com.dicren.autospot.bluetooth.BluetoothEvent
 import com.dicren.autospot.bluetooth.BluetoothIntents
 import com.dicren.autospot.bluetooth.DisconnectionDebouncer
@@ -39,9 +33,6 @@ class BluetoothMonitorService : Service() {
 
     companion object {
         private const val TAG = "BluetoothMonitorService"
-        private const val CHANNEL_ID = "bluetooth_monitor_channel_v2"
-        private const val LEGACY_CHANNEL_ID = "bluetooth_monitor_channel"
-        private const val NOTIFICATION_ID = 3
         private const val DEBOUNCE_TIME_MS = 10_000L // 10 seconds
     }
 
@@ -50,6 +41,7 @@ class BluetoothMonitorService : Service() {
         applicationContext.appContainer.vehicleRepository
     }
     private val debouncer = DisconnectionDebouncer(DEBOUNCE_TIME_MS, DefaultClock)
+    private lateinit var notifications: AppNotifications
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
@@ -116,10 +108,11 @@ class BluetoothMonitorService : Service() {
         }
     }
 
-    @SuppressLint("InlinedApi") // RECEIVER_EXPORTED is inlined (value 2), safe on API 31+.
+    @SuppressLint("InlinedApi") // RECEIVER_NOT_EXPORTED is inlined (value 4), safe on API 31+.
     override fun onCreate() {
         super.onCreate()
-        createNotificationChannel()
+        notifications = AppNotifications(this)
+        notifications.createChannels()
 
         val filter = IntentFilter().apply {
             addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
@@ -128,7 +121,8 @@ class BluetoothMonitorService : Service() {
             addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED)
             addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
         }
-        registerReceiver(bluetoothReceiver, filter, RECEIVER_EXPORTED)
+        // These are protected system broadcasts, so no other app can spoof them.
+        registerReceiver(bluetoothReceiver, filter, RECEIVER_NOT_EXPORTED)
 
         Log.d(TAG, "BluetoothMonitorService created and receiver registered")
     }
@@ -141,10 +135,11 @@ class BluetoothMonitorService : Service() {
         }
 
         return try {
-            startForeground(
-                NOTIFICATION_ID,
-                createNotification(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            ServiceCompat.startForeground(
+                this,
+                AppNotifications.MONITOR_NOTIFICATION_ID,
+                notifications.monitorNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION,
             )
             START_STICKY
         } catch (e: SecurityException) {
@@ -167,36 +162,4 @@ class BluetoothMonitorService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun createNotificationChannel() {
-        // A new channel id is required to apply a lower importance to existing installs:
-        // Android ignores importance changes on channels that already exist.
-        val channel = NotificationChannel(
-            CHANNEL_ID,
-            getString(R.string.bluetooth_monitor_channel_name),
-            NotificationManager.IMPORTANCE_MIN
-        ).apply {
-            description = getString(R.string.bluetooth_monitor_channel_description)
-        }
-        val notificationManager = getSystemService(NotificationManager::class.java)
-        notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
-        notificationManager.createNotificationChannel(channel)
-    }
-
-    private fun createNotification(): Notification {
-        val pendingIntent = PendingIntent.getActivity(
-            this,
-            0,
-            Intent(this, MainActivity::class.java),
-            PendingIntent.FLAG_IMMUTABLE
-        )
-
-        return NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(getString(R.string.bluetooth_monitor_notification_title))
-            .setContentText(getString(R.string.bluetooth_monitor_notification_text))
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setContentIntent(pendingIntent)
-            .build()
-    }
 }
