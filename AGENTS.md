@@ -92,8 +92,13 @@ dedicated emulator.
 The generator test sets `includeInStartupProfile = true`. The plugin writes
 `app/src/release/generated/baselineProfiles/{baseline-prof.txt,startup-prof.txt}`, which are
 committed and embedded in the release APK as `assets/dexopt/baseline.prof`; debug builds ignore
-them. Regenerate after changing startup-critical code. CI does not regenerate profiles (it has no
-device); it only packages the committed ones.
+them.
+
+**Regenerate and commit the profile in the same change whenever startup-critical code changes**
+(the activity/application entry points, `AutoSpotApp`/`AppContainer`, the first Compose screen,
+the Room builder or the DataStore read). A stale profile does not break anything — ART ignores
+rules for code that no longer exists and AGP filters them — it just stops helping the new code.
+CI cannot check this because it has no device, so it is on the person making the change.
 
 ### Google Maps API key
 
