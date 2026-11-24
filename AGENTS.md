@@ -32,7 +32,7 @@ a different app on the Play Store and orphan existing installs.
 - **Location:** `play-services-location` 21.4.0 (FusedLocationProviderClient)
 - **Persistence:** Room 2.8.5 (KSP) + DataStore Preferences 1.3.0
 - **Build:** Gradle 9.7.1 wrapper, AGP 9.5.2, KSP 2.3.14, `compileSdk` 37.1
-- **SDK:** `compileSdk` 37.1, `targetSdk` 36, `minSdk` 31 (Android 12)
+- **SDK:** `compileSdk` 37.1, `targetSdk` 37, `minSdk` 31 (Android 12)
 - **DI / architecture:** manual DI (`AutoSpotApp` + `di/AppContainer`), one ViewModel per
   screen (`ParkingViewModel` + `StateFlow<ParkingUiState>`) and plain repositories. No Hilt, no
   Koin, no navigation library.
@@ -224,9 +224,10 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
 2. **Release builds need `keystore.properties`:** without it they come out unsigned and the store
    rejects them. `autospot-release.keystore` lives at the repo root and is gitignored; never commit
    it or its passwords.
-3. **Toolchain is current but targetSdk is deliberately 36.** Compose 1.13/core 1.19 require
-   `compileSdk` 37.1. `targetSdk` stays at 36 until the API 37 behaviour changes are tested; lint
-   reports `OldTargetApi` as a warning for that reason.
+3. **targetSdk is 37 (Android 17).** The Android 17 targeting changes (widget memory caps,
+   MessageQueue internals, static-final reflection, local-network permission, SMS OTP, audio,
+   orientation on large screens) do not apply to this app. Verified on an API 37 emulator:
+   map, monitor, bottom sheets, navigation to Maps and landscape.
 4. **Migration schemas are test assets:** `app/build.gradle.kts` adds `app/schemas` to the **debug**
    assets so `MigrationTestHelper` can read them under Robolectric. They never ship in release.
    Every schema bump must keep the exported JSON committed, or `MigrationTest` fails.

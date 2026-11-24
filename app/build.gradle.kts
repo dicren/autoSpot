@@ -32,7 +32,7 @@ android {
     defaultConfig {
         applicationId = "com.dicren.autospot"
         minSdk = 31
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 2
         versionName = "1.1"
 
