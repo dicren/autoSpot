@@ -135,6 +135,7 @@ fun ParkingScreen(
 
     val displayLocation = selectedLocation ?: latestLocation
     val coroutineScope = rememberCoroutineScope()
+    val shareTitle = stringResource(R.string.share_location)
 
     val cameraPositionState = rememberCameraPositionState()
 
@@ -282,7 +283,7 @@ fun ParkingScreen(
                         type = "text/plain"
                         putExtra(Intent.EXTRA_TEXT, shareText)
                     }
-                    context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.share_location)))
+                    context.startActivity(Intent.createChooser(shareIntent, shareTitle))
                 },
                 onHistoryClick = { showHistorySheet = true },
                 onBackToLatestClick = { selectedLocation = null },

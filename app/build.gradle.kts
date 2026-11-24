@@ -2,16 +2,30 @@ import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
+    // AGP 9 has built-in Kotlin: no `kotlin-android` plugin. Compose still needs
+    // its compiler plugin, whose version must match the Kotlin version.
     alias(libs.plugins.kotlin.compose)
-    alias(libs.plugins.secrets.gradle)
     alias(libs.plugins.ksp)
+}
+
+/** Reads the Maps key from `local.properties`, falling back to the committed template. */
+fun mapsApiKey(): String {
+    val candidates = listOf(
+        rootProject.file("local.properties"),
+        rootProject.file("local.defaults.properties")
+    )
+    return candidates.firstNotNullOfOrNull { file ->
+        if (!file.exists()) return@firstNotNullOfOrNull null
+        Properties().apply { file.inputStream().use { load(it) } }.getProperty("MAPS_API_KEY")
+    } ?: "YOUR_API_KEY_HERE"
 }
 
 android {
     namespace = "com.dicren.autospot"
     compileSdk {
-        version = release(36)
+        version = release(37) {
+            minorApiLevel = 1
+        }
     }
 
     defaultConfig {
@@ -22,6 +36,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // The Maps SDK key is injected as a manifest placeholder instead of using the
+        // secrets plugin, which does not populate unit-test manifests under AGP 9.
+        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey()
     }
 
     signingConfigs {
@@ -47,21 +65,29 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-    kotlinOptions {
-        jvmTarget = "11"
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     buildFeatures {
         compose = true
+    }
+    lint {
+        // False positive: the app has no fragments at all. The detector looks for the
+        // androidx.fragment artifact and fires when it is absent.
+        disable += "InvalidFragmentVersionForActivityResult"
+    }
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+        }
     }
 }
 
 dependencies {
     implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.fragment)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.lifecycle.runtime.compose)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.androidx.activity.compose)
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -89,17 +115,20 @@ dependencies {
     ksp(libs.room.compiler)
 
     testImplementation(libs.junit)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.turbine)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.room.testing)
+
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.rules)
     androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
     debugImplementation(libs.androidx.compose.ui.tooling)
     debugImplementation(libs.androidx.compose.ui.test.manifest)
-}
-
-secrets {
-    propertiesFileName = "local.properties"
-    defaultPropertiesFileName = "local.defaults.properties"
 }
 
 ksp {

@@ -26,21 +26,27 @@ a different app on the Play Store and orphan existing installs.
 
 ## Tech stack
 
-- **Language:** Kotlin 2.0.21, JVM target 11
-- **UI:** Jetpack Compose, Material 3, `material-icons-extended`; Compose BOM `2024.09.00`
-- **Maps:** Google Maps SDK + `maps-compose` 6.2.1
-- **Location:** `play-services-location` 21.3.0 (FusedLocationProviderClient)
-- **Persistence:** Room 2.6.1 (KSP) + DataStore Preferences 1.1.1
-- **Build:** Gradle 8.13 wrapper, AGP 8.13.2, KSP `2.0.21-1.0.27`
-- **SDK:** `compileSdk`/`targetSdk` 36, `minSdk` 31 (Android 12)
+- **Language:** Kotlin 2.4.21 (AGP 9 built-in Kotlin), JVM target 17
+- **UI:** Jetpack Compose, Material 3, `material-icons-extended`; Compose BOM `2026.11.01`
+- **Maps:** Google Maps SDK + `maps-compose` 9.0.1
+- **Location:** `play-services-location` 21.4.0 (FusedLocationProviderClient)
+- **Persistence:** Room 2.8.5 (KSP) + DataStore Preferences 1.3.0
+- **Build:** Gradle 9.7.1 wrapper, AGP 9.5.2, KSP 2.3.14, `compileSdk` 37.1
+- **SDK:** `compileSdk` 37.1, `targetSdk` 36, `minSdk` 31 (Android 12)
 - **DI / architecture:** none — no Hilt, no ViewModels. Compose screens call a plain
   `LocationRepository`, and services construct their own instances.
+
+AGP 9 compiles Kotlin itself: **never apply `org.jetbrains.kotlin.android`**. The Compose compiler
+plugin (`org.jetbrains.kotlin.plugin.compose`) is still required and its version must match
+Kotlin. The root `build.gradle.kts` pins KGP/KSP through `buildscript` classpath because AGP
+otherwise ships older versions.
 
 Dependencies are declared in the version catalog `gradle/libs.versions.toml`. Add new libraries
 there, not inline in `app/build.gradle.kts`.
 
-There is no CI, no linter config beyond Android Lint, and no meaningful test suite
-(`app/src/test` and `app/src/androidTest` contain only the generated examples).
+There is no CI and no linter config beyond Android Lint. The test suite is still the generated
+examples, plus the unit-test dependencies (`robolectric`, `turbine`, `coroutines-test`,
+`room-testing`) wired in `app/build.gradle.kts`.
 
 ## Commands
 
@@ -61,12 +67,15 @@ Use JDK 17 or newer (JBR 21 is installed on this machine). The Android SDK path 
 
 ### Google Maps API key
 
-`app/build.gradle.kts` applies the Maps secrets plugin, and the manifest injects
-`${MAPS_API_KEY}` as `com.google.android.geo.API_KEY`:
+`app/build.gradle.kts` reads `MAPS_API_KEY` from `local.properties` (falling back to
+`local.defaults.properties`) and injects it as the `MAPS_API_KEY` manifest placeholder, which the
+manifest uses for `com.google.android.geo.API_KEY`:
 
 - Real key: `MAPS_API_KEY=...` in `local.properties` (gitignored).
 - Fallback: `local.defaults.properties` contains `MAPS_API_KEY=YOUR_API_KEY_HERE`, so the build
   succeeds without a key but the map stays blank and the Maps SDK logs an authorization failure.
+
+The old secrets Gradle plugin was removed: it did not populate the unit-test manifest under AGP 9.
 
 ### Release signing
 
@@ -178,9 +187,9 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
 2. **Release builds need `keystore.properties`:** without it they come out unsigned and the store
    rejects them. `autospot-release.keystore` lives at the repo root and is gitignored; never commit
    it or its passwords.
-3. **Dependency versions are behind** (AGP 8.13.2, Kotlin 2.0.21, Room 2.6.1). Lint reports newer
-   versions as informational warnings; upgrading is a separate task because it can change Compose
-   and Room APIs.
+3. **Toolchain is current but targetSdk is deliberately 36.** Compose 1.13/core 1.19 require
+   `compileSdk` 37.1. `targetSdk` stays at 36 until the API 37 behaviour changes are tested; lint
+   reports `OldTargetApi` as a warning for that reason.
 4. **No migration tests:** schemas are exported to `app/schemas/`, but `app/src/androidTest` still
    only has the template. A Room `MigrationTestHelper` test is the missing safety net for future
    version bumps.
