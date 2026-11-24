@@ -88,7 +88,7 @@ import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -173,14 +173,18 @@ fun ParkingScreen(
             GoogleMap(
                 modifier = Modifier.fillMaxSize(),
                 cameraPositionState = cameraPositionState,
-                properties = MapProperties(isMyLocationEnabled = true),
+                properties = MapProperties(
+                    // Only request the blue dot when the permission is granted: the Maps SDK
+                    // throws SecurityException otherwise (e.g. after revoking it in Settings).
+                    isMyLocationEnabled = Permissions.hasLocation(context)
+                ),
                 uiSettings = MapUiSettings(
                     zoomControlsEnabled = false,
                     myLocationButtonEnabled = false
                 )
             ) {
                 Marker(
-                    state = rememberMarkerState(position = position),
+                    state = rememberUpdatedMarkerState(position = position),
                     title = stringResource(R.string.marker_title)
                 )
             }
