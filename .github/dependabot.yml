@@ -1,5 +1,7 @@
 version: 2
+
 updates:
+    # The version catalog is the single place where dependency versions live.
     - package-ecosystem: gradle
       directory: "/"
       schedule:
@@ -13,7 +15,12 @@ updates:
               patterns:
                   - "org.jetbrains.kotlin*"
                   - "com.google.devtools.ksp*"
-
+          test:
+              patterns:
+                  - "junit*"
+                  - "org.robolectric*"
+                  - "app.cash.turbine*"
+                  - "androidx.test*"
     - package-ecosystem: github-actions
       directory: "/"
       schedule:
