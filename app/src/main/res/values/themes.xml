@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <style name="Theme.AutoSpot" parent="android:Theme.Material.Light.NoActionBar" />
+    <style name="Theme.AutoSpot" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">?android:colorBackground</item>
+        <item name="android:windowSplashScreenBackground">?android:colorBackground</item>
+    </style>
 
     <style name="Theme.AutoSpot.Dialog" parent="android:Theme.Material.Light.Dialog.NoActionBar">
         <item name="android:windowBackground">@android:color/transparent</item>
