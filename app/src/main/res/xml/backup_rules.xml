@@ -4,4 +4,6 @@
     <include domain="database" path="parking_database" />
     <include domain="database" path="parking_database-shm" />
     <include domain="database" path="parking_database-wal" />
+    <!-- Keep the onboarding flag when the user restores a backup -->
+    <include domain="file" path="datastore/settings.preferences_pb" />
 </full-backup-content>

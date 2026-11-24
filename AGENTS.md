@@ -187,7 +187,8 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 - **`SettingsRepository`** wraps the `settings` DataStore and treats an `IOException` (corrupt
   file) as "not onboarded" instead of crashing.
 - Cloud backup / device transfer rules (`res/xml/backup_rules.xml`,
-  `res/xml/data_extraction_rules.xml`) include the three database files.
+  `res/xml/data_extraction_rules.xml`) include the three database files and the DataStore
+  preferences (`datastore/settings.preferences_pb`) so the onboarding flag survives a restore.
 
 ## Conventions
 
