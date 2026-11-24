@@ -234,7 +234,12 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
    with a paired car. Use `adb logcat -s BluetoothMonitorService LocationSaveService BootReceiver`
    to follow the flow. You can also simulate a disconnection by adding a connected device (watch,
    earbuds) as a vehicle and turning Bluetooth off with `adb shell cmd bluetooth_manager disable`.
-6. **Release artifacts** (`app/release/app-release.aab`) and `local.properties` are gitignored;
+6. **Maps needs `org.apache.http.legacy` on old Play Services.** The manifest declares
+   `<uses-library android:name="org.apache.http.legacy" android:required="false" />`. Without it,
+   the Maps dynamite module in the API 31/33 emulator images (GMS 2023) crashes with
+   `NoClassDefFoundError: org/apache/http/ProtocolVersion`. It is optional, so real devices are
+   unaffected. For emulator smoke tests prefer `google_apis_playstore` images.
+7. **Release artifacts** (`app/release/app-release.aab`) and `local.properties` are gitignored;
    do not add them back to version control.
 
 ## Working rules for agents

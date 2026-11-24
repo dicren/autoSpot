@@ -78,6 +78,13 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="${MAPS_API_KEY}" />
+
+        <!-- Older Google Play Services builds (e.g. the API 33 emulator images) load the Maps
+             dynamite module against the app classloader, which needs the legacy Apache HTTP
+             classes on API 28+. Optional, so devices without the library are unaffected. -->
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
     </application>
 
 </manifest>
