@@ -269,8 +269,9 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
    surfaces constraint failures as `android.database.SQLException` (its native libraries reference
    that class), so catching `SQLiteConstraintException` only works in tests, which use
    `AndroidSQLiteDriver`. Use `OnConflictStrategy.IGNORE` and check the returned row id (or catch
-   `android.database.SQLException`) for anything that depends on a unique index. Verified on the
-   release APK.
+   `android.database.SQLException`) for anything that depends on a unique index. The failure type
+   was confirmed in the bundled driver's native libraries; the release APK builds and runs with
+   the `IGNORE` strategy.
 5. **targetSdk is 37 (Android 17).** The Android 17 targeting changes (widget memory caps,
    MessageQueue internals, static-final reflection, local-network permission, SMS OTP, audio,
    orientation on large screens) do not apply to this app. Verified on an API 37 emulator:
