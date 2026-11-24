@@ -98,8 +98,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Dieses Bluetooth-Gerät ist bereits eingerichtet.</string>
     <string name="vehicle_update_conflict">Ein anderes Fahrzeug verwendet dieses Bluetooth-Gerät bereits.</string>
-    <string name="delete_vehicle_message">Der Parkverlauf wird ebenfalls gelöscht.</string>
-    <string name="clear_all_message">Alle gespeicherten Standorte dieses Fahrzeugs werden gelöscht.</string>
+    <string name="delete_vehicle_message">%1$s wird gelöscht, einschließlich des Parkverlaufs.</string>
+    <string name="clear_all_message">Alle gespeicherten Standorte von %1$s werden gelöscht.</string>
     <string name="bluetooth_permission_required">Erlauben Sie den Bluetooth-Zugriff, um gekoppelte Geräte aufzulisten.</string>
     <string name="location_services_disabled">Aktivieren Sie die Standortdienste, damit Ihr Parkplatz gespeichert werden kann.</string>
     <string name="open_settings">Einstellungen öffnen</string>

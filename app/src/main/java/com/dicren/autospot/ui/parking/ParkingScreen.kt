@@ -405,7 +405,14 @@ fun ParkingScreen(
         AlertDialog(
             onDismissRequest = { confirmClearHistory = false },
             title = { Text(stringResource(R.string.clear_all)) },
-            text = { Text(stringResource(R.string.clear_all_message)) },
+            text = {
+                Text(
+                    stringResource(
+                        R.string.clear_all_message,
+                        state.activeVehicle?.name.orEmpty(),
+                    ),
+                )
+            },
             confirmButton = {
                 Button(
                     onClick = {

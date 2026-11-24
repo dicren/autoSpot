@@ -100,8 +100,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Ese dispositivo Bluetooth ya está configurado.</string>
     <string name="vehicle_update_conflict">Otro vehículo ya usa ese dispositivo Bluetooth.</string>
-    <string name="delete_vehicle_message">También se borrará su historial de aparcamientos.</string>
-    <string name="clear_all_message">Se borrarán todas las ubicaciones guardadas de este vehículo.</string>
+    <string name="delete_vehicle_message">Se borrará %1$s, incluido su historial de aparcamientos.</string>
+    <string name="clear_all_message">Se borrarán todas las ubicaciones guardadas de %1$s.</string>
     <string name="bluetooth_permission_required">Permite el acceso a Bluetooth para ver tus dispositivos vinculados.</string>
     <string name="location_services_disabled">Activa los servicios de ubicación para poder guardar tu plaza.</string>
     <string name="open_settings">Abrir ajustes</string>

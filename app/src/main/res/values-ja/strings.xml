@@ -96,8 +96,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">このBluetooth機器はすでに設定されています。</string>
     <string name="vehicle_update_conflict">別の車がこのBluetooth機器を使用しています。</string>
-    <string name="delete_vehicle_message">駐車履歴も削除されます。</string>
-    <string name="clear_all_message">この車の保存済みの位置がすべて削除されます。</string>
+    <string name="delete_vehicle_message">%1$sを削除します。駐車履歴も削除されます。</string>
+    <string name="clear_all_message">%1$sの保存済みの位置がすべて削除されます。</string>
     <string name="bluetooth_permission_required">ペア設定済みの機器を表示するにはBluetoothへのアクセスを許可してください。</string>
     <string name="location_services_disabled">駐車位置を保存するには位置情報サービスをオンにしてください。</string>
     <string name="open_settings">設定を開く</string>

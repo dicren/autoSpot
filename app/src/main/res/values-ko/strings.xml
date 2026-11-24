@@ -96,8 +96,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">이 Bluetooth 기기는 이미 설정되어 있습니다.</string>
     <string name="vehicle_update_conflict">다른 차량이 이미 이 Bluetooth 기기를 사용하고 있습니다.</string>
-    <string name="delete_vehicle_message">주차 기록도 함께 삭제됩니다.</string>
-    <string name="clear_all_message">이 차량의 저장된 위치가 모두 삭제됩니다.</string>
+    <string name="delete_vehicle_message">%1$s을(를) 삭제합니다. 주차 기록도 삭제됩니다.</string>
+    <string name="clear_all_message">%1$s의 저장된 위치가 모두 삭제됩니다.</string>
     <string name="bluetooth_permission_required">페어링된 기기를 표시하려면 Bluetooth 접근을 허용하세요.</string>
     <string name="location_services_disabled">주차 위치를 저장하려면 위치 서비스를 켜세요.</string>
     <string name="open_settings">설정 열기</string>

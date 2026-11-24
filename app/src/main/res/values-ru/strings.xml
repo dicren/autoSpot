@@ -102,8 +102,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Это Bluetooth-устройство уже настроено.</string>
     <string name="vehicle_update_conflict">Другое транспортное средство уже использует это Bluetooth-устройство.</string>
-    <string name="delete_vehicle_message">История парковок также будет удалена.</string>
-    <string name="clear_all_message">Все сохранённые места этого автомобиля будут удалены.</string>
+    <string name="delete_vehicle_message">%1$s будет удалён вместе с историей парковок.</string>
+    <string name="clear_all_message">Все сохранённые места для %1$s будут удалены.</string>
     <string name="bluetooth_permission_required">Разрешите доступ к Bluetooth, чтобы показать сопряжённые устройства.</string>
     <string name="location_services_disabled">Включите геолокацию, чтобы сохранить место парковки.</string>
     <string name="open_settings">Открыть настройки</string>

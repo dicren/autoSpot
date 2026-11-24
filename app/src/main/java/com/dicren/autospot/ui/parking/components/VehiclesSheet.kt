@@ -184,7 +184,7 @@ fun VehiclesSheet(
         AlertDialog(
             onDismissRequest = { deletingVehicle = null },
             title = { Text(stringResource(R.string.delete_vehicle)) },
-            text = { Text(stringResource(R.string.delete_vehicle_message)) },
+            text = { Text(stringResource(R.string.delete_vehicle_message, vehicle.name)) },
             confirmButton = {
                 Button(
                     onClick = {

@@ -237,6 +237,7 @@ class ParkingComponentsTest {
 
         composeRule.onNodeWithContentDescription("Delete").performClick()
         composeRule.onNodeWithText("Delete vehicle").assertIsDisplayed()
+        composeRule.onNodeWithText("Mi coche will be deleted", substring = true).assertIsDisplayed()
         composeRule.onNodeWithText("Delete").performClick()
 
         assertEquals(vehicle.id, deleted?.id)

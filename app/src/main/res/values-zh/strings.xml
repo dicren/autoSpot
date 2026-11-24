@@ -96,8 +96,8 @@
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">该蓝牙设备已配置。</string>
     <string name="vehicle_update_conflict">另一辆车已使用该蓝牙设备。</string>
-    <string name="delete_vehicle_message">其停车记录也会被删除。</string>
-    <string name="clear_all_message">该车辆的所有已保存位置都会被删除。</string>
+    <string name="delete_vehicle_message">将删除 %1$s 及其停车记录。</string>
+    <string name="clear_all_message">将删除 %1$s 的所有已保存位置。</string>
     <string name="bluetooth_permission_required">允许蓝牙访问以列出已配对的设备。</string>
     <string name="location_services_disabled">开启定位服务以保存停车位置。</string>
     <string name="open_settings">打开设置</string>
