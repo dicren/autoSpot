@@ -33,6 +33,7 @@ import java.util.Locale
 fun HistorySheet(
     locations: List<ParkingLocationEntity>,
     timeFormatter: ParkingTimeFormatter,
+    nowMillis: Long,
     onLocationSelected: (ParkingLocationEntity) -> Unit,
     onDeleteLocation: (ParkingLocationEntity) -> Unit,
     onRequestClearAll: () -> Unit,
@@ -90,7 +91,7 @@ fun HistorySheet(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = timeFormatter.format(location.timestamp, System.currentTimeMillis()),
+                                text = timeFormatter.format(location.timestamp, nowMillis),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(

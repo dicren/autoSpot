@@ -48,8 +48,11 @@ class LocationSaveServiceTest {
 
     private class TestSettingsRepository : SettingsRepository {
         override val isOnboardingCompleted: Flow<Boolean> = flowOf(true)
+        override val isBackgroundLocationRationaleShown: Flow<Boolean> = flowOf(true)
 
         override suspend fun setOnboardingCompleted() = Unit
+
+        override suspend fun setBackgroundLocationRationaleShown() = Unit
     }
 
     private class TestContainer(

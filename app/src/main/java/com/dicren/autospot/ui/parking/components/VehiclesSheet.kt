@@ -46,7 +46,7 @@ fun VehiclesSheet(
     canReadBluetooth: Boolean,
     devices: List<BluetoothDeviceInfo>,
     onVehicleClick: (VehicleEntity) -> Unit,
-    onAddVehicle: (name: String, bluetoothAddress: String, bluetoothName: String) -> Unit,
+    onAddVehicle: (name: String, bluetoothAddress: String, bluetoothName: String, onResult: (Boolean) -> Unit) -> Unit,
     /** Reports whether the edit was stored; the dialog stays open when it was not. */
     onEditVehicle: (VehicleEntity, (Boolean) -> Unit) -> Unit,
     onDeleteVehicle: (VehicleEntity) -> Unit,
@@ -163,8 +163,11 @@ fun VehiclesSheet(
             devices = devices,
             onDismiss = { showAddDialog = false },
             onSave = { name, bluetoothAddress, bluetoothName ->
-                onAddVehicle(name, bluetoothAddress, bluetoothName)
-                showAddDialog = false
+                onAddVehicle(name, bluetoothAddress, bluetoothName) { added ->
+                    // On a duplicate address the repository refuses: keep the dialog (and what the
+                    // user typed) open, exactly like the edit dialog does.
+                    if (added) showAddDialog = false
+                }
             },
         )
     }

@@ -134,12 +134,19 @@ class FakeParkingRepository(
 
 class FakeSettingsRepository(
     onboardingCompleted: Boolean = true,
+    backgroundRationaleShown: Boolean = false,
 ) : SettingsRepository {
     private val completed = MutableStateFlow(onboardingCompleted)
+    private val rationaleShown = MutableStateFlow(backgroundRationaleShown)
     override val isOnboardingCompleted: Flow<Boolean> = completed
+    override val isBackgroundLocationRationaleShown: Flow<Boolean> = rationaleShown
 
     override suspend fun setOnboardingCompleted() {
         completed.value = true
+    }
+
+    override suspend fun setBackgroundLocationRationaleShown() {
+        rationaleShown.value = true
     }
 }
 

@@ -29,6 +29,7 @@ import com.dicren.autospot.ui.format.ParkingTimeFormatter
 fun LocationCard(
     location: ParkingLocationEntity,
     timeFormatter: ParkingTimeFormatter,
+    nowMillis: Long,
     historyCount: Int,
     isFromHistory: Boolean,
     onShareClick: () -> Unit,
@@ -57,7 +58,7 @@ fun LocationCard(
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        text = timeFormatter.format(location.timestamp, System.currentTimeMillis()),
+                        text = timeFormatter.format(location.timestamp, nowMillis),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )

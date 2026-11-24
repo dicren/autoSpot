@@ -27,6 +27,7 @@ import com.dicren.autospot.util.BluetoothDeviceInfo
 fun ParkingSheets(
     state: ParkingUiState,
     timeFormatter: ParkingTimeFormatter,
+    nowMillis: Long,
     canReadBluetooth: Boolean,
     devices: List<BluetoothDeviceInfo>,
     showVehicles: Boolean,
@@ -40,7 +41,7 @@ fun ParkingSheets(
     onRequestClearHistory: () -> Unit,
     onClearHistory: () -> Unit,
     onActivateVehicle: (VehicleEntity) -> Unit,
-    onAddVehicle: (name: String, bluetoothAddress: String, bluetoothName: String) -> Unit,
+    onAddVehicle: (name: String, bluetoothAddress: String, bluetoothName: String, onResult: (Boolean) -> Unit) -> Unit,
     onEditVehicle: (VehicleEntity, (Boolean) -> Unit) -> Unit,
     onDeleteVehicle: (VehicleEntity) -> Unit,
 ) {
@@ -73,6 +74,7 @@ fun ParkingSheets(
             HistorySheet(
                 locations = state.locations,
                 timeFormatter = timeFormatter,
+                nowMillis = nowMillis,
                 onLocationSelected = onSelectLocation,
                 onDeleteLocation = onDeleteLocation,
                 onRequestClearAll = onRequestClearHistory,

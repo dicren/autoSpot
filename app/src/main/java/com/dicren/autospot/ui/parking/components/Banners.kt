@@ -30,8 +30,8 @@ import com.dicren.autospot.R
 @Composable
 fun PermissionBanner(
     onGrantClick: () -> Unit,
-    isApproximateOnly: Boolean = false,
     modifier: Modifier = Modifier,
+    isApproximateOnly: Boolean = false,
 ) {
     Banner(
         title =

@@ -11,10 +11,12 @@ import com.dicren.autospot.data.AppDatabase
 import com.dicren.autospot.data.ParkingRepository
 import com.dicren.autospot.data.RoomParkingRepository
 import com.dicren.autospot.data.RoomVehicleRepository
+import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.util.FakeSettingsRepository
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
@@ -72,10 +74,11 @@ class ParkingViewModelTest {
     @After
     fun tearDown() = db.close()
 
-    private fun viewModel(): ParkingViewModel =
+    private fun viewModel(settings: SettingsRepository = FakeSettingsRepository()): ParkingViewModel =
         ParkingViewModel(
             vehicleRepository = vehicles,
             parkingRepository = parking,
+            settingsRepository = settings,
             saveParkingLocation =
                 SaveParkingLocationUseCase(
                     vehicleRepository = vehicles,
@@ -233,6 +236,57 @@ class ParkingViewModelTest {
             viewModel.events.test {
                 viewModel.addVehicle("B", "AA:BB:CC:DD:EE:01", "Car")
                 assertEquals(ParkingEvent.DuplicateVehicle, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `adding a duplicate tells the caller so the dialog can stay open`() =
+        runTest {
+            addVehicle("A")
+            val viewModel = viewModel()
+            var added: Boolean? = null
+
+            viewModel.events.test {
+                viewModel.addVehicle("B", "AA:BB:CC:DD:EE:01", "Car") { added = it }
+                assertEquals(ParkingEvent.DuplicateVehicle, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+
+            assertEquals(false, added)
+        }
+
+    @Test
+    fun `the background rationale is asked once and then stays silent`() =
+        runTest {
+            addVehicle()
+            backgroundLocation = false
+            val viewModel = viewModel(FakeSettingsRepository(backgroundRationaleShown = false))
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (!state.isReady || state.vehicles.isEmpty()) state = awaitItem()
+                assertTrue(state.needsBackgroundLocationRationale)
+
+                viewModel.markBackgroundRationaleShown()
+                while (state.needsBackgroundLocationRationale) state = awaitItem()
+
+                assertFalse(state.needsBackgroundLocationRationale)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `the background rationale waits until a vehicle exists`() =
+        runTest {
+            backgroundLocation = false
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (!state.isReady) state = awaitItem()
+                assertTrue(state.vehicles.isEmpty())
+                assertFalse(state.needsBackgroundLocationRationale)
                 cancelAndIgnoreRemainingEvents()
             }
         }

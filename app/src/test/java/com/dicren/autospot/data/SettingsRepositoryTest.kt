@@ -60,6 +60,18 @@ class SettingsRepositoryTest {
         }
 
     @Test
+    fun `the background location rationale flag is persisted`() =
+        runTest {
+            val repository = repository()
+
+            assertFalse(repository.isBackgroundLocationRationaleShown.first())
+
+            repository.setBackgroundLocationRationaleShown()
+
+            assertTrue(repository.isBackgroundLocationRationaleShown.first())
+        }
+
+    @Test
     fun `a corrupt preferences file does not crash the app`() =
         runTest {
             file.parentFile?.mkdirs()

@@ -50,6 +50,9 @@ class ParkingComponentsTest {
             timestamp = System.currentTimeMillis() - 5 * 60_000L,
         )
 
+    /** A clock five minutes after the saved spot, so the rendered text is deterministic. */
+    private val nowMillis = location.timestamp + 5 * 60_000L
+
     @Test
     fun `the empty state invites the user to save a location`() {
         var clicked = false
@@ -107,6 +110,7 @@ class ParkingComponentsTest {
                 LocationCard(
                     location = location,
                     timeFormatter = formatter,
+                    nowMillis = nowMillis,
                     historyCount = 1,
                     isFromHistory = false,
                     onShareClick = {},
@@ -130,6 +134,7 @@ class ParkingComponentsTest {
                 LocationCard(
                     location = location,
                     timeFormatter = formatter,
+                    nowMillis = nowMillis,
                     historyCount = 3,
                     isFromHistory = true,
                     onShareClick = {},
@@ -178,6 +183,7 @@ class ParkingComponentsTest {
                 HistorySheet(
                     locations = listOf(location),
                     timeFormatter = formatter,
+                    nowMillis = nowMillis,
                     onLocationSelected = {},
                     onDeleteLocation = {},
                     onRequestClearAll = { cleared = true },
@@ -199,6 +205,7 @@ class ParkingComponentsTest {
                 HistorySheet(
                     locations = emptyList(),
                     timeFormatter = formatter,
+                    nowMillis = nowMillis,
                     onLocationSelected = {},
                     onDeleteLocation = {},
                     onRequestClearAll = {},
@@ -242,7 +249,7 @@ class ParkingComponentsTest {
                     canReadBluetooth = true,
                     devices = emptyList(),
                     onVehicleClick = {},
-                    onAddVehicle = { _, _, _ -> },
+                    onAddVehicle = { _, _, _, _ -> },
                     onEditVehicle = { _, _ -> },
                     onDeleteVehicle = { deleted = it },
                 )
@@ -270,7 +277,7 @@ class ParkingComponentsTest {
                     canReadBluetooth = true,
                     devices = listOf(device),
                     onVehicleClick = {},
-                    onAddVehicle = { _, _, _ -> },
+                    onAddVehicle = { _, _, _, _ -> },
                     onEditVehicle = { _, onResult -> editResult = onResult },
                     onDeleteVehicle = {},
                 )
@@ -289,5 +296,40 @@ class ParkingComponentsTest {
 
         editResult?.invoke(true)
         composeRule.onNodeWithText("Edit vehicle").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a duplicate add keeps the dialog open instead of discarding the changes`() {
+        val device = BluetoothDeviceInfo(name = "R-LINK", address = "AA:BB:CC:DD:EE:01")
+        var addResult: ((Boolean) -> Unit)? = null
+
+        composeRule.setContent {
+            AutoSpotTheme {
+                VehiclesSheet(
+                    vehicles = emptyList(),
+                    activeVehicle = null,
+                    canReadBluetooth = true,
+                    devices = listOf(device),
+                    onVehicleClick = {},
+                    onAddVehicle = { _, _, _, onResult -> addResult = onResult },
+                    onEditVehicle = { _, _ -> },
+                    onDeleteVehicle = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Add vehicle").performClick()
+        composeRule.onNodeWithText("Select Bluetooth device").performClick()
+        composeRule.onNodeWithText("R-LINK").performClick()
+        composeRule.onNodeWithText("Save").performClick()
+
+        // The repository has not answered yet; nothing may close the dialog.
+        composeRule.onNodeWithText("Add vehicle").assertIsDisplayed()
+
+        addResult?.invoke(false)
+        composeRule.onNodeWithText("Add vehicle").assertIsDisplayed()
+
+        addResult?.invoke(true)
+        composeRule.onNodeWithText("Add vehicle").assertDoesNotExist()
     }
 }

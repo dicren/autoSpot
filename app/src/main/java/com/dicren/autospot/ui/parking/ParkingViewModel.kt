@@ -10,6 +10,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import com.dicren.autospot.data.AddVehicleResult
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.ParkingRepository
+import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
@@ -36,6 +37,7 @@ import kotlinx.coroutines.launch
 class ParkingViewModel(
     private val vehicleRepository: VehicleRepository,
     private val parkingRepository: ParkingRepository,
+    private val settingsRepository: SettingsRepository,
     private val saveParkingLocation: SaveParkingLocationUseCase,
     private val hasMonitoringPermission: () -> Boolean,
     private val locationAccuracy: () -> LocationAccuracy,
@@ -89,7 +91,11 @@ class ParkingViewModel(
         }
 
     val uiState: StateFlow<ParkingUiState> =
-        combine(content, flags) { content, flags ->
+        combine(
+            content,
+            flags,
+            settingsRepository.isBackgroundLocationRationaleShown,
+        ) { content, flags, rationaleShown ->
             ParkingUiState(
                 vehicles = content.vehicles,
                 activeVehicle = content.activeVehicle,
@@ -100,6 +106,7 @@ class ParkingViewModel(
                 hasBackgroundLocationPermission = flags.hasBackgroundLocationPermission,
                 isLocationEnabled = flags.isLocationEnabled,
                 isSaving = flags.isSaving,
+                backgroundLocationRationaleShown = rationaleShown,
                 // Reaching this block means the repository flows emitted at least once.
                 isReady = true,
             )
@@ -143,16 +150,20 @@ class ParkingViewModel(
         if (isSaving.value) return
         viewModelScope.launch {
             isSaving.value = true
-            val result = saveParkingLocation.save(null)
-            isSaving.value = false
-            eventsFlow.emit(
-                when (result) {
-                    is SaveResult.Saved -> ParkingEvent.LocationSaved
-                    SaveResult.NoVehicle -> ParkingEvent.NoVehicle
-                    SaveResult.NoPermission -> ParkingEvent.PermissionMissing
-                    SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
-                },
-            )
+            try {
+                val result = saveParkingLocation.save(null)
+                eventsFlow.emit(
+                    when (result) {
+                        is SaveResult.Saved -> ParkingEvent.LocationSaved
+                        SaveResult.NoVehicle -> ParkingEvent.NoVehicle
+                        SaveResult.NoPermission -> ParkingEvent.PermissionMissing
+                        SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
+                    },
+                )
+            } finally {
+                // Also runs when the view model is cleared mid-save.
+                isSaving.value = false
+            }
         }
     }
 
@@ -160,15 +171,22 @@ class ParkingViewModel(
         name: String,
         bluetoothAddress: String,
         bluetoothName: String,
+        /** Receives true when the vehicle was stored, false when the address was taken. */
+        onResult: (Boolean) -> Unit = {},
     ) {
         viewModelScope.launch {
-            when (vehicleRepository.addVehicle(name, bluetoothAddress, bluetoothName)) {
-                is AddVehicleResult.Added -> Unit
-
+            val result = vehicleRepository.addVehicle(name, bluetoothAddress, bluetoothName)
+            if (result is AddVehicleResult.Duplicate) {
                 // The list and the active vehicle update themselves.
-                is AddVehicleResult.Duplicate -> eventsFlow.emit(ParkingEvent.DuplicateVehicle)
+                eventsFlow.emit(ParkingEvent.DuplicateVehicle)
             }
+            onResult(result is AddVehicleResult.Added)
         }
+    }
+
+    /** Records that the background-location explanation was shown, so it is not repeated. */
+    fun markBackgroundRationaleShown() {
+        viewModelScope.launch { settingsRepository.setBackgroundLocationRationaleShown() }
     }
 
     /**
@@ -218,6 +236,7 @@ class ParkingViewModel(
                     ParkingViewModel(
                         vehicleRepository = container.vehicleRepository,
                         parkingRepository = container.parkingRepository,
+                        settingsRepository = container.settingsRepository,
                         saveParkingLocation = container.saveParkingLocationUseCase,
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
                         locationAccuracy = { Permissions.locationAccuracy(appContext) },

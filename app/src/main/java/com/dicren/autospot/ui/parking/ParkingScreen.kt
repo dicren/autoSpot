@@ -41,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -64,6 +65,7 @@ import com.dicren.autospot.ui.parking.components.LocationServicesBanner
 import com.dicren.autospot.ui.parking.components.NoLocationCard
 import com.dicren.autospot.ui.parking.components.PermissionBanner
 import com.dicren.autospot.ui.parking.components.VehicleCard
+import com.dicren.autospot.util.BluetoothDeviceInfo
 import com.dicren.autospot.util.BluetoothDevices
 import com.dicren.autospot.util.MapsIntents
 import com.dicren.autospot.util.Permissions
@@ -73,9 +75,15 @@ import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.rememberCameraPositionState
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 private const val TAG = "ParkingScreen"
+
+/** How often the relative "parked at" text is refreshed while the screen stays composed. */
+private const val NOW_TICK_MILLIS = 60_000L
 
 /** Builds the ViewModel from the application container. */
 @Composable
@@ -128,13 +136,20 @@ fun ParkingScreen(
     var showHistorySheet by rememberSaveable { mutableStateOf(false) }
     var confirmClearHistory by rememberSaveable { mutableStateOf(false) }
     var showBackgroundRationale by rememberSaveable { mutableStateOf(false) }
-    var backgroundRationaleShown by rememberSaveable { mutableStateOf(false) }
     val cameraPositionState = rememberCameraPositionState()
+    val nowMillis = rememberNow()
     val canReadBluetooth = Permissions.hasBluetoothConnect(context)
-    val devices =
-        remember(showVehiclesSheet, canReadBluetooth) {
-            if (showVehiclesSheet) BluetoothDevices.paired(context, canReadBluetooth) else emptyList()
-        }
+    // Reading bonded devices is a binder call: keep it off the main thread and only while the
+    // sheet is actually open.
+    var devices by remember { mutableStateOf(emptyList<BluetoothDeviceInfo>()) }
+    LaunchedEffect(showVehiclesSheet, canReadBluetooth) {
+        devices =
+            if (showVehiclesSheet) {
+                withContext(Dispatchers.IO) { BluetoothDevices.paired(context, canReadBluetooth) }
+            } else {
+                emptyList()
+            }
+    }
 
     // Permissions can change while the app is in the background (user went to Settings).
     LaunchedEffect(lifecycleOwner) {
@@ -173,10 +188,15 @@ fun ParkingScreen(
     }
 
     // Explain the "Allow all the time" requirement before Android sends the user to its settings
-    // page; shown once per screen so a rotation does not reopen it.
-    LaunchedEffect(state.isReady, state.hasLocationPermission, state.hasBackgroundLocationPermission) {
-        if (state.needsBackgroundLocationRationale(backgroundRationaleShown)) {
-            backgroundRationaleShown = true
+    // page. The fact that it was shown is persisted, so it is not repeated on every cold start.
+    LaunchedEffect(
+        state.isReady,
+        state.hasLocationPermission,
+        state.hasBackgroundLocationPermission,
+        state.vehicles.isNotEmpty(),
+    ) {
+        if (state.needsBackgroundLocationRationale) {
+            viewModel.markBackgroundRationaleShown()
             showBackgroundRationale = true
         }
     }
@@ -217,7 +237,9 @@ fun ParkingScreen(
                     ).padding(16.dp),
         ) {
             if (state.isReady) {
-                if (!state.hasMonitoringPermission) {
+                // The rationale dialog already explains the missing background grant; showing the
+                // generic banner at the same time would ask for the same thing twice.
+                if (!state.hasMonitoringPermission && !showBackgroundRationale) {
                     PermissionBanner(
                         isApproximateOnly = state.isLocationApproximate,
                         onGrantClick = { context.openAppSettings() },
@@ -301,6 +323,7 @@ fun ParkingScreen(
             LocationCard(
                 location = displayLocation,
                 timeFormatter = timeFormatter,
+                nowMillis = nowMillis,
                 historyCount = state.locations.size,
                 isFromHistory = state.isShowingHistory,
                 onShareClick = {
@@ -359,6 +382,7 @@ fun ParkingScreen(
     ParkingSheets(
         state = state,
         timeFormatter = timeFormatter,
+        nowMillis = nowMillis,
         canReadBluetooth = canReadBluetooth,
         devices = devices,
         showVehicles = showVehiclesSheet,
@@ -441,6 +465,21 @@ private fun CompassFab(
             )
         }
     }
+}
+
+/**
+ * A wall clock that advances once a minute. Reading the clock inside composition would freeze
+ * "5 minutes ago" until some unrelated state changed, which is exactly what the card showed.
+ */
+@Composable
+private fun rememberNow(): Long {
+    val now by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            delay(NOW_TICK_MILLIS)
+            value = System.currentTimeMillis()
+        }
+    }
+    return now
 }
 
 private data class ParkingMessages(

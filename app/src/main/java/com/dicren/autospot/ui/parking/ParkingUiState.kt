@@ -16,6 +16,8 @@ data class ParkingUiState(
     val hasBackgroundLocationPermission: Boolean = false,
     val isLocationEnabled: Boolean = true,
     val isSaving: Boolean = false,
+    /** True once the persisted "allow all the time" explanation has been shown. */
+    val backgroundLocationRationaleShown: Boolean = false,
     /** False until the first real emission; the defaults must not drive service or banners. */
     val isReady: Boolean = false,
 ) {
@@ -37,9 +39,17 @@ data class ParkingUiState(
     /**
      * True when the app must explain the "Allow all the time" requirement before sending the
      * user to the system background-location screen.
+     *
+     * It is only asked once, after precise location is granted and a vehicle exists: there is no
+     * point in requesting background access before there is something to monitor.
      */
-    fun needsBackgroundLocationRationale(alreadyAsked: Boolean): Boolean =
-        isReady && hasLocationPermission && !hasBackgroundLocationPermission && !alreadyAsked
+    val needsBackgroundLocationRationale: Boolean
+        get() =
+            isReady &&
+                hasLocationPermission &&
+                !hasBackgroundLocationPermission &&
+                vehicles.isNotEmpty() &&
+                !backgroundLocationRationaleShown
 }
 
 /** One-shot things to tell the user, shown as a snackbar. */

@@ -1,7 +1,7 @@
 package com.dicren.autospot.ui.parking.components
 
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.tooling.preview.Preview
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.VehicleEntity
@@ -44,7 +44,8 @@ private fun LocationCardPreview() {
     AutoSpotTheme {
         LocationCard(
             location = previewLocation,
-            timeFormatter = ParkingTimeFormatter(LocalContext.current.resources),
+            timeFormatter = ParkingTimeFormatter(LocalResources.current),
+            nowMillis = previewLocation.timestamp + 5 * 60_000L,
             historyCount = 3,
             isFromHistory = false,
             onShareClick = {},
