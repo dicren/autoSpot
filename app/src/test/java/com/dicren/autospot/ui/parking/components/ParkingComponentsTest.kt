@@ -13,6 +13,7 @@ import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.theme.AutoSpotTheme
+import com.dicren.autospot.util.BluetoothDeviceInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -159,6 +160,17 @@ class ParkingComponentsTest {
     }
 
     @Test
+    fun `the permission banner names approximate location as the cause`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                PermissionBanner(onGrantClick = {}, isApproximateOnly = true)
+            }
+        }
+
+        composeRule.onNodeWithText("Precise location required").assertIsDisplayed()
+    }
+
+    @Test
     fun `the history sheet lists entries and offers to clear them`() {
         var cleared = false
         composeRule.setContent {
@@ -205,6 +217,7 @@ class ParkingComponentsTest {
                 VehicleEditDialog(
                     vehicle = null,
                     canReadBluetooth = false,
+                    devices = emptyList(),
                     onDismiss = {},
                     onSave = { _, _, _ -> },
                 )
@@ -227,9 +240,10 @@ class ParkingComponentsTest {
                     vehicles = listOf(vehicle),
                     activeVehicle = vehicle,
                     canReadBluetooth = true,
+                    devices = emptyList(),
                     onVehicleClick = {},
                     onAddVehicle = { _, _, _ -> },
-                    onEditVehicle = {},
+                    onEditVehicle = { _, _ -> },
                     onDeleteVehicle = { deleted = it },
                 )
             }
@@ -241,5 +255,39 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Delete").performClick()
 
         assertEquals(vehicle.id, deleted?.id)
+    }
+
+    @Test
+    fun `a failed edit keeps the dialog open instead of discarding the changes`() {
+        val device = BluetoothDeviceInfo(name = "R-LINK", address = "AA:BB:CC:DD:EE:01")
+        var editResult: ((Boolean) -> Unit)? = null
+
+        composeRule.setContent {
+            AutoSpotTheme {
+                VehiclesSheet(
+                    vehicles = listOf(vehicle),
+                    activeVehicle = vehicle,
+                    canReadBluetooth = true,
+                    devices = listOf(device),
+                    onVehicleClick = {},
+                    onAddVehicle = { _, _, _ -> },
+                    onEditVehicle = { _, onResult -> editResult = onResult },
+                    onDeleteVehicle = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Edit vehicle").performClick()
+        // The edited vehicle already has a Bluetooth address, so Save is enabled right away.
+        composeRule.onNodeWithText("Save").performClick()
+
+        // The repository has not answered yet; nothing may close the dialog.
+        composeRule.onNodeWithText("Edit vehicle").assertIsDisplayed()
+
+        editResult?.invoke(false)
+        composeRule.onNodeWithText("Edit vehicle").assertIsDisplayed()
+
+        editResult?.invoke(true)
+        composeRule.onNodeWithText("Edit vehicle").assertDoesNotExist()
     }
 }

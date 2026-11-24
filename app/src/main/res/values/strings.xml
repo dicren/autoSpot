@@ -94,6 +94,13 @@
     <string name="permissions_required">Permissions required</string>
     <string name="permissions_required_description">Enable location set to \"Always\" with precise location, and Bluetooth permission.</string>
     <string name="grant_permissions">Grant permissions</string>
+    <string name="precise_location_required">Precise location required</string>
+    <string name="precise_location_required_description">AutoSpot needs precise location to remember where you parked. Allow it in Settings.</string>
+    <string name="background_location_title">Allow location all the time</string>
+    <string name="background_location_description">AutoSpot saves your parking spot when you disconnect from your car\'s Bluetooth, even with the app closed. On the next screen, choose “Allow all the time”.</string>
+    <string name="continue_label">Continue</string>
+    <string name="not_now">Not now</string>
+    <string name="location_permission_missing">Location permission is missing. Allow it to save your parking spot.</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">That Bluetooth device is already configured.</string>

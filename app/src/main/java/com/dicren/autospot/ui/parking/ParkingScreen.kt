@@ -1,11 +1,9 @@
 package com.dicren.autospot.ui.parking
 
 import android.Manifest
-import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
@@ -31,19 +29,16 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -64,24 +59,20 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dicren.autospot.R
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
-import com.dicren.autospot.ui.parking.components.HistorySheet
 import com.dicren.autospot.ui.parking.components.LocationCard
 import com.dicren.autospot.ui.parking.components.LocationServicesBanner
 import com.dicren.autospot.ui.parking.components.NoLocationCard
 import com.dicren.autospot.ui.parking.components.PermissionBanner
 import com.dicren.autospot.ui.parking.components.VehicleCard
-import com.dicren.autospot.ui.parking.components.VehiclesSheet
+import com.dicren.autospot.util.BluetoothDevices
 import com.dicren.autospot.util.MapsIntents
 import com.dicren.autospot.util.Permissions
+import com.dicren.autospot.util.openAppSettings
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
+import com.google.maps.android.compose.CameraPositionState
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.launch
 
 private const val TAG = "ParkingScreen"
@@ -96,7 +87,6 @@ fun ParkingScreen(modifier: Modifier = Modifier) {
     ParkingScreen(viewModel = viewModel, modifier = modifier)
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ParkingScreen(
     viewModel: ParkingViewModel,
@@ -115,6 +105,7 @@ fun ParkingScreen(
             saved = stringResource(R.string.location_saved),
             saveFailed = stringResource(R.string.notification_save_failed_title),
             noVehicle = stringResource(R.string.no_vehicle_configured),
+            permissionMissing = stringResource(R.string.location_permission_missing),
             duplicateVehicle = stringResource(R.string.vehicle_duplicate),
             updateConflict = stringResource(R.string.vehicle_update_conflict),
             mapsNotInstalled = stringResource(R.string.maps_not_found),
@@ -126,12 +117,24 @@ fun ParkingScreen(
             ActivityResultContracts.RequestPermission(),
         ) { /* Notifications are optional: the services keep running without them. */ }
 
+    // Android 11+ answers this request by sending the user to the system's location page; the
+    // flags are refreshed on resume, and immediately here for the versions that answer inline.
+    val backgroundLocationLauncher =
+        rememberLauncherForActivityResult(
+            ActivityResultContracts.RequestPermission(),
+        ) { viewModel.refreshEnvironment() }
+
     var showVehiclesSheet by rememberSaveable { mutableStateOf(false) }
     var showHistorySheet by rememberSaveable { mutableStateOf(false) }
     var confirmClearHistory by rememberSaveable { mutableStateOf(false) }
-    val vehiclesSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    val historySheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
+    var showBackgroundRationale by rememberSaveable { mutableStateOf(false) }
+    var backgroundRationaleShown by rememberSaveable { mutableStateOf(false) }
     val cameraPositionState = rememberCameraPositionState()
+    val canReadBluetooth = Permissions.hasBluetoothConnect(context)
+    val devices =
+        remember(showVehiclesSheet, canReadBluetooth) {
+            if (showVehiclesSheet) BluetoothDevices.paired(context, canReadBluetooth) else emptyList()
+        }
 
     // Permissions can change while the app is in the background (user went to Settings).
     LaunchedEffect(lifecycleOwner) {
@@ -169,6 +172,15 @@ fun ParkingScreen(
         }
     }
 
+    // Explain the "Allow all the time" requirement before Android sends the user to its settings
+    // page; shown once per screen so a rotation does not reopen it.
+    LaunchedEffect(state.isReady, state.hasLocationPermission, state.hasBackgroundLocationPermission) {
+        if (state.needsBackgroundLocationRationale(backgroundRationaleShown)) {
+            backgroundRationaleShown = true
+            showBackgroundRationale = true
+        }
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             snackbarHostState.showSnackbar(messages.forEvent(event))
@@ -186,29 +198,12 @@ fun ParkingScreen(
 
     Box(modifier = modifier.fillMaxSize()) {
         if (displayLocation != null) {
-            val position = LatLng(displayLocation.latitude, displayLocation.longitude)
-
-            @SuppressLint("MissingPermission")
-            GoogleMap(
-                modifier = Modifier.fillMaxSize(),
+            ParkingMap(
+                location = displayLocation,
+                isMyLocationEnabled = state.hasLocationPermission,
                 cameraPositionState = cameraPositionState,
-                properties =
-                    MapProperties(
-                        // The Maps SDK throws SecurityException if the blue dot is enabled without
-                        // the location permission (e.g. after revoking it in Settings).
-                        isMyLocationEnabled = state.hasLocationPermission,
-                    ),
-                uiSettings =
-                    MapUiSettings(
-                        zoomControlsEnabled = false,
-                        myLocationButtonEnabled = false,
-                    ),
-            ) {
-                Marker(
-                    state = rememberUpdatedMarkerState(position = position),
-                    title = stringResource(R.string.marker_title),
-                )
-            }
+                modifier = Modifier.fillMaxSize(),
+            )
         }
 
         Column(
@@ -224,6 +219,7 @@ fun ParkingScreen(
             if (state.isReady) {
                 if (!state.hasMonitoringPermission) {
                     PermissionBanner(
+                        isApproximateOnly = state.isLocationApproximate,
                         onGrantClick = { context.openAppSettings() },
                     )
                     Spacer(modifier = Modifier.height(8.dp))
@@ -243,10 +239,23 @@ fun ParkingScreen(
             }
         }
 
-        AnimatedVisibility(
-            visible = cameraPositionState.position.bearing != 0f,
-            enter = fadeIn(),
-            exit = fadeOut(),
+        CompassFab(
+            cameraPositionState = cameraPositionState,
+            onReset = {
+                coroutineScope.launch {
+                    cameraPositionState.animate(
+                        CameraUpdateFactory.newCameraPosition(
+                            CameraPosition
+                                .Builder()
+                                .target(cameraPositionState.position.target)
+                                .zoom(cameraPositionState.position.zoom)
+                                .bearing(0f)
+                                .tilt(0f)
+                                .build(),
+                        ),
+                    )
+                }
+            },
             modifier =
                 Modifier
                     .align(Alignment.TopEnd)
@@ -255,34 +264,7 @@ fun ParkingScreen(
                             WindowInsetsSides.Top + WindowInsetsSides.End,
                         ),
                     ).padding(top = 92.dp, end = 16.dp),
-        ) {
-            FloatingActionButton(
-                onClick = {
-                    coroutineScope.launch {
-                        cameraPositionState.animate(
-                            CameraUpdateFactory.newCameraPosition(
-                                CameraPosition
-                                    .Builder()
-                                    .target(cameraPositionState.position.target)
-                                    .zoom(cameraPositionState.position.zoom)
-                                    .bearing(0f)
-                                    .tilt(0f)
-                                    .build(),
-                            ),
-                        )
-                    }
-                },
-                modifier = Modifier.size(40.dp),
-                containerColor = MaterialTheme.colorScheme.surface,
-                contentColor = MaterialTheme.colorScheme.onSurface,
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Explore,
-                    contentDescription = stringResource(R.string.reset_orientation),
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-        }
+        )
 
         if (displayLocation != null) {
             FloatingActionButton(
@@ -374,70 +356,90 @@ fun ParkingScreen(
         )
     }
 
-    if (showVehiclesSheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showVehiclesSheet = false },
-            sheetState = vehiclesSheetState,
-        ) {
-            VehiclesSheet(
-                vehicles = state.vehicles,
-                activeVehicle = state.activeVehicle,
-                canReadBluetooth = Permissions.hasBluetoothConnect(context),
-                onVehicleClick = viewModel::activateVehicle,
-                onAddVehicle = viewModel::addVehicle,
-                onEditVehicle = viewModel::updateVehicle,
-                onDeleteVehicle = viewModel::deleteVehicle,
-            )
-        }
-    }
+    ParkingSheets(
+        state = state,
+        timeFormatter = timeFormatter,
+        canReadBluetooth = canReadBluetooth,
+        devices = devices,
+        showVehicles = showVehiclesSheet,
+        showHistory = showHistorySheet,
+        confirmClearHistory = confirmClearHistory,
+        onDismissVehicles = { showVehiclesSheet = false },
+        onDismissHistory = { showHistorySheet = false },
+        onCancelClearHistory = { confirmClearHistory = false },
+        onSelectLocation = { location ->
+            viewModel.selectLocation(location)
+            showHistorySheet = false
+        },
+        onDeleteLocation = viewModel::deleteLocation,
+        onRequestClearHistory = { confirmClearHistory = true },
+        onClearHistory = {
+            viewModel.clearHistory()
+            confirmClearHistory = false
+            showHistorySheet = false
+        },
+        onActivateVehicle = viewModel::activateVehicle,
+        onAddVehicle = viewModel::addVehicle,
+        onEditVehicle = viewModel::updateVehicle,
+        onDeleteVehicle = viewModel::deleteVehicle,
+    )
 
-    if (showHistorySheet) {
-        ModalBottomSheet(
-            onDismissRequest = { showHistorySheet = false },
-            sheetState = historySheetState,
-        ) {
-            HistorySheet(
-                locations = state.locations,
-                timeFormatter = timeFormatter,
-                onLocationSelected = { location ->
-                    viewModel.selectLocation(location)
-                    showHistorySheet = false
-                },
-                onDeleteLocation = viewModel::deleteLocation,
-                onRequestClearAll = { confirmClearHistory = true },
-            )
-        }
-    }
-
-    if (confirmClearHistory) {
+    if (showBackgroundRationale) {
         AlertDialog(
-            onDismissRequest = { confirmClearHistory = false },
-            title = { Text(stringResource(R.string.clear_all)) },
-            text = {
-                Text(
-                    stringResource(
-                        R.string.clear_all_message,
-                        state.activeVehicle?.name.orEmpty(),
-                    ),
-                )
-            },
+            onDismissRequest = { showBackgroundRationale = false },
+            title = { Text(stringResource(R.string.background_location_title)) },
+            text = { Text(stringResource(R.string.background_location_description)) },
             confirmButton = {
                 Button(
                     onClick = {
-                        viewModel.clearHistory()
-                        confirmClearHistory = false
-                        showHistorySheet = false
+                        showBackgroundRationale = false
+                        backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
                     },
                 ) {
-                    Text(stringResource(R.string.delete))
+                    Text(stringResource(R.string.continue_label))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClearHistory = false }) {
-                    Text(stringResource(R.string.cancel))
+                TextButton(onClick = { showBackgroundRationale = false }) {
+                    Text(stringResource(R.string.not_now))
                 }
             },
         )
+    }
+}
+
+/**
+ * Own composable so the camera position is only read here: reading it in the screen body would
+ * recompose the whole screen (map included) while the user pans or rotates the map.
+ */
+@Composable
+private fun CompassFab(
+    cameraPositionState: CameraPositionState,
+    onReset: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val bearing by remember(cameraPositionState) {
+        derivedStateOf { cameraPositionState.position.bearing }
+    }
+
+    AnimatedVisibility(
+        visible = bearing != 0f,
+        enter = fadeIn(),
+        exit = fadeOut(),
+        modifier = modifier,
+    ) {
+        FloatingActionButton(
+            onClick = onReset,
+            modifier = Modifier.size(40.dp),
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ) {
+            Icon(
+                imageVector = Icons.Default.Explore,
+                contentDescription = stringResource(R.string.reset_orientation),
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -445,6 +447,7 @@ private data class ParkingMessages(
     val saved: String,
     val saveFailed: String,
     val noVehicle: String,
+    val permissionMissing: String,
     val duplicateVehicle: String,
     val updateConflict: String,
     val mapsNotInstalled: String,
@@ -455,18 +458,10 @@ private data class ParkingMessages(
             ParkingEvent.LocationSaved -> saved
             ParkingEvent.SaveFailed -> saveFailed
             ParkingEvent.NoVehicle -> noVehicle
+            ParkingEvent.PermissionMissing -> permissionMissing
             ParkingEvent.DuplicateVehicle -> duplicateVehicle
             ParkingEvent.VehicleUpdateConflict -> updateConflict
         }
-}
-
-private fun Context.openAppSettings() {
-    startActivity(
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        },
-    )
 }
 
 private fun Context.openLocationSettings() {

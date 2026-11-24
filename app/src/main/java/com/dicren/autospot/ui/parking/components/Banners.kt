@@ -23,14 +23,29 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 
+/**
+ * [isApproximateOnly] turns the generic notice into a precise cause: the user granted location
+ * but picked "Approximate", which is not enough to remember a parking spot.
+ */
 @Composable
 fun PermissionBanner(
     onGrantClick: () -> Unit,
+    isApproximateOnly: Boolean = false,
     modifier: Modifier = Modifier,
 ) {
     Banner(
-        title = stringResource(R.string.permissions_required),
-        description = stringResource(R.string.permissions_required_description),
+        title =
+            stringResource(
+                if (isApproximateOnly) R.string.precise_location_required else R.string.permissions_required,
+            ),
+        description =
+            stringResource(
+                if (isApproximateOnly) {
+                    R.string.precise_location_required_description
+                } else {
+                    R.string.permissions_required_description
+                },
+            ),
         actionLabel = stringResource(R.string.grant_permissions),
         onActionClick = onGrantClick,
         modifier = modifier,

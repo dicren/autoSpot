@@ -37,15 +37,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.util.BluetoothDeviceInfo
 
 @Composable
 fun VehiclesSheet(
     vehicles: List<VehicleEntity>,
     activeVehicle: VehicleEntity?,
     canReadBluetooth: Boolean,
+    devices: List<BluetoothDeviceInfo>,
     onVehicleClick: (VehicleEntity) -> Unit,
     onAddVehicle: (name: String, bluetoothAddress: String, bluetoothName: String) -> Unit,
-    onEditVehicle: (VehicleEntity) -> Unit,
+    /** Reports whether the edit was stored; the dialog stays open when it was not. */
+    onEditVehicle: (VehicleEntity, (Boolean) -> Unit) -> Unit,
     onDeleteVehicle: (VehicleEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -157,6 +160,7 @@ fun VehiclesSheet(
         VehicleEditDialog(
             vehicle = null,
             canReadBluetooth = canReadBluetooth,
+            devices = devices,
             onDismiss = { showAddDialog = false },
             onSave = { name, bluetoothAddress, bluetoothName ->
                 onAddVehicle(name, bluetoothAddress, bluetoothName)
@@ -169,6 +173,7 @@ fun VehiclesSheet(
         VehicleEditDialog(
             vehicle = vehicle,
             canReadBluetooth = canReadBluetooth,
+            devices = devices,
             onDismiss = { editingVehicleId = null },
             onSave = { name, bluetoothAddress, bluetoothName ->
                 onEditVehicle(
@@ -177,8 +182,11 @@ fun VehiclesSheet(
                         bluetoothAddress = bluetoothAddress,
                         bluetoothName = bluetoothName,
                     ),
-                )
-                editingVehicleId = null
+                ) { saved ->
+                    // On a duplicate address the repository refuses: keep the dialog (and what
+                    // the user typed) open instead of silently throwing the edit away.
+                    if (saved) editingVehicleId = null
+                }
             },
         )
     }

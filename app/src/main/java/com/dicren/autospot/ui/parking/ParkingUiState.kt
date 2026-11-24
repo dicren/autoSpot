@@ -2,6 +2,7 @@ package com.dicren.autospot.ui.parking
 
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.util.LocationAccuracy
 
 /** Everything the parking screen draws, derived from the repositories. */
 data class ParkingUiState(
@@ -11,7 +12,8 @@ data class ParkingUiState(
     val locations: List<ParkingLocationEntity> = emptyList(),
     val selectedLocationId: Long? = null,
     val hasMonitoringPermission: Boolean = false,
-    val hasLocationPermission: Boolean = false,
+    val locationAccuracy: LocationAccuracy = LocationAccuracy.NONE,
+    val hasBackgroundLocationPermission: Boolean = false,
     val isLocationEnabled: Boolean = true,
     val isSaving: Boolean = false,
     /** False until the first real emission; the defaults must not drive service or banners. */
@@ -25,6 +27,19 @@ data class ParkingUiState(
     val displayLocation: ParkingLocationEntity? get() = selectedLocation ?: latestLocation
 
     val isShowingHistory: Boolean get() = selectedLocation != null
+
+    /** Precise location is what the monitor and the save use case need. */
+    val hasLocationPermission: Boolean get() = locationAccuracy == LocationAccuracy.PRECISE
+
+    /** The user granted location but picked "Approximate". */
+    val isLocationApproximate: Boolean get() = locationAccuracy == LocationAccuracy.COARSE
+
+    /**
+     * True when the app must explain the "Allow all the time" requirement before sending the
+     * user to the system background-location screen.
+     */
+    fun needsBackgroundLocationRationale(alreadyAsked: Boolean): Boolean =
+        isReady && hasLocationPermission && !hasBackgroundLocationPermission && !alreadyAsked
 }
 
 /** One-shot things to tell the user, shown as a snackbar. */
@@ -34,6 +49,9 @@ sealed interface ParkingEvent {
     data object SaveFailed : ParkingEvent
 
     data object NoVehicle : ParkingEvent
+
+    /** The location permission disappeared between the tap and the save. */
+    data object PermissionMissing : ParkingEvent
 
     data object DuplicateVehicle : ParkingEvent
 

@@ -62,13 +62,4 @@ class DisconnectionDebouncerTest {
 
             assertEquals(1, results.count { it })
         }
-
-    @Test
-    fun `clear forgets previous events`() =
-        runTest {
-            assertTrue(debouncer.tryAcquire(1L))
-            debouncer.clear()
-
-            assertTrue(debouncer.tryAcquire(1L))
-        }
 }

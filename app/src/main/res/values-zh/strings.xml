@@ -92,6 +92,13 @@
     <string name="permissions_required">需要权限</string>
     <string name="permissions_required_description">请将位置权限设置为"始终"并启用精确位置，同时授予蓝牙权限。</string>
     <string name="grant_permissions">授予权限</string>
+    <string name="precise_location_required">需要精确位置</string>
+    <string name="precise_location_required_description">AutoSpot 需要精确位置才能记住你的停车位置。请在设置中允许。</string>
+    <string name="background_location_title">始终允许使用位置</string>
+    <string name="background_location_description">即使应用已关闭，AutoSpot 也会在与车载蓝牙断开时保存停车位置。请在下一屏选择“始终允许”。</string>
+    <string name="continue_label">继续</string>
+    <string name="not_now">以后再说</string>
+    <string name="location_permission_missing">缺少位置权限。请允许以保存停车位置。</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">该蓝牙设备已配置。</string>

@@ -96,6 +96,13 @@
     <string name="permissions_required">Autorisations requises</string>
     <string name="permissions_required_description">Activez la localisation sur \"Toujours\" avec la position précise, et l\'autorisation Bluetooth.</string>
     <string name="grant_permissions">Accorder les autorisations</string>
+    <string name="precise_location_required">Localisation précise requise</string>
+    <string name="precise_location_required_description">AutoSpot a besoin de la localisation précise pour mémoriser votre stationnement. Autorisez-la dans les réglages.</string>
+    <string name="background_location_title">Autoriser la localisation en permanence</string>
+    <string name="background_location_description">AutoSpot enregistre votre place lorsque vous vous déconnectez du Bluetooth de votre voiture, même application fermée. Sur l\'écran suivant, choisissez « Autoriser en permanence ».</string>
+    <string name="continue_label">Continuer</string>
+    <string name="not_now">Plus tard</string>
+    <string name="location_permission_missing">L\'autorisation de localisation est manquante. Autorisez-la pour enregistrer votre place.</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Cet appareil Bluetooth est déjà configuré.</string>

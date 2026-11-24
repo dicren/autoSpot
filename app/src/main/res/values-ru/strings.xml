@@ -98,6 +98,13 @@
     <string name="permissions_required">Требуются разрешения</string>
     <string name="permissions_required_description">Включите геолокацию \"Всегда\" с точным местоположением и разрешение Bluetooth.</string>
     <string name="grant_permissions">Предоставить разрешения</string>
+    <string name="precise_location_required">Требуется точное местоположение</string>
+    <string name="precise_location_required_description">AutoSpot нужен точный доступ к местоположению, чтобы запомнить, где вы припарковались. Разрешите его в настройках.</string>
+    <string name="background_location_title">Разрешить доступ к геоданным всегда</string>
+    <string name="background_location_description">AutoSpot сохраняет место парковки, когда связь с Bluetooth автомобиля прерывается, даже если приложение закрыто. На следующем экране выберите «Разрешить всегда».</string>
+    <string name="continue_label">Продолжить</string>
+    <string name="not_now">Не сейчас</string>
+    <string name="location_permission_missing">Нет разрешения на геолокацию. Разрешите его, чтобы сохранить место парковки.</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Это Bluetooth-устройство уже настроено.</string>

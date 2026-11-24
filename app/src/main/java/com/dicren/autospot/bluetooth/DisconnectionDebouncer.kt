@@ -31,6 +31,4 @@ class DisconnectionDebouncer(
                 true
             }
         }
-
-    suspend fun clear() = mutex.withLock { lastHandledAt.clear() }
 }

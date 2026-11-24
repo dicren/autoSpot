@@ -96,6 +96,13 @@
     <string name="permissions_required">Autorizzazioni richieste</string>
     <string name="permissions_required_description">Attiva la posizione su \"Sempre\" con posizione precisa e l\'autorizzazione Bluetooth.</string>
     <string name="grant_permissions">Concedi autorizzazioni</string>
+    <string name="precise_location_required">Posizione precisa necessaria</string>
+    <string name="precise_location_required_description">AutoSpot ha bisogno della posizione precisa per ricordare dove hai parcheggiato. Consentila nelle Impostazioni.</string>
+    <string name="background_location_title">Consenti posizione sempre</string>
+    <string name="background_location_description">AutoSpot salva il parcheggio quando ti disconnetti dal Bluetooth dell\'auto, anche con l\'app chiusa. Nella schermata successiva scegli «Consenti sempre».</string>
+    <string name="continue_label">Continua</string>
+    <string name="not_now">Non ora</string>
+    <string name="location_permission_missing">Manca l\'autorizzazione alla posizione. Consentila per salvare il parcheggio.</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Quel dispositivo Bluetooth è già configurato.</string>

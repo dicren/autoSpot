@@ -15,6 +15,7 @@ import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -48,7 +49,8 @@ class ParkingViewModelTest {
     private lateinit var parking: RoomParkingRepository
     private lateinit var source: FakeLocationSource
     private var monitoringPermission = true
-    private var locationPermission = true
+    private var accuracy = LocationAccuracy.PRECISE
+    private var backgroundLocation = true
     private var gpsEnabled = true
     private var vehicleCount = 0
 
@@ -80,10 +82,11 @@ class ParkingViewModelTest {
                     parkingRepository = parking,
                     locationSource = source,
                     clock = Clock { NOW },
-                    hasLocationPermission = { locationPermission },
+                    hasLocationPermission = { accuracy == LocationAccuracy.PRECISE },
                 ),
             hasMonitoringPermission = { monitoringPermission },
-            hasLocationPermission = { locationPermission },
+            locationAccuracy = { accuracy },
+            hasBackgroundLocationPermission = { backgroundLocation },
             isLocationEnabled = { gpsEnabled },
         )
 
@@ -271,6 +274,36 @@ class ParkingViewModelTest {
                 }
 
                 assertNull(state.selectedLocationId)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `an approximate grant is not treated as a usable location permission`() =
+        runTest {
+            addVehicle()
+            accuracy = LocationAccuracy.COARSE
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locationAccuracy != LocationAccuracy.COARSE) state = awaitItem()
+                assertFalse(state.hasLocationPermission)
+                assertTrue(state.isLocationApproximate)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `saving without the location permission asks for it`() =
+        runTest {
+            addVehicle()
+            accuracy = LocationAccuracy.NONE
+            val viewModel = viewModel()
+
+            viewModel.events.test {
+                viewModel.saveCurrentLocation()
+                assertEquals(ParkingEvent.PermissionMissing, awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
         }

@@ -94,6 +94,13 @@
     <string name="permissions_required">Berechtigungen erforderlich</string>
     <string name="permissions_required_description">Aktivieren Sie den Standort auf \"Immer\" mit genauem Standort und die Bluetooth-Berechtigung.</string>
     <string name="grant_permissions">Berechtigungen erteilen</string>
+    <string name="precise_location_required">Genaue Standortbestimmung erforderlich</string>
+    <string name="precise_location_required_description">AutoSpot benötigt den genauen Standort, um sich an Ihren Parkplatz zu erinnern. Erlauben Sie ihn in den Einstellungen.</string>
+    <string name="background_location_title">Standort immer erlauben</string>
+    <string name="background_location_description">AutoSpot speichert Ihren Parkplatz, wenn die Bluetooth-Verbindung zum Auto endet – auch bei geschlossener App. Wählen Sie im nächsten Bildschirm „Immer erlauben“.</string>
+    <string name="continue_label">Weiter</string>
+    <string name="not_now">Jetzt nicht</string>
+    <string name="location_permission_missing">Die Standortberechtigung fehlt. Erlauben Sie sie, um Ihren Parkplatz zu speichern.</string>
 
     <!-- Refactor additions -->
     <string name="vehicle_duplicate">Dieses Bluetooth-Gerät ist bereits eingerichtet.</string>

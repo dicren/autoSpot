@@ -10,11 +10,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dicren.autospot.ui.OnboardingScreen
 import com.dicren.autospot.ui.parking.ParkingScreen
 import com.dicren.autospot.ui.theme.AutoSpotTheme
@@ -23,21 +23,13 @@ import kotlinx.coroutines.launch
 class MainActivity : ComponentActivity() {
     private val permissionsToRequest = mutableListOf<String>()
 
+    // Background location is requested later, from ParkingScreen, after explaining why it is
+    // needed: Android 11+ sends the user to a settings screen for that permission.
     private val permissionRequest =
         registerForActivityResult(
             ActivityResultContracts.RequestMultiplePermissions(),
-        ) { permissions ->
-            val fineLocationGranted = permissions[Manifest.permission.ACCESS_FINE_LOCATION] ?: false
-            if (fineLocationGranted) {
-                requestBackgroundLocationPermission()
-            }
-        }
-
-    private val backgroundLocationPermissionRequest =
-        registerForActivityResult(
-            ActivityResultContracts.RequestPermission(),
         ) { _ ->
-            // Background permission handled
+            // The parking screen refreshes its own flags when it resumes.
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -56,7 +48,7 @@ class MainActivity : ComponentActivity() {
                 // null means "not read yet": show neither the map nor onboarding until DataStore
                 // answers, instead of flashing the wrong screen on first launch.
                 val onboardingCompleted by container.settingsRepository.isOnboardingCompleted
-                    .collectAsState(initial = null)
+                    .collectAsStateWithLifecycle(initialValue = null)
                 val coroutineScope = rememberCoroutineScope()
 
                 when (onboardingCompleted) {
@@ -106,21 +98,6 @@ class MainActivity : ComponentActivity() {
 
         if (permissionsToRequest.isNotEmpty()) {
             permissionRequest.launch(permissionsToRequest.toTypedArray())
-        } else {
-            requestBackgroundLocationPermission()
-        }
-    }
-
-    private fun requestBackgroundLocationPermission() {
-        val backgroundPermission =
-            ContextCompat.checkSelfPermission(
-                this,
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-            )
-        if (backgroundPermission != PackageManager.PERMISSION_GRANTED) {
-            backgroundLocationPermissionRequest.launch(
-                Manifest.permission.ACCESS_BACKGROUND_LOCATION,
-            )
         }
     }
 }

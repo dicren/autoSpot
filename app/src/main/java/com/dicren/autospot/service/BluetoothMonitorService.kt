@@ -65,7 +65,12 @@ class BluetoothMonitorService : Service() {
                     } catch (e: SecurityException) {
                         "unknown"
                     }
-                val deviceAddress = device?.address
+                val deviceAddress =
+                    try {
+                        device?.address
+                    } catch (e: SecurityException) {
+                        null
+                    }
 
                 // The adapter broadcast uses its own extras; profiles and ACL use the profile ones.
                 val isAdapterEvent = action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED

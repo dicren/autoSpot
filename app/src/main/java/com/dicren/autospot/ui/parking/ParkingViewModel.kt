@@ -15,6 +15,7 @@ import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
+import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -37,7 +38,8 @@ class ParkingViewModel(
     private val parkingRepository: ParkingRepository,
     private val saveParkingLocation: SaveParkingLocationUseCase,
     private val hasMonitoringPermission: () -> Boolean,
-    private val hasLocationPermission: () -> Boolean,
+    private val locationAccuracy: () -> LocationAccuracy,
+    private val hasBackgroundLocationPermission: () -> Boolean,
     private val isLocationEnabled: () -> Boolean,
 ) : ViewModel() {
     private data class Content(
@@ -49,7 +51,8 @@ class ParkingViewModel(
 
     private data class Flags(
         val hasMonitoringPermission: Boolean,
-        val hasLocationPermission: Boolean,
+        val locationAccuracy: LocationAccuracy,
+        val hasBackgroundLocationPermission: Boolean,
         val isLocationEnabled: Boolean,
         val isSaving: Boolean,
     )
@@ -60,7 +63,8 @@ class ParkingViewModel(
         MutableStateFlow(
             Flags(
                 hasMonitoringPermission = hasMonitoringPermission(),
-                hasLocationPermission = hasLocationPermission(),
+                locationAccuracy = locationAccuracy(),
+                hasBackgroundLocationPermission = hasBackgroundLocationPermission(),
                 isLocationEnabled = isLocationEnabled(),
                 isSaving = false,
             ),
@@ -92,7 +96,8 @@ class ParkingViewModel(
                 locations = content.locations,
                 selectedLocationId = content.selectedLocationId,
                 hasMonitoringPermission = flags.hasMonitoringPermission,
-                hasLocationPermission = flags.hasLocationPermission,
+                locationAccuracy = flags.locationAccuracy,
+                hasBackgroundLocationPermission = flags.hasBackgroundLocationPermission,
                 isLocationEnabled = flags.isLocationEnabled,
                 isSaving = flags.isSaving,
                 // Reaching this block means the repository flows emitted at least once.
@@ -120,7 +125,8 @@ class ParkingViewModel(
         flags.value =
             flags.value.copy(
                 hasMonitoringPermission = hasMonitoringPermission(),
-                hasLocationPermission = hasLocationPermission(),
+                locationAccuracy = locationAccuracy(),
+                hasBackgroundLocationPermission = hasBackgroundLocationPermission(),
                 isLocationEnabled = isLocationEnabled(),
             )
     }
@@ -143,7 +149,8 @@ class ParkingViewModel(
                 when (result) {
                     is SaveResult.Saved -> ParkingEvent.LocationSaved
                     SaveResult.NoVehicle -> ParkingEvent.NoVehicle
-                    SaveResult.NoPermission, SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
+                    SaveResult.NoPermission -> ParkingEvent.PermissionMissing
+                    SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
                 },
             )
         }
@@ -164,11 +171,18 @@ class ParkingViewModel(
         }
     }
 
-    fun updateVehicle(vehicle: VehicleEntity) {
+    /**
+     * [onResult] runs after the repository answers, so the edit dialog can stay open when the
+     * Bluetooth address is already taken instead of discarding what the user typed.
+     */
+    fun updateVehicle(
+        vehicle: VehicleEntity,
+        onResult: (Boolean) -> Unit = {},
+    ) {
         viewModelScope.launch {
-            if (!vehicleRepository.updateVehicle(vehicle)) {
-                eventsFlow.emit(ParkingEvent.VehicleUpdateConflict)
-            }
+            val saved = vehicleRepository.updateVehicle(vehicle)
+            if (!saved) eventsFlow.emit(ParkingEvent.VehicleUpdateConflict)
+            onResult(saved)
         }
     }
 
@@ -206,7 +220,8 @@ class ParkingViewModel(
                         parkingRepository = container.parkingRepository,
                         saveParkingLocation = container.saveParkingLocationUseCase,
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
-                        hasLocationPermission = { Permissions.hasLocation(appContext) },
+                        locationAccuracy = { Permissions.locationAccuracy(appContext) },
+                        hasBackgroundLocationPermission = { Permissions.hasBackgroundLocation(appContext) },
                         isLocationEnabled = { isLocationEnabled(appContext) },
                     )
                 }

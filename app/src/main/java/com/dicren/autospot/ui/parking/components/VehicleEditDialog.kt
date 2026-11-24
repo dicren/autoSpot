@@ -1,11 +1,5 @@
 package com.dicren.autospot.ui.parking.components
 
-import android.annotation.SuppressLint
-import android.bluetooth.BluetoothManager
-import android.content.Context
-import android.content.Intent
-import android.net.Uri
-import android.provider.Settings
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -28,7 +22,6 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -38,17 +31,19 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.util.BluetoothDeviceInfo
 import com.dicren.autospot.util.VehicleName
+import com.dicren.autospot.util.openAppSettings
 
-data class BluetoothDeviceInfo(
-    val name: String,
-    val address: String,
-)
-
+/**
+ * Add/edit dialog. [devices] is injected instead of read here so the dialog stays stateless and
+ * testable; only the screen touches the Bluetooth adapter.
+ */
 @Composable
 fun VehicleEditDialog(
     vehicle: VehicleEntity?,
     canReadBluetooth: Boolean,
+    devices: List<BluetoothDeviceInfo>,
     onDismiss: () -> Unit,
     onSave: (name: String, bluetoothAddress: String, bluetoothName: String) -> Unit,
 ) {
@@ -61,8 +56,6 @@ fun VehicleEditDialog(
         selectedBluetoothAddress?.let { address ->
             BluetoothDeviceInfo(selectedBluetoothName.orEmpty(), address)
         }
-
-    val pairedDevices = remember(canReadBluetooth) { readPairedDevices(context, canReadBluetooth) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -100,7 +93,7 @@ fun VehicleEditDialog(
 
                     showBluetoothPicker -> {
                         BluetoothDevicePicker(
-                            devices = pairedDevices,
+                            devices = devices,
                             onSelect = { device ->
                                 selectedBluetoothName = device.name
                                 selectedBluetoothAddress = device.address
@@ -211,38 +204,4 @@ private fun BluetoothDevicePicker(
             }
         }
     }
-}
-
-/**
- * Reading `bondedDevices` throws SecurityException without BLUETOOTH_CONNECT. Catching it keeps
- * the add-vehicle dialog from crashing when the permission was denied.
- */
-@SuppressLint("MissingPermission")
-private fun readPairedDevices(
-    context: Context,
-    canReadBluetooth: Boolean,
-): List<BluetoothDeviceInfo> {
-    if (!canReadBluetooth) return emptyList()
-
-    val adapter = context.getSystemService(BluetoothManager::class.java)?.adapter
-    return runCatching {
-        adapter
-            ?.bondedDevices
-            .orEmpty()
-            .map { device ->
-                BluetoothDeviceInfo(
-                    name = device.name?.takeIf { it.isNotBlank() } ?: device.address,
-                    address = device.address,
-                )
-            }.sortedBy { it.name.lowercase() }
-    }.getOrDefault(emptyList())
-}
-
-private fun Context.openAppSettings() {
-    startActivity(
-        Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-            data = Uri.fromParts("package", packageName, null)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        },
-    )
 }

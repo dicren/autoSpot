@@ -1,7 +1,6 @@
 package com.dicren.autospot.ui
 
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -55,7 +54,6 @@ data class OnboardingPage(
     val descriptionRes: Int,
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun OnboardingScreen(
     onFinish: () -> Unit,
