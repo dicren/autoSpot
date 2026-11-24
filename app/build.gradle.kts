@@ -91,7 +91,7 @@ android {
         // Room's MigrationTestHelper reads exported schemas from the app's assets. They are only
         // needed for local unit tests, so they go into the debug variant and never into release.
         getByName("debug") {
-            assets.srcDir("$projectDir/schemas")
+            assets.directories.add("$projectDir/schemas")
         }
     }
 }
