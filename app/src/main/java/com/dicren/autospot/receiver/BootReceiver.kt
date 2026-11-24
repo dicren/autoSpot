@@ -20,9 +20,9 @@ class BootReceiver : BroadcastReceiver() {
         context: Context,
         intent: Intent,
     ) {
-        if (intent.action != Intent.ACTION_BOOT_COMPLETED) return
+        if (!isRelevantAction(intent.action)) return
 
-        Log.d(TAG, "Boot completed, checking if any vehicle is configured")
+        Log.d(TAG, "Device booted or app updated, checking if any vehicle is configured")
 
         val pendingResult = goAsync()
 
@@ -41,6 +41,13 @@ class BootReceiver : BroadcastReceiver() {
         }
     }
 }
+
+/**
+ * The system kills the app on an update, so it must also restart the monitor after
+ * ACTION_MY_PACKAGE_REPLACED; otherwise auto-save silently stops until the app is opened.
+ */
+internal fun isRelevantAction(action: String?): Boolean =
+    action == Intent.ACTION_BOOT_COMPLETED || action == Intent.ACTION_MY_PACKAGE_REPLACED
 
 /**
  * Starts the monitor when there is at least one vehicle and every permission is granted.

@@ -1,6 +1,7 @@
 package com.dicren.autospot.receiver
 
 import android.app.Application
+import android.content.Intent
 import androidx.test.core.app.ApplicationProvider
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.service.BluetoothMonitorService
@@ -45,6 +46,14 @@ class BootReceiverTest {
 
         assertFalse(started)
         assertNull(shadowOf(application).nextStartedService)
+    }
+
+    @Test
+    fun `boot completion and app updates both trigger the check`() {
+        assertTrue(isRelevantAction(Intent.ACTION_BOOT_COMPLETED))
+        assertTrue(isRelevantAction(Intent.ACTION_MY_PACKAGE_REPLACED))
+        assertFalse(isRelevantAction(Intent.ACTION_TIME_CHANGED))
+        assertFalse(isRelevantAction(null))
     }
 
     @Test
