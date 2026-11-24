@@ -28,7 +28,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,9 +49,12 @@ fun VehiclesSheet(
     onDeleteVehicle: (VehicleEntity) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var showAddDialog by remember { mutableStateOf(false) }
-    var editingVehicle by remember { mutableStateOf<VehicleEntity?>(null) }
-    var deletingVehicle by remember { mutableStateOf<VehicleEntity?>(null) }
+    var showAddDialog by rememberSaveable { mutableStateOf(false) }
+    // Ids survive a configuration change; the entities themselves are not saveable.
+    var editingVehicleId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var deletingVehicleId by rememberSaveable { mutableStateOf<Long?>(null) }
+    val editingVehicle = editingVehicleId?.let { id -> vehicles.firstOrNull { it.id == id } }
+    val deletingVehicle = deletingVehicleId?.let { id -> vehicles.firstOrNull { it.id == id } }
 
     Column(
         modifier =
@@ -127,13 +130,13 @@ fun VehiclesSheet(
                             }
                         }
                         Row {
-                            IconButton(onClick = { editingVehicle = vehicle }) {
+                            IconButton(onClick = { editingVehicleId = vehicle.id }) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = stringResource(R.string.edit_vehicle),
                                 )
                             }
-                            IconButton(onClick = { deletingVehicle = vehicle }) {
+                            IconButton(onClick = { deletingVehicleId = vehicle.id }) {
                                 Icon(
                                     imageVector = Icons.Default.Delete,
                                     contentDescription = stringResource(R.string.delete),
@@ -166,7 +169,7 @@ fun VehiclesSheet(
         VehicleEditDialog(
             vehicle = vehicle,
             canReadBluetooth = canReadBluetooth,
-            onDismiss = { editingVehicle = null },
+            onDismiss = { editingVehicleId = null },
             onSave = { name, bluetoothAddress, bluetoothName ->
                 onEditVehicle(
                     vehicle.copy(
@@ -175,28 +178,28 @@ fun VehiclesSheet(
                         bluetoothName = bluetoothName,
                     ),
                 )
-                editingVehicle = null
+                editingVehicleId = null
             },
         )
     }
 
     deletingVehicle?.let { vehicle ->
         AlertDialog(
-            onDismissRequest = { deletingVehicle = null },
+            onDismissRequest = { deletingVehicleId = null },
             title = { Text(stringResource(R.string.delete_vehicle)) },
             text = { Text(stringResource(R.string.delete_vehicle_message, vehicle.name)) },
             confirmButton = {
                 Button(
                     onClick = {
                         onDeleteVehicle(vehicle)
-                        deletingVehicle = null
+                        deletingVehicleId = null
                     },
                 ) {
                     Text(stringResource(R.string.delete))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { deletingVehicle = null }) {
+                TextButton(onClick = { deletingVehicleId = null }) {
                     Text(stringResource(R.string.cancel))
                 }
             },

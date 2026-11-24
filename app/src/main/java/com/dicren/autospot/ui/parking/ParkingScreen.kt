@@ -48,6 +48,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -125,9 +126,9 @@ fun ParkingScreen(
             ActivityResultContracts.RequestPermission(),
         ) { /* Notifications are optional: the services keep running without them. */ }
 
-    var showVehiclesSheet by remember { mutableStateOf(false) }
-    var showHistorySheet by remember { mutableStateOf(false) }
-    var confirmClearHistory by remember { mutableStateOf(false) }
+    var showVehiclesSheet by rememberSaveable { mutableStateOf(false) }
+    var showHistorySheet by rememberSaveable { mutableStateOf(false) }
+    var confirmClearHistory by rememberSaveable { mutableStateOf(false) }
     val vehiclesSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val historySheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
     val cameraPositionState = rememberCameraPositionState()
@@ -321,13 +322,15 @@ fun ParkingScreen(
                 historyCount = state.locations.size,
                 isFromHistory = state.isShowingHistory,
                 onShareClick = {
-                    context.startActivity(
-                        MapsIntents.shareIntent(
-                            displayLocation.latitude,
-                            displayLocation.longitude,
-                            messages.shareTitle,
-                        ),
-                    )
+                    runCatching {
+                        context.startActivity(
+                            MapsIntents.shareIntent(
+                                displayLocation.latitude,
+                                displayLocation.longitude,
+                                messages.shareTitle,
+                            ),
+                        )
+                    }.onFailure { Log.w(TAG, "No app can share the location", it) }
                 },
                 onHistoryClick = { showHistorySheet = true },
                 onBackToLatestClick = viewModel::showLatestLocation,

@@ -29,6 +29,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -52,13 +53,14 @@ fun VehicleEditDialog(
     onSave: (name: String, bluetoothAddress: String, bluetoothName: String) -> Unit,
 ) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf(vehicle?.name ?: "") }
-    var selectedBluetooth by remember {
-        mutableStateOf(
-            vehicle?.let { BluetoothDeviceInfo(it.bluetoothName, it.bluetoothAddress) },
-        )
-    }
-    var showBluetoothPicker by remember { mutableStateOf(false) }
+    var name by rememberSaveable { mutableStateOf(vehicle?.name ?: "") }
+    var selectedBluetoothName by rememberSaveable { mutableStateOf(vehicle?.bluetoothName) }
+    var selectedBluetoothAddress by rememberSaveable { mutableStateOf(vehicle?.bluetoothAddress) }
+    var showBluetoothPicker by rememberSaveable { mutableStateOf(false) }
+    val selectedBluetooth =
+        selectedBluetoothAddress?.let { address ->
+            BluetoothDeviceInfo(selectedBluetoothName.orEmpty(), address)
+        }
 
     val pairedDevices = remember(canReadBluetooth) { readPairedDevices(context, canReadBluetooth) }
 
@@ -100,7 +102,8 @@ fun VehicleEditDialog(
                         BluetoothDevicePicker(
                             devices = pairedDevices,
                             onSelect = { device ->
-                                selectedBluetooth = device
+                                selectedBluetoothName = device.name
+                                selectedBluetoothAddress = device.address
                                 showBluetoothPicker = false
                             },
                         )

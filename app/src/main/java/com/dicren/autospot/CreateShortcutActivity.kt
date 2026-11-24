@@ -21,7 +21,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -33,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.content.pm.ShortcutInfoCompat
 import androidx.core.content.pm.ShortcutManagerCompat
 import androidx.core.graphics.drawable.IconCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 
@@ -86,7 +86,7 @@ private fun VehicleSelectionDialog(
     val context = LocalContext.current
     val app = remember(context) { context.applicationContext as AutoSpotApp }
     val vehicles by app.container.vehicleRepository.vehicles
-        .collectAsState(initial = emptyList())
+        .collectAsStateWithLifecycle(initialValue = emptyList())
 
     Box(
         modifier =
