@@ -85,6 +85,10 @@ startup profile on a connected device or emulator (API 33+, no root needed):
 ./gradlew :app:generateBaselineProfile
 ```
 
+**Never run this on a phone with real app data:** it installs the non-minified release build and
+a test APK, then uninstalls both when the connected test finishes, which wipes the app data. Use a
+dedicated emulator.
+
 The generator test sets `includeInStartupProfile = true`. The plugin writes
 `app/src/release/generated/baselineProfiles/{baseline-prof.txt,startup-prof.txt}`, which are
 committed and embedded in the release APK as `assets/dexopt/baseline.prof`; debug builds ignore
