@@ -19,9 +19,11 @@ import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import androidx.core.content.IntentCompat
 import com.dicren.autospot.MainActivity
 import com.dicren.autospot.R
 import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -32,7 +34,8 @@ class BluetoothMonitorService : Service() {
 
     companion object {
         private const val TAG = "BluetoothMonitorService"
-        private const val CHANNEL_ID = "bluetooth_monitor_channel"
+        private const val CHANNEL_ID = "bluetooth_monitor_channel_v2"
+        private const val LEGACY_CHANNEL_ID = "bluetooth_monitor_channel"
         private const val NOTIFICATION_ID = 3
         private const val DEBOUNCE_TIME_MS = 10_000L // 10 seconds
         const val EXTRA_VEHICLE_ID = "vehicle_id"
@@ -47,7 +50,8 @@ class BluetoothMonitorService : Service() {
         override fun onReceive(context: Context, intent: Intent) {
             Log.d(TAG, "Bluetooth event received: ${intent.action}")
 
-            val device = intent.getParcelableExtra(
+            val device = IntentCompat.getParcelableExtra(
+                intent,
                 BluetoothDevice.EXTRA_DEVICE,
                 BluetoothDevice::class.java
             )
@@ -117,6 +121,7 @@ class BluetoothMonitorService : Service() {
         }
     }
 
+    @SuppressLint("InlinedApi") // RECEIVER_EXPORTED is inlined (value 2), safe on API 31+.
     override fun onCreate() {
         super.onCreate()
         repository = LocationRepository(applicationContext)
@@ -135,12 +140,25 @@ class BluetoothMonitorService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(
-            NOTIFICATION_ID,
-            createNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-        )
-        return START_STICKY
+        if (!Permissions.canMonitor(this)) {
+            Log.w(TAG, "Location or Bluetooth permission missing, stopping monitor")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        return try {
+            startForeground(
+                NOTIFICATION_ID,
+                createNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+            START_STICKY
+        } catch (e: SecurityException) {
+            // The system refuses a location-typed foreground service without permission.
+            Log.e(TAG, "Cannot start foreground monitor", e)
+            stopSelf()
+            START_NOT_STICKY
+        }
     }
 
     override fun onDestroy() {
@@ -157,14 +175,17 @@ class BluetoothMonitorService : Service() {
     override fun onBind(intent: Intent?): IBinder? = null
 
     private fun createNotificationChannel() {
+        // A new channel id is required to apply a lower importance to existing installs:
+        // Android ignores importance changes on channels that already exist.
         val channel = NotificationChannel(
             CHANNEL_ID,
             getString(R.string.bluetooth_monitor_channel_name),
-            NotificationManager.IMPORTANCE_LOW
+            NotificationManager.IMPORTANCE_MIN
         ).apply {
             description = getString(R.string.bluetooth_monitor_channel_description)
         }
         val notificationManager = getSystemService(NotificationManager::class.java)
+        notificationManager.deleteNotificationChannel(LEGACY_CHANNEL_ID)
         notificationManager.createNotificationChannel(channel)
     }
 
@@ -181,7 +202,6 @@ class BluetoothMonitorService : Service() {
             .setContentText(getString(R.string.bluetooth_monitor_notification_text))
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setPriority(NotificationCompat.PRIORITY_MIN)
-            .setOngoing(true)
             .setContentIntent(pendingIntent)
             .build()
     }

@@ -1,18 +1,18 @@
 package com.dicren.autospot.service
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.content.pm.ServiceInfo
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import androidx.core.content.ContextCompat
 import com.dicren.autospot.R
 import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.util.Permissions
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
@@ -41,11 +41,25 @@ class LocationSaveService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForeground(
-            NOTIFICATION_ID,
-            createNotification(),
-            ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-        )
+        if (!Permissions.hasLocation(this)) {
+            Log.w(TAG, "Location permission not granted, not saving")
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
+        try {
+            startForeground(
+                NOTIFICATION_ID,
+                createNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+            )
+        } catch (e: SecurityException) {
+            // The system refuses a location-typed foreground service without permission,
+            // or when started from the background without background location access.
+            Log.e(TAG, "Cannot start foreground location service", e)
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         val vehicleId = intent?.getLongExtra(EXTRA_VEHICLE_ID, -1L) ?: -1L
 
@@ -64,6 +78,8 @@ class LocationSaveService : Service() {
 
     override fun onBind(intent: Intent?): IBinder? = null
 
+    // Permission is checked in onStartCommand and below; the SecurityException is also handled.
+    @SuppressLint("MissingPermission")
     private suspend fun saveCurrentLocation(vehicleId: Long) {
         // If no vehicleId provided, try to use active vehicle
         val finalVehicleId = if (vehicleId > 0) {
@@ -77,11 +93,7 @@ class LocationSaveService : Service() {
             activeVehicle.id
         }
 
-        if (ContextCompat.checkSelfPermission(
-                this,
-                android.Manifest.permission.ACCESS_FINE_LOCATION
-            ) != PackageManager.PERMISSION_GRANTED
-        ) {
+        if (!Permissions.hasLocation(this)) {
             Log.w(TAG, "Location permission not granted")
             return
         }

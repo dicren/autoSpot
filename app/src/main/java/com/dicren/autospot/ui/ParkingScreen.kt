@@ -5,11 +5,12 @@ import android.annotation.SuppressLint
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.provider.Settings
-import androidx.core.content.ContextCompat
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -75,6 +76,7 @@ import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.service.LocationSaveService
+import com.dicren.autospot.util.Permissions
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -85,8 +87,8 @@ import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
 import com.google.maps.android.compose.rememberCameraPositionState
+import com.google.maps.android.compose.rememberMarkerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -106,13 +108,17 @@ fun ParkingScreen(
 ) {
     val context = LocalContext.current
 
-    val hasPermissions = remember { mutableStateOf(checkPermissions(context)) }
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { /* Notifications are optional: the services run without them. */ }
+
+    val hasPermissions = remember { mutableStateOf(Permissions.canMonitor(context)) }
     val lifecycleOwner = LocalLifecycleOwner.current
 
     // Re-check permissions when resuming
     LaunchedEffect(lifecycleOwner) {
         lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
-            hasPermissions.value = checkPermissions(context)
+            hasPermissions.value = Permissions.canMonitor(context)
         }
     }
     val locationRepository = remember { LocationRepository(context) }
@@ -132,10 +138,14 @@ fun ParkingScreen(
 
     val cameraPositionState = rememberCameraPositionState()
 
-    // Start/stop bluetooth monitor service based on configured vehicles
-    LaunchedEffect(allVehicles) {
-        if (allVehicles.isNotEmpty()) {
-            context.startForegroundService(Intent(context, BluetoothMonitorService::class.java))
+    // Start/stop bluetooth monitor service based on vehicles and granted permissions
+    LaunchedEffect(allVehicles, hasPermissions.value) {
+        if (allVehicles.isNotEmpty() && hasPermissions.value) {
+            try {
+                context.startForegroundService(Intent(context, BluetoothMonitorService::class.java))
+            } catch (e: Exception) {
+                Log.w("ParkingScreen", "Could not start Bluetooth monitor", e)
+            }
         } else {
             context.stopService(Intent(context, BluetoothMonitorService::class.java))
         }
@@ -169,7 +179,7 @@ fun ParkingScreen(
                 )
             ) {
                 Marker(
-                    state = MarkerState(position = position),
+                    state = rememberMarkerState(position = position),
                     title = stringResource(R.string.marker_title)
                 )
             }
@@ -243,7 +253,7 @@ fun ParkingScreen(
             // Floating navigate button (bottom right, above the card)
             FloatingActionButton(
                 onClick = {
-                    val uri = Uri.parse("google.navigation:q=${displayLocation.latitude},${displayLocation.longitude}&mode=w")
+                    val uri = "google.navigation:q=${displayLocation.latitude},${displayLocation.longitude}&mode=w".toUri()
                     val intent = Intent(Intent.ACTION_VIEW, uri).apply {
                         setPackage("com.google.android.apps.maps")
                     }
@@ -320,6 +330,10 @@ fun ParkingScreen(
                     CoroutineScope(Dispatchers.IO).launch {
                         val id = locationRepository.addVehicle(name, bluetoothAddress, bluetoothName)
                         locationRepository.setActiveVehicle(id)
+                    }
+                    // Ask for notification permission in context, when monitoring first starts.
+                    if (allVehicles.isEmpty() && Permissions.needsNotificationPermission(context)) {
+                        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                     }
                 },
                 onEditVehicle = { vehicle ->
@@ -908,26 +922,6 @@ private fun formatTimestamp(context: Context, timestamp: Long): String {
 
 private fun formatCoordinates(lat: Double, lon: Double): String {
     return String.format(Locale.US, "%.6f, %.6f", lat, lon)
-}
-
-private fun checkPermissions(context: Context): Boolean {
-    val fineLocation = ContextCompat.checkSelfPermission(
-        context, Manifest.permission.ACCESS_FINE_LOCATION
-    ) == PackageManager.PERMISSION_GRANTED
-
-    val backgroundLocation = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.ACCESS_BACKGROUND_LOCATION
-        ) == PackageManager.PERMISSION_GRANTED
-    } else true
-
-    val bluetooth = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        ContextCompat.checkSelfPermission(
-            context, Manifest.permission.BLUETOOTH_CONNECT
-        ) == PackageManager.PERMISSION_GRANTED
-    } else true
-
-    return fineLocation && backgroundLocation && bluetooth
 }
 
 @Composable
