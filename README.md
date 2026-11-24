@@ -103,6 +103,8 @@ app/src/main/java/com/dicren/autospot/
 │   ├── parking/                 # ParkingScreen, ViewModel, state, components
 │   └── theme/                   # App theme
 └── util/                        # Permissions, Maps intents, vehicle naming
+
+baselineprofile/                 # Startup baseline profile generator (macrobenchmark)
 ```
 
 ## Tests
@@ -115,6 +117,7 @@ Compose components:
 ./gradlew lintDebug           # Android Lint
 ./gradlew spotlessCheck       # ktlint via Spotless
 ./gradlew connectedAndroidTest # instrumented tests (device required)
+./gradlew :app:generateBaselineProfile # startup profile (device, API 33+)
 ```
 
 ## Privacy

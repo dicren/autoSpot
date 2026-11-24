@@ -7,6 +7,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
     alias(libs.plugins.spotless)
+    alias(libs.plugins.baselineprofile)
 }
 
 /** Reads the Maps key from `local.properties`, falling back to the committed template. */
@@ -136,6 +137,8 @@ dependencies {
     testImplementation(libs.sqlite.framework)
     testImplementation(libs.androidx.junit)
     testImplementation(libs.androidx.compose.ui.test.junit4)
+
+    baselineProfile(project(":baselineprofile"))
 
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

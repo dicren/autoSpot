@@ -21,4 +21,5 @@ dependencyResolutionManagement {
 
 rootProject.name = "AutoSpot"
 include(":app")
+include(":baselineprofile")
  
