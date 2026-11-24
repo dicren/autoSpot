@@ -201,6 +201,12 @@ fun ParkingScreen(
         }
     }
 
+    // Coming back from the system settings page with the grant in place should close the
+    // explanation instead of leaving it on screen.
+    LaunchedEffect(state.hasBackgroundLocationPermission) {
+        if (state.hasBackgroundLocationPermission) showBackgroundRationale = false
+    }
+
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
             snackbarHostState.showSnackbar(messages.forEvent(event))
