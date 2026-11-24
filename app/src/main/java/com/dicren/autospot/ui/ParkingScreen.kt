@@ -340,8 +340,8 @@ fun ParkingScreen(
                 },
                 onAddVehicle = { name, bluetoothAddress, bluetoothName ->
                     CoroutineScope(Dispatchers.IO).launch {
-                        val id = locationRepository.addVehicle(name, bluetoothAddress, bluetoothName)
-                        locationRepository.setActiveVehicle(id)
+                        // The repository inserts and activates the new vehicle atomically.
+                        locationRepository.addVehicle(name, bluetoothAddress, bluetoothName)
                     }
                     // Ask for notification permission in context, when monitoring first starts.
                     if (allVehicles.isEmpty() && Permissions.needsNotificationPermission(context)) {

@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.lifecycle.lifecycleScope
-import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.MapsIntents
 import kotlinx.coroutines.launch
 
@@ -20,13 +20,13 @@ class NavigateActivity : ComponentActivity() {
         val vehicleId = intent.getLongExtra(EXTRA_VEHICLE_ID, -1L)
 
         lifecycleScope.launch {
-            val repository = LocationRepository(applicationContext)
+            val container = applicationContext.appContainer
             val location = if (vehicleId > 0) {
-                repository.getLatestLocationByVehicleSync(vehicleId)
+                container.parkingRepository.latestLocationOnce(vehicleId)
             } else {
                 // Fallback to active vehicle if no specific vehicle ID
-                repository.getActiveVehicleSync()
-                    ?.let { repository.getLatestLocationByVehicleSync(it.id) }
+                container.vehicleRepository.getActiveVehicleOnce()
+                    ?.let { container.parkingRepository.latestLocationOnce(it.id) }
             }
 
             if (location != null) {

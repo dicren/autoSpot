@@ -4,7 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
-import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineScope
@@ -26,8 +26,7 @@ class BootReceiver : BroadcastReceiver() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val repository = LocationRepository(context)
-                val vehicles = repository.getAllVehiclesSync()
+                val vehicles = context.appContainer.vehicleRepository.getAllVehiclesOnce()
 
                 if (vehicles.isNotEmpty() && Permissions.canMonitor(context)) {
                     Log.d(TAG, "${vehicles.size} vehicle(s) configured, starting monitor service")

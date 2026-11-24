@@ -11,7 +11,9 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dicren.autospot.R
-import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.data.ParkingRepository
+import com.dicren.autospot.data.VehicleRepository
+import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.Permissions
 import com.google.android.gms.location.LocationServices
 import com.google.android.gms.location.Priority
@@ -32,11 +34,15 @@ class LocationSaveService : Service() {
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private lateinit var locationRepository: LocationRepository
+    private val vehicleRepository: VehicleRepository by lazy {
+        applicationContext.appContainer.vehicleRepository
+    }
+    private val parkingRepository: ParkingRepository by lazy {
+        applicationContext.appContainer.parkingRepository
+    }
 
     override fun onCreate() {
         super.onCreate()
-        locationRepository = LocationRepository(applicationContext)
         createNotificationChannel()
     }
 
@@ -85,7 +91,7 @@ class LocationSaveService : Service() {
         val finalVehicleId = if (vehicleId > 0) {
             vehicleId
         } else {
-            val activeVehicle = locationRepository.getActiveVehicleSync()
+            val activeVehicle = vehicleRepository.getActiveVehicleOnce()
             if (activeVehicle == null) {
                 Log.w(TAG, "No vehicle specified and no active vehicle")
                 return
@@ -108,13 +114,13 @@ class LocationSaveService : Service() {
             ).await()
 
             if (location != null) {
-                locationRepository.saveLocation(finalVehicleId, location.latitude, location.longitude)
+                parkingRepository.saveLocation(finalVehicleId, location.latitude, location.longitude)
                 Log.d(TAG, "Location saved for vehicle $finalVehicleId: ${location.latitude}, ${location.longitude}")
             } else {
                 // Try to get last known location as fallback
                 val lastLocation = fusedLocationClient.lastLocation.await()
                 if (lastLocation != null) {
-                    locationRepository.saveLocation(finalVehicleId, lastLocation.latitude, lastLocation.longitude)
+                    parkingRepository.saveLocation(finalVehicleId, lastLocation.latitude, lastLocation.longitude)
                     Log.d(TAG, "Last known location saved for vehicle $finalVehicleId: ${lastLocation.latitude}, ${lastLocation.longitude}")
                 } else {
                     Log.w(TAG, "No location available")

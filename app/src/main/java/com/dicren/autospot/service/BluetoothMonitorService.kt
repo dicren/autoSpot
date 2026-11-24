@@ -26,7 +26,8 @@ import com.dicren.autospot.bluetooth.BluetoothEvent
 import com.dicren.autospot.bluetooth.BluetoothIntents
 import com.dicren.autospot.bluetooth.DisconnectionDebouncer
 import com.dicren.autospot.core.DefaultClock
-import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.data.VehicleRepository
+import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -45,7 +46,9 @@ class BluetoothMonitorService : Service() {
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private lateinit var repository: LocationRepository
+    private val vehicleRepository: VehicleRepository by lazy {
+        applicationContext.appContainer.vehicleRepository
+    }
     private val debouncer = DisconnectionDebouncer(DEBOUNCE_TIME_MS, DefaultClock)
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
@@ -90,7 +93,7 @@ class BluetoothMonitorService : Service() {
 
         serviceScope.launch {
             try {
-                val vehicle = repository.getVehicleByBluetoothAddress(deviceAddress)
+                val vehicle = vehicleRepository.getVehicleByBluetoothAddressOnce(deviceAddress)
 
                 if (vehicle != null) {
                     if (!debouncer.tryAcquire(vehicle.id)) {
@@ -116,7 +119,6 @@ class BluetoothMonitorService : Service() {
     @SuppressLint("InlinedApi") // RECEIVER_EXPORTED is inlined (value 2), safe on API 31+.
     override fun onCreate() {
         super.onCreate()
-        repository = LocationRepository(applicationContext)
         createNotificationChannel()
 
         val filter = IntentFilter().apply {

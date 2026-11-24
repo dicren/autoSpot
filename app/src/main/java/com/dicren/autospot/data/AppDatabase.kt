@@ -7,7 +7,7 @@ import androidx.room.RoomDatabase
 
 @Database(
     entities = [ParkingLocationEntity::class, VehicleEntity::class],
-    version = 3,
+    version = 4,
     exportSchema = true
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -16,6 +16,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun vehicleDao(): VehicleDao
 
     companion object {
+        const val NAME = "parking_database"
+
         @Volatile
         private var INSTANCE: AppDatabase? = null
 
@@ -24,10 +26,11 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
-                    "parking_database"
+                    NAME
                 )
                     // Pre-v3 schemas are unknown, so drop them. From v3 onward every version
                     // bump must ship an explicit Migration; schemas live in app/schemas/.
+                    .addMigrations(MIGRATION_3_4)
                     .fallbackToDestructiveMigrationFrom(1, 2)
                     .build()
                 INSTANCE = instance
