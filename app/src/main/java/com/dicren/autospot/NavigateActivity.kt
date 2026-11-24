@@ -1,13 +1,11 @@
 package com.dicren.autospot
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
-import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import com.dicren.autospot.data.LocationRepository
+import com.dicren.autospot.util.MapsIntents
 import kotlinx.coroutines.launch
 
 class NavigateActivity : ComponentActivity() {
@@ -32,13 +30,7 @@ class NavigateActivity : ComponentActivity() {
             }
 
             if (location != null) {
-                val uri = "google.navigation:q=${location.latitude},${location.longitude}&mode=w".toUri()
-                val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                    setPackage("com.google.android.apps.maps")
-                }
-                try {
-                    startActivity(intent)
-                } catch (e: ActivityNotFoundException) {
+                if (!MapsIntents.openNavigation(this@NavigateActivity, location.latitude, location.longitude)) {
                     Toast.makeText(this@NavigateActivity, R.string.maps_not_found, Toast.LENGTH_SHORT).show()
                 }
             } else {

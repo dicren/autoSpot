@@ -8,9 +8,9 @@ import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -76,7 +76,10 @@ import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.service.LocationSaveService
+import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.util.MapsIntents
 import com.dicren.autospot.util.Permissions
+import com.dicren.autospot.util.VehicleName
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -92,8 +95,6 @@ import com.google.maps.android.compose.rememberUpdatedMarkerState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Date
 import java.util.Locale
 
 data class BluetoothDeviceInfo(
@@ -136,6 +137,7 @@ fun ParkingScreen(
     val displayLocation = selectedLocation ?: latestLocation
     val coroutineScope = rememberCoroutineScope()
     val shareTitle = stringResource(R.string.share_location)
+    val timeFormatter = remember { ParkingTimeFormatter(context.resources) }
 
     val cameraPositionState = rememberCameraPositionState()
 
@@ -258,11 +260,14 @@ fun ParkingScreen(
             // Floating navigate button (bottom right, above the card)
             FloatingActionButton(
                 onClick = {
-                    val uri = "google.navigation:q=${displayLocation.latitude},${displayLocation.longitude}&mode=w".toUri()
-                    val intent = Intent(Intent.ACTION_VIEW, uri).apply {
-                        setPackage("com.google.android.apps.maps")
+                    val opened = MapsIntents.openNavigation(
+                        context,
+                        displayLocation.latitude,
+                        displayLocation.longitude,
+                    )
+                    if (!opened) {
+                        Toast.makeText(context, R.string.maps_not_found, Toast.LENGTH_SHORT).show()
                     }
-                    context.startActivity(intent)
                 },
                 containerColor = MaterialTheme.colorScheme.primary,
                 modifier = Modifier
@@ -279,15 +284,17 @@ fun ParkingScreen(
             // Floating bottom card with info and actions
             FloatingLocationCard(
                 location = displayLocation,
+                timeFormatter = timeFormatter,
                 historyCount = allLocations.size,
                 isFromHistory = selectedLocation != null,
                 onShareClick = {
-                    val shareText = "https://maps.google.com/?q=${displayLocation.latitude},${displayLocation.longitude}"
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        type = "text/plain"
-                        putExtra(Intent.EXTRA_TEXT, shareText)
-                    }
-                    context.startActivity(Intent.createChooser(shareIntent, shareTitle))
+                    context.startActivity(
+                        MapsIntents.shareIntent(
+                            displayLocation.latitude,
+                            displayLocation.longitude,
+                            shareTitle,
+                        )
+                    )
                 },
                 onHistoryClick = { showHistorySheet = true },
                 onBackToLatestClick = { selectedLocation = null },
@@ -363,6 +370,7 @@ fun ParkingScreen(
         ) {
             HistoryList(
                 locations = allLocations,
+                timeFormatter = timeFormatter,
                 onLocationSelected = { location ->
                     selectedLocation = location
                     showHistorySheet = false
@@ -683,7 +691,7 @@ private fun VehicleEditDialog(
             Button(
                 onClick = {
                     selectedBluetooth?.let { bt ->
-                        onSave(name.ifBlank { bt.name }, bt.address, bt.name)
+                        onSave(VehicleName.resolve(name, bt.name), bt.address, bt.name)
                     }
                 },
                 enabled = selectedBluetooth != null
@@ -702,12 +710,12 @@ private fun VehicleEditDialog(
 @Composable
 private fun HistoryList(
     locations: List<ParkingLocationEntity>,
+    timeFormatter: ParkingTimeFormatter,
     onLocationSelected: (ParkingLocationEntity) -> Unit,
     onDeleteLocation: (ParkingLocationEntity) -> Unit,
     onClearAll: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -757,7 +765,7 @@ private fun HistoryList(
                     ) {
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
-                                text = formatTimestamp(context, location.timestamp),
+                                text = timeFormatter.format(location.timestamp, System.currentTimeMillis()),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
@@ -786,6 +794,7 @@ private fun HistoryList(
 @Composable
 private fun FloatingLocationCard(
     location: ParkingLocationEntity,
+    timeFormatter: ParkingTimeFormatter,
     historyCount: Int,
     isFromHistory: Boolean,
     onShareClick: () -> Unit,
@@ -794,7 +803,6 @@ private fun FloatingLocationCard(
     onCenterMapClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val context = LocalContext.current
     Card(
         modifier = modifier.fillMaxWidth(),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
@@ -816,7 +824,7 @@ private fun FloatingLocationCard(
                         style = MaterialTheme.typography.titleMedium
                     )
                     Text(
-                        text = formatTimestamp(context, location.timestamp),
+                        text = timeFormatter.format(location.timestamp, System.currentTimeMillis()),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -904,23 +912,6 @@ private fun NoLocationContent(
                 )
                 Text(text = stringResource(R.string.save_location_button))
             }
-        }
-    }
-}
-
-private fun formatTimestamp(context: Context, timestamp: Long): String {
-    val now = System.currentTimeMillis()
-    val diff = now - timestamp
-    val minutes = diff / (1000 * 60)
-    val hours = diff / (1000 * 60 * 60)
-
-    return when {
-        minutes < 1 -> context.getString(R.string.just_now)
-        hours < 1 -> context.resources.getQuantityString(R.plurals.minutes_ago, minutes.toInt(), minutes.toInt())
-        hours < 24 -> context.resources.getQuantityString(R.plurals.hours_ago, hours.toInt(), hours.toInt())
-        else -> {
-            val sdf = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-            sdf.format(Date(timestamp))
         }
     }
 }

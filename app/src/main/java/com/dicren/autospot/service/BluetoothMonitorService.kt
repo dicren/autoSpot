@@ -22,6 +22,10 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.IntentCompat
 import com.dicren.autospot.MainActivity
 import com.dicren.autospot.R
+import com.dicren.autospot.bluetooth.BluetoothEvent
+import com.dicren.autospot.bluetooth.BluetoothIntents
+import com.dicren.autospot.bluetooth.DisconnectionDebouncer
+import com.dicren.autospot.core.DefaultClock
 import com.dicren.autospot.data.LocationRepository
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineScope
@@ -38,17 +42,17 @@ class BluetoothMonitorService : Service() {
         private const val LEGACY_CHANNEL_ID = "bluetooth_monitor_channel"
         private const val NOTIFICATION_ID = 3
         private const val DEBOUNCE_TIME_MS = 10_000L // 10 seconds
-        const val EXTRA_VEHICLE_ID = "vehicle_id"
     }
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var repository: LocationRepository
-    private val lastDisconnectionTimeByVehicle = mutableMapOf<Long, Long>()
+    private val debouncer = DisconnectionDebouncer(DEBOUNCE_TIME_MS, DefaultClock)
 
     private val bluetoothReceiver = object : BroadcastReceiver() {
         @SuppressLint("MissingPermission")
         override fun onReceive(context: Context, intent: Intent) {
-            Log.d(TAG, "Bluetooth event received: ${intent.action}")
+            val action = intent.action
+            Log.d(TAG, "Bluetooth event received: $action")
 
             val device = IntentCompat.getParcelableExtra(
                 intent,
@@ -59,32 +63,24 @@ class BluetoothMonitorService : Service() {
             val deviceName = try { device?.name } catch (e: SecurityException) { "unknown" }
             val deviceAddress = device?.address
 
-            when (intent.action) {
-                BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
-                    Log.d(TAG, "ACL Disconnected: $deviceName ($deviceAddress)")
-                    handleDisconnection(deviceAddress)
-                }
-                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED,
-                BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
-                    val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1)
-                    val prevState = intent.getIntExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, -1)
-                    Log.d(TAG, "Profile state changed: $deviceName ($deviceAddress), state: $prevState -> $state")
+            // The adapter broadcast uses its own extras; profiles and ACL use the profile ones.
+            val isAdapterEvent = action == BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED
+            val state = if (isAdapterEvent) {
+                intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, Int.MIN_VALUE)
+            } else {
+                intent.getIntExtra(BluetoothProfile.EXTRA_STATE, Int.MIN_VALUE)
+            }
+            val previousState = if (isAdapterEvent) {
+                intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE, Int.MIN_VALUE)
+            } else {
+                intent.getIntExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, Int.MIN_VALUE)
+            }
 
-                    if (state == BluetoothProfile.STATE_DISCONNECTED &&
-                        prevState == BluetoothProfile.STATE_CONNECTED) {
-                        handleDisconnection(deviceAddress)
-                    }
-                }
-                BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED -> {
-                    val state = intent.getIntExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, -1)
-                    val prevState = intent.getIntExtra(BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE, -1)
-                    Log.d(TAG, "Adapter connection state: $deviceName ($deviceAddress), state: $prevState -> $state")
+            Log.d(TAG, "Event: $action, $deviceName ($deviceAddress), state: $previousState -> $state")
 
-                    if (state == BluetoothAdapter.STATE_DISCONNECTED &&
-                        prevState == BluetoothAdapter.STATE_CONNECTED) {
-                        handleDisconnection(deviceAddress)
-                    }
-                }
+            when (val event = BluetoothIntents.toEvent(action, deviceAddress, state, previousState)) {
+                is BluetoothEvent.DeviceDisconnected -> handleDisconnection(event.deviceAddress)
+                is BluetoothEvent.DeviceConnected, null -> Unit
             }
         }
     }
@@ -97,19 +93,15 @@ class BluetoothMonitorService : Service() {
                 val vehicle = repository.getVehicleByBluetoothAddress(deviceAddress)
 
                 if (vehicle != null) {
-                    val now = System.currentTimeMillis()
-                    val lastTime = lastDisconnectionTimeByVehicle[vehicle.id] ?: 0L
-
-                    if (now - lastTime < DEBOUNCE_TIME_MS) {
+                    if (!debouncer.tryAcquire(vehicle.id)) {
                         Log.d(TAG, "Ignoring disconnection event for '${vehicle.name}' (debounce)")
                         return@launch
                     }
 
-                    lastDisconnectionTimeByVehicle[vehicle.id] = now
                     Log.d(TAG, "Vehicle '${vehicle.name}' Bluetooth disconnected! Saving location...")
 
                     val serviceIntent = Intent(this@BluetoothMonitorService, LocationSaveService::class.java).apply {
-                        putExtra(EXTRA_VEHICLE_ID, vehicle.id)
+                        putExtra(LocationSaveService.EXTRA_VEHICLE_ID, vehicle.id)
                     }
                     startForegroundService(serviceIntent)
                 } else {
