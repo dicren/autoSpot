@@ -452,9 +452,19 @@ internal fun ParkingBottomControls(
                 }
 
             // The card is being lifted into the sheet, and it would climb over the route button.
-            // The tools step aside instead: their job is done once the history is coming up.
+            // The tools step aside instead: their job is done once the history is coming up. The
+            // lift only counts while that card exists, because the overview without a group has
+            // none and would otherwise keep the opacity of the lift that opened it (see
+            // [mapToolsAlpha]).
             Column(
-                modifier = Modifier.graphicsLayer { alpha = 1f - liftProgress.floatValue },
+                modifier =
+                    Modifier.graphicsLayer {
+                        alpha =
+                            mapToolsAlpha(
+                                hasCard = location != null,
+                                liftProgress = liftProgress.floatValue,
+                            )
+                    },
                 horizontalAlignment = Alignment.End,
             ) {
                 if (isOverviewing) {
@@ -512,6 +522,19 @@ internal fun ParkingBottomControls(
         }
     }
 }
+
+/**
+ * How opaque the map tools are while a card is being lifted into the history sheet.
+ *
+ * The lift is a property of the card, so it only counts while there is one: the overview without a
+ * group shows the tools without any card, and the value left behind by the lift that opened it used
+ * to follow them there, leaving "show all spots" half faded next to fully opaque buttons. No card
+ * means no lift, whatever the last value was.
+ */
+internal fun mapToolsAlpha(
+    hasCard: Boolean,
+    liftProgress: Float,
+): Float = if (hasCard) 1f - liftProgress else 1f
 
 /** How far the card has to be lifted, finger down, before the history sheet starts opening. */
 private val SWIPE_UP_THRESHOLD = 32.dp

@@ -345,6 +345,17 @@ class ParkingBottomControlsTest {
         composeRule.onNodeWithTag(LOCATION_CARD_TAG).assertDoesNotExist()
     }
 
+    /**
+     * The tools fade while the card is lifted into the sheet, and that lift is a property of the
+     * card. Opening the overview from the sheet removes the card mid-lift, so the last value used to
+     * stay behind and left "show all spots" half faded next to fully opaque buttons.
+     */
+    @Test
+    fun `the tools are fully opaque when there is no card to lift`() {
+        assertEquals(1f, mapToolsAlpha(hasCard = false, liftProgress = 0.7f), 0f)
+        assertEquals(0.3f, mapToolsAlpha(hasCard = true, liftProgress = 0.7f), 0.001f)
+    }
+
     @Test
     fun `a focused group keeps the route button under the full extent one`() {
         setContent(isShowingHistory = false, isOverviewing = true)

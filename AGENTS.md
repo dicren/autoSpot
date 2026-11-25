@@ -256,7 +256,10 @@ All UI is Compose, split in `ui/`:
   reset is driven by the sheet's state on purpose: opening a `ModalBottomSheet` steals the window
   and cancels the drag without `onDragStopped`, so a release-driven reset would leave the card
   hanging. The map tools fade out with that lift (`graphicsLayer { alpha }`, driven by
-  `onLiftChange` and read at draw time) instead of being covered by the rising card. The
+  `onLiftChange` and read at draw time) instead of being covered by the rising card. The fade only
+  applies while a card is on screen (`mapToolsAlpha`): the lift belongs to the card, and the overview
+  without a group has none, so a value left behind by the lift that opened it from the sheet used to
+  keep "show all spots" half faded there, next to fully opaque buttons. The
   drag offsets are applied to the card, not to the node that reads the pointer: moving the detector
   would drag the coordinate system its deltas are measured in. The step animation runs on
   `rememberCoroutineScope`, not on the pointer-input scope, because that one has no frame clock (it
