@@ -18,7 +18,7 @@
     <application
         android:name=".AutoSpotApp"
         android:allowBackup="true"
-        tools:targetApi="33"
+        tools:targetApi="37"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
@@ -76,7 +76,7 @@
 
         <receiver
             android:name=".receiver.BootReceiver"
-            android:exported="true">
+            android:exported="false">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <!-- The app process is killed on update; restart monitoring without waiting

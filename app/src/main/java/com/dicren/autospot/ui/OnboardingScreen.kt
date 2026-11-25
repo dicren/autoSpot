@@ -42,7 +42,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
@@ -109,6 +112,7 @@ fun OnboardingScreen(
                 // safeDrawing (not statusBars): with three-button navigation the Next/Start
                 // button was ending up behind the navigation bar on Android 12.
                 .windowInsetsPadding(WindowInsets.safeDrawing)
+                .semantics { testTagsAsResourceId = true }
                 .padding(24.dp),
     ) {
         // Skip button
@@ -117,7 +121,10 @@ fun OnboardingScreen(
             horizontalArrangement = Arrangement.End,
         ) {
             if (pagerState.currentPage < pages.size - 1) {
-                TextButton(onClick = onFinish) {
+                TextButton(
+                    onClick = onFinish,
+                    modifier = Modifier.testTag("onboarding_skip"),
+                ) {
                     Text(stringResource(R.string.onboarding_skip))
                 }
             }

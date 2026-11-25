@@ -175,7 +175,8 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   posts a notification instead of failing silently.
 - **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
   an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
-  **and** `Permissions.canMonitor` is true. It logs `ForegroundServiceStartNotAllowedException`
+  **and** `Permissions.canMonitor` is true. The receiver is not exported: both actions are system
+  broadcasts. It logs `ForegroundServiceStartNotAllowedException`
   explicitly: Android 12+ may refuse the start, and the monitor then starts the next time the app
   is opened.
 
@@ -211,8 +212,9 @@ All UI is Compose, split in `ui/`:
   previous car's history cannot appear for a frame while the new Room flow emits. `isReady` stays
   false until the first real emission so the UI never acts on the defaults.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
-  `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`) that take state and
-  callbacks, which is what the Compose tests render. `Previews.kt` holds the design-time previews.
+  `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`,
+  `BackgroundLocationDialog`) that take state and callbacks, which is what the Compose tests
+  render. `Previews.kt` holds the design-time previews.
   The edit dialog receives the paired-device list instead of reading the adapter, so it can be
   tested without Bluetooth; only `ParkingScreen` touches `BluetoothDevices.paired`.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
@@ -268,8 +270,9 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
   `ko`, `ru`, `zh`) and all currently carry the same 85 strings plus 2 plurals (87 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
-  back to English. `LocaleResourcesTest` fails CI when the key sets differ. Spanish, French and
-  Italian need a `quantity="many"` item in plurals or lint fails.
+  back to English. `LocaleResourcesTest` fails CI when the key sets differ or a translation
+  changes the `%s`/`%d` arguments of a string or plural. Spanish, French and Italian need a
+  `quantity="many"` item in plurals or lint fails.
 - **Permissions:** check runtime grants through `util/Permissions`, not raw
   `checkSelfPermission`. `Permissions.locationAccuracy` distinguishes `NONE` / `COARSE` /
   `PRECISE`: only precise is useful for a parking spot, and the banner names approximate access as

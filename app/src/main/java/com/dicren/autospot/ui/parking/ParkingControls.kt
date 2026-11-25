@@ -98,7 +98,7 @@ internal fun CompassFab(
     ) {
         FloatingActionButton(
             onClick = onReset,
-            modifier = Modifier.size(40.dp),
+            modifier = Modifier.size(48.dp),
             containerColor = MaterialTheme.colorScheme.surface,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ) {

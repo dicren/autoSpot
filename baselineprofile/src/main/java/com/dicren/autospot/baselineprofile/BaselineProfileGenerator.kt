@@ -46,7 +46,12 @@ class BaselineProfileGenerator {
             startActivityAndWait()
 
             // The first launch shows onboarding; skip it and measure the parking screen too.
-            val skip = device.findObject(By.text("Skip")) ?: device.findObject(By.text("Omitir"))
+            // `testTagsAsResourceId` exposes the Compose test tag, so this does not depend on the
+            // device locale.
+            val skip =
+                device.findObject(By.res("onboarding_skip"))
+                    ?: device.findObject(By.text("Skip"))
+                    ?: device.findObject(By.text("Omitir"))
             if (skip != null) {
                 skip.click()
                 device.waitForIdle()
