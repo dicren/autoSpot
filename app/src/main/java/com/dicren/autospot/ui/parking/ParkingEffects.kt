@@ -8,6 +8,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -48,6 +50,9 @@ internal fun ParkingMonitorEffect(
         rememberLauncherForActivityResult(
             ActivityResultContracts.RequestPermission(),
         ) { /* Notifications are optional: the services keep running without them. */ }
+    // The effect outlives configuration changes, so the message must come from the latest
+    // composition instead of the one captured when it started.
+    val currentOnStartFailed by rememberUpdatedState(onStartFailed)
 
     LaunchedEffect(state.isReady, state.vehicles.isNotEmpty(), state.hasMonitoringPermission) {
         if (!state.isReady) return@LaunchedEffect
@@ -59,7 +64,7 @@ internal fun ParkingMonitorEffect(
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Could not start the Bluetooth monitor", e)
-                onStartFailed()
+                currentOnStartFailed()
             }
         } else {
             context.stopService(Intent(context, BluetoothMonitorService::class.java))

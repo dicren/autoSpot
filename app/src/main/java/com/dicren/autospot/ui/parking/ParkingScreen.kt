@@ -26,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -93,10 +94,13 @@ fun ParkingScreen(
             duplicateVehicle = stringResource(R.string.vehicle_duplicate),
             updateConflict = stringResource(R.string.vehicle_update_conflict),
             operationFailed = stringResource(R.string.operation_failed),
-            mapsNotInstalled = stringResource(R.string.maps_not_found),
-            shareTitle = stringResource(R.string.share_location),
         )
+    // The event collector below outlives configuration changes, so it must read the latest
+    // translated strings instead of the ones captured on its first composition.
+    val currentMessages by rememberUpdatedState(messages)
     val monitorFailedMessage = stringResource(R.string.monitor_failed_text)
+    val mapsNotInstalled = stringResource(R.string.maps_not_found)
+    val shareTitle = stringResource(R.string.share_location)
 
     // Android 11+ answers this request by sending the user to the system's location page; the
     // flags are refreshed on resume, and immediately here for the versions that answer inline.
@@ -143,7 +147,7 @@ fun ParkingScreen(
 
     LaunchedEffect(viewModel) {
         viewModel.events.collect { event ->
-            snackbarHostState.showSnackbar(messages.forEvent(event))
+            snackbarHostState.showSnackbar(currentMessages.forEvent(event))
         }
     }
 
@@ -207,7 +211,7 @@ fun ParkingScreen(
                         )
                     if (!opened) {
                         coroutineScope.launch {
-                            snackbarHostState.showSnackbar(messages.mapsNotInstalled)
+                            snackbarHostState.showSnackbar(mapsNotInstalled)
                         }
                     }
                 },
@@ -233,7 +237,7 @@ fun ParkingScreen(
                             MapsIntents.shareIntent(
                                 displayLocation.latitude,
                                 displayLocation.longitude,
-                                messages.shareTitle,
+                                shareTitle,
                             ),
                         )
                     }.onFailure { Log.w(TAG, "No app can share the location", it) }
