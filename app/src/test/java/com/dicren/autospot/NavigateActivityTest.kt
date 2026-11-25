@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.dicren.autospot.data.ParkingLocationEntity
+import com.dicren.autospot.data.ParkingRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.util.FakeParkingRepository
 import com.dicren.autospot.util.FakeVehicleRepository
@@ -52,9 +53,17 @@ class NavigateActivityTest {
         app.containerOverride = null
     }
 
+    private class FailingParkingRepository(
+        private val delegate: ParkingRepository,
+    ) : ParkingRepository by delegate {
+        override suspend fun latestLocationOnce(vehicleId: Long): ParkingLocationEntity? =
+            throw IllegalStateException("database closed")
+    }
+
     private fun launch(
         withLocation: Boolean,
         vehicleId: Long? = null,
+        parkingRepository: ParkingRepository? = null,
     ): NavigateActivity {
         val history =
             if (withLocation) {
@@ -76,7 +85,7 @@ class NavigateActivityTest {
         app.containerOverride =
             TestAppContainer(
                 vehicleRepository = FakeVehicleRepository(listOf(vehicle)),
-                parkingRepository = FakeParkingRepository(history),
+                parkingRepository = parkingRepository ?: FakeParkingRepository(history),
             )
 
         val intent = Intent(app, NavigateActivity::class.java)
@@ -113,6 +122,19 @@ class NavigateActivityTest {
         val activity = launch(withLocation = false)
 
         assertEquals("No location saved", ShadowToast.getTextOfLatestToast())
+        assertTrue(activity.isFinishing)
+    }
+
+    @Test
+    fun `a storage failure is explained without crashing`() {
+        val activity =
+            launch(
+                withLocation = true,
+                vehicleId = vehicle.id,
+                parkingRepository = FailingParkingRepository(FakeParkingRepository()),
+            )
+
+        assertEquals("Something went wrong. Please try again.", ShadowToast.getTextOfLatestToast())
         assertTrue(activity.isFinishing)
     }
 }

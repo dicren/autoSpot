@@ -89,7 +89,10 @@ class ParkingViewModel(
             locations,
             selectedLocationId,
         ) { vehicles, active, locations, selected ->
-            Content(vehicles, active, locations, selected)
+            // `locations` is collected from the same active-vehicle flow, but `combine` can see
+            // the new vehicle before its history flow emits. Filtering keeps the previous car's
+            // spot from appearing under the new one for a frame.
+            Content(vehicles, active, locations.filter { it.vehicleId == active?.id }, selected)
         }
 
     val uiState: StateFlow<ParkingUiState> =

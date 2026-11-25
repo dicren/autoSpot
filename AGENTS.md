@@ -140,9 +140,10 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   the "Navigate to my car" shortcuts. Reads an optional `vehicle_id` extra, falls back to the
   active vehicle, queries Room from a `lifecycleScope` coroutine, and fires
   `google.navigation:q=<lat>,<lon>&mode=w` pinned to `com.google.android.apps.maps`. Shows a toast
-  and finishes if Maps is missing or there is no saved location. **Never use `Theme.NoDisplay`
-  here**: the activity suspends before finishing, and Android throws "did not call finish() prior
-  to onResume() completing" (see trap 10).
+  and finishes if Maps is missing, there is no saved location, or the storage read fails; the
+  failure path must never crash a headless shortcut. **Never use `Theme.NoDisplay` here**: the
+  activity suspends before finishing, and Android throws "did not call finish() prior to
+  onResume() completing" (see trap 10).
 - **`CreateShortcutActivity`** — handles `android.intent.action.CREATE_SHORTCUT` (launcher's
   "add to home screen"). Shows a vehicle picker and returns a pinned
   `ShortcutInfoCompat` (`navigate_to_<vehicleId>`) pointing at `NavigateActivity`.
@@ -205,8 +206,9 @@ All UI is Compose, split in `ui/`:
   the repositories (`combine` + `flatMapLatest`), one-shot `ParkingEvent`s for snackbars, and the
   action methods. Repository writes are wrapped so a storage failure emits
   `ParkingEvent.OperationFailed` instead of crashing the app. Switching the active vehicle clears
-  the selected history item. `isReady` stays false until the first real emission so the UI never
-  acts on the defaults.
+  the selected history item, and the location list is filtered by the active vehicle id so the
+  previous car's history cannot appear for a frame while the new Room flow emits. `isReady` stays
+  false until the first real emission so the UI never acts on the defaults.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`) that take state and
   callbacks, which is what the Compose tests render. `Previews.kt` holds the design-time previews.

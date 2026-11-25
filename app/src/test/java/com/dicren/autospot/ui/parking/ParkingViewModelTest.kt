@@ -20,8 +20,12 @@ import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
 import com.dicren.autospot.util.FakeParkingRepository
 import com.dicren.autospot.util.FakeSettingsRepository
+import com.dicren.autospot.util.FakeVehicleRepository
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -117,6 +121,22 @@ class ParkingViewModelTest {
         override suspend fun deleteLocation(id: Long) = throw IllegalStateException("disk full")
     }
 
+    /** Emits the new vehicle's history only after a delay, like a slow Room query. */
+    private class SlowSwitchParkingRepository(
+        private val delegate: ParkingRepository,
+        private val slowVehicleId: Long,
+    ) : ParkingRepository by delegate {
+        override fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>> =
+            if (vehicleId == slowVehicleId) {
+                flow {
+                    delay(1_000)
+                    emit(emptyList())
+                }
+            } else {
+                delegate.locations(vehicleId)
+            }
+    }
+
     private suspend fun addVehicle(name: String = "Car"): Long {
         vehicleCount++
         val address = "AA:BB:CC:DD:EE:${vehicleCount.toString().padStart(2, '0')}"
@@ -184,6 +204,52 @@ class ParkingViewModelTest {
                 }
 
                 assertFalse(state.isShowingHistory)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `switching vehicles never shows the previous history`() =
+        runTest {
+            val first =
+                VehicleEntity(
+                    id = 1,
+                    name = "A",
+                    bluetoothAddress = "AA:BB:CC:DD:EE:01",
+                    bluetoothName = "A",
+                    isActive = true,
+                )
+            val second =
+                VehicleEntity(
+                    id = 2,
+                    name = "B",
+                    bluetoothAddress = "AA:BB:CC:DD:EE:02",
+                    bluetoothName = "B",
+                )
+            val parking =
+                FakeParkingRepository(
+                    mutableMapOf(
+                        first.id to listOf(ParkingLocationEntity(10, first.id, 1.0, 1.0, 1L)),
+                    ),
+                )
+            val viewModel =
+                viewModel(
+                    vehicleRepository = FakeVehicleRepository(listOf(first, second)),
+                    parkingRepository = SlowSwitchParkingRepository(parking, slowVehicleId = second.id),
+                )
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locations.isEmpty()) state = awaitItem()
+                assertEquals(first.id, state.activeVehicle?.id)
+
+                viewModel.activateVehicle(second)
+
+                // The second vehicle's history is still delayed; the first one's must not leak.
+                state = awaitItem()
+                while (state.activeVehicle?.id != second.id) state = awaitItem()
+                assertTrue(state.locations.isEmpty())
+
                 cancelAndIgnoreRemainingEvents()
             }
         }

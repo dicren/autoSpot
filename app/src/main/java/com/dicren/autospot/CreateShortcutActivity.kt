@@ -2,6 +2,7 @@ package com.dicren.autospot
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.clickable
@@ -35,6 +36,10 @@ import androidx.core.graphics.drawable.IconCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.ui.theme.AutoSpotTheme
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.catch
+
+private const val TAG = "CreateShortcutActivity"
 
 class CreateShortcutActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -86,7 +91,11 @@ private fun VehicleSelectionDialog(
     val context = LocalContext.current
     val app = remember(context) { context.applicationContext as AutoSpotApp }
     val vehicles by app.container.vehicleRepository.vehicles
-        .collectAsStateWithLifecycle(initialValue = emptyList())
+        .catch { error ->
+            if (error is CancellationException) throw error
+            Log.e(TAG, "Could not read the vehicle list", error)
+            emit(emptyList())
+        }.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Box(
         modifier =
