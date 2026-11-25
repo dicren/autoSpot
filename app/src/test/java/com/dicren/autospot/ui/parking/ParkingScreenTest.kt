@@ -1,10 +1,13 @@
 package com.dicren.autospot.ui.parking
 
+import android.content.Context
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.dicren.autospot.R
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.domain.SaveParkingLocation
@@ -62,6 +65,9 @@ class ParkingScreenTest {
 
     @Test
     fun `the background rationale is not recorded until the user dismisses it`() {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        val rationaleTitle = context.getString(R.string.background_location_title)
+        val notNow = context.getString(R.string.not_now)
         val settings = RecordingSettingsRepository()
         val viewModel =
             ParkingViewModel(
@@ -83,13 +89,13 @@ class ParkingScreenTest {
 
         composeRule.waitUntil(timeoutMillis = 5_000) {
             composeRule
-                .onAllNodesWithText("Allow location all the time")
+                .onAllNodesWithText(rationaleTitle)
                 .fetchSemanticsNodes()
                 .isNotEmpty()
         }
         assertFalse(settings.rationaleMarked)
 
-        composeRule.onNodeWithText("Not now").performClick()
+        composeRule.onNodeWithText(notNow).performClick()
         composeRule.waitUntil(timeoutMillis = 5_000) { settings.rationaleMarked }
         assertTrue(settings.rationaleMarked)
     }

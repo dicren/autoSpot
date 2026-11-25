@@ -1,5 +1,6 @@
 package com.dicren.autospot
 
+import android.content.Context
 import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
@@ -121,7 +122,8 @@ class NavigateActivityTest {
     fun `without a saved location it explains and finishes`() {
         val activity = launch(withLocation = false)
 
-        assertEquals("No location saved", ShadowToast.getTextOfLatestToast())
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertEquals(context.getString(R.string.no_location_saved), ShadowToast.getTextOfLatestToast())
         assertTrue(activity.isFinishing)
     }
 
@@ -134,7 +136,8 @@ class NavigateActivityTest {
                 parkingRepository = FailingParkingRepository(FakeParkingRepository()),
             )
 
-        assertEquals("Something went wrong. Please try again.", ShadowToast.getTextOfLatestToast())
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        assertEquals(context.getString(R.string.operation_failed), ShadowToast.getTextOfLatestToast())
         assertTrue(activity.isFinishing)
     }
 }
