@@ -63,6 +63,12 @@
     <string name="view_all_on_map">すべての車両を地図に表示</string>
     <string name="clear_group">グループを削除</string>
     <string name="clear_group_message">このグループの保存地点をすべて削除します（%1$d）。</string>
+    <string name="history_calendar_view">カレンダー表示</string>
+    <string name="history_list_view">リスト表示</string>
+    <string name="previous_month">前の月</string>
+    <string name="next_month">次の月</string>
+    <string name="no_spots_this_month">今月の駐車記録はありません</string>
+    <string name="no_spots_this_day">この日の駐車記録はありません</string>
 
     <!-- Relative time -->
     <string name="just_now">たった今</string>

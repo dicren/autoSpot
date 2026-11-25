@@ -65,6 +65,12 @@
     <string name="view_all_on_map">Ver todos los vehículos en el mapa</string>
     <string name="clear_group">Borrar grupo</string>
     <string name="clear_group_message">Se borrarán todos los aparcamientos guardados de este grupo (%1$d).</string>
+    <string name="history_calendar_view">Vista de calendario</string>
+    <string name="history_list_view">Vista de lista</string>
+    <string name="previous_month">Mes anterior</string>
+    <string name="next_month">Mes siguiente</string>
+    <string name="no_spots_this_month">No hay aparcamientos este mes</string>
+    <string name="no_spots_this_day">No hay aparcamientos este día</string>
 
     <!-- Relative time -->
     <string name="just_now">Ahora mismo</string>

@@ -291,7 +291,9 @@ All UI is Compose, split in `ui/`:
   derived from the id so it survives adding vehicles), the car glyph on each vehicle's newest spot
   (`latestSpotIds`), and a neutral bubble with the count for a group that may mix vehicles.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
-  `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.
+  `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas. The history
+  sheet owns its own `SheetState` because the calendar asks it to expand: the day list sits under
+  the grid, and in a half-expanded sheet a day tap would look like it did nothing.
 - `ui/parking/ParkingViewModel.kt` + `ParkingUiState.kt` — `StateFlow<ParkingUiState>` built from
   the repositories (`combine` + `flatMapLatest`), one-shot `ParkingEvent`s for snackbars, and the
   action methods. Repository writes are wrapped so a storage failure emits
@@ -321,6 +323,22 @@ All UI is Compose, split in `ui/`:
   the history and the second line on the card. The sheet header also holds the two map buttons
   (only while there are spots) and, in the all-vehicles overview, each row is prefixed with the
   vehicle's name (`showVehicleNames`), because a mixed list would otherwise not say whose spot it is.
+  The remaining header actions are icon-only: the list/calendar toggle and the clear-all (or
+  delete-group) sweep. Their wording lives in the tooltip, and the confirmation dialog still
+  spells out what is about to be deleted.
+- `ui/parking/components/HistoryCalendar.kt` — the calendar face of the history. It opens on the
+  newest spot's month and day, draws a dot on every day that holds a spot, rings today, and pages
+  with the arrows **or a sideways swipe**, stopping at the months holding the oldest and newest
+  spots, so it never walks through months that can only be empty. The swipe lives on the whole
+  calendar (grid and day list) and consumes horizontal movement on purpose: otherwise a sideways
+  drag over a spot row would fire that row's click instead of paging. Months slide in the
+  direction of travel with `AnimatedContent`, which also animates the 5↔6 week height change.
+  Tapping a marked day selects it and expands the sheet through `onRevealEntries`; unmarked days
+  are not selectable. Both faces render the same `HistoryRow`, so the per-row delete button and
+  the address fallback cannot drift apart.
+- `ui/format/ParkingCalendar.kt` — groups the history by local calendar day (`ParkingCalendar`,
+  device time zone, newest first inside a day) and lays out a month on the locale's week
+  (`monthWeeks`, `weekdayLabels`, `firstDayOfWeek`), which is what the calendar face draws.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
   absolute fallback.
 - `ui/format/AddressFormatter.kt` — `formatAddress(street, locality)` joins the stored components
@@ -403,7 +421,7 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 94 strings plus 3 plurals (97 entries).
+  `ko`, `ru`, `zh`) and all currently carry the same 100 strings plus 3 plurals (103 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
   back to English. `LocaleResourcesTest` fails CI when the key sets differ or a translation
   changes the `%s`/`%d` arguments of a string or plural. Spanish, French and Italian need a

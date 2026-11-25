@@ -122,6 +122,10 @@ internal class EdgeSafeTooltipPositionProvider(
 /**
  * An icon-only button that always carries a tooltip. [label] is used both as the accessibility
  * description and as the tooltip text, so the two cannot drift apart.
+ *
+ * [tint] defaults to [Color.Unspecified] so the icon follows the button's content color, which is
+ * what dims it while [enabled] is false. A color read at the call site would stay at full opacity
+ * and make a disabled button look enabled.
  */
 @Composable
 fun TooltippedIconButton(
@@ -130,14 +134,14 @@ fun TooltippedIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
-    tint: Color = LocalContentColor.current,
+    tint: Color = Color.Unspecified,
 ) {
     IconTooltip(text = label) {
         IconButton(onClick = onClick, modifier = modifier, enabled = enabled) {
             Icon(
                 imageVector = imageVector,
                 contentDescription = label,
-                tint = tint,
+                tint = if (tint != Color.Unspecified) tint else LocalContentColor.current,
             )
         }
     }

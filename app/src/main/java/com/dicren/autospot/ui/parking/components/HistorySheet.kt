@@ -11,14 +11,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ViewList
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -27,12 +34,17 @@ import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.components.TooltippedIconButton
+import com.dicren.autospot.ui.format.ParkingCalendar
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.format.formatAddress
 import java.util.Locale
 
 /**
  * The parking history, either the whole of a scope or only the group of spots the map is showing.
+ *
+ * It has two faces, switched from the header: the list, newest first, and a calendar of the days
+ * that hold spots. The list is the one that opens, because "where did I park today" is the common
+ * question and the newest spot is always on top of it.
  *
  * The header carries the way out to the map: one vehicle at a time, and — only when there is more
  * than one — every vehicle at once. Both need at least one spot, because there would be nothing
@@ -57,106 +69,196 @@ fun HistorySheet(
     onShowOnMap: (() -> Unit)? = null,
     /** Non-null only when there is more than one vehicle to show. */
     onShowAllVehiclesOnMap: (() -> Unit)? = null,
+    /**
+     * Asks the host to grow the sheet. The calendar calls it when a day is picked, because that
+     * day's spots sit under the grid and a half-expanded sheet would hide them.
+     */
+    onRevealEntries: () -> Unit = {},
 ) {
+    val calendar = remember(locations) { ParkingCalendar(locations) }
+    var isCalendar by rememberSaveable { mutableStateOf(false) }
+
     Column(
         modifier =
             modifier
                 .fillMaxWidth()
                 .padding(16.dp),
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            Text(
-                text = stringResource(R.string.history_title),
-                style = MaterialTheme.typography.titleLarge,
-                modifier = Modifier.weight(1f),
-            )
-            if (locations.isNotEmpty()) {
-                // One icon per scope: the map glyph means "this vehicle", the globe "all of them".
-                onShowOnMap?.let {
-                    TooltippedIconButton(
-                        imageVector = Icons.Default.Map,
-                        label = stringResource(R.string.view_vehicle_on_map),
-                        onClick = it,
-                    )
-                }
-                onShowAllVehiclesOnMap?.let {
-                    TooltippedIconButton(
-                        imageVector = Icons.Default.Public,
-                        label = stringResource(R.string.view_all_on_map),
-                        onClick = it,
-                    )
-                }
-                TextButton(onClick = onRequestClearAll) {
-                    Text(
-                        text =
-                            stringResource(
-                                if (isClusterScoped) R.string.clear_group else R.string.clear_all,
-                            ),
-                        color = MaterialTheme.colorScheme.error,
-                    )
-                }
-            }
-        }
+        HistoryHeader(
+            hasLocations = locations.isNotEmpty(),
+            isCalendar = isCalendar,
+            clearLabel =
+                stringResource(
+                    if (isClusterScoped) R.string.clear_group else R.string.clear_all,
+                ),
+            onToggleView = { isCalendar = !isCalendar },
+            onRequestClearAll = onRequestClearAll,
+            onShowOnMap = onShowOnMap,
+            onShowAllVehiclesOnMap = onShowAllVehiclesOnMap,
+        )
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (locations.isEmpty()) {
-            Text(
-                text = stringResource(R.string.no_history),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                textAlign = TextAlign.Center,
-            )
-        } else {
-            LazyColumn {
-                items(locations, key = { it.id }) { location ->
-                    Row(
-                        modifier =
-                            Modifier
-                                .fillMaxWidth()
-                                .clickable { onLocationSelected(location) }
-                                .padding(vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = timeFormatter.format(location.timestamp, nowMillis),
-                                style = MaterialTheme.typography.bodyLarge,
-                            )
-                            Text(
-                                text =
-                                    detailLine(
-                                        location = location,
-                                        vehicleNames = vehicleNames,
-                                        showVehicleName = showVehicleNames,
-                                    ),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        TooltippedIconButton(
-                            imageVector = Icons.Default.Delete,
-                            label = stringResource(R.string.delete),
-                            onClick = { onDeleteLocation(location) },
-                            tint = MaterialTheme.colorScheme.error,
+        when {
+            locations.isEmpty() -> {
+                EmptyHistory()
+            }
+
+            isCalendar -> {
+                HistoryCalendar(
+                    calendar = calendar,
+                    timeFormatter = timeFormatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = onLocationSelected,
+                    onDeleteLocation = onDeleteLocation,
+                    vehicleNames = vehicleNames,
+                    showVehicleNames = showVehicleNames,
+                    onRevealEntries = onRevealEntries,
+                )
+            }
+
+            else -> {
+                LazyColumn {
+                    items(locations, key = { it.id }) { location ->
+                        HistoryRow(
+                            location = location,
+                            timeFormatter = timeFormatter,
+                            nowMillis = nowMillis,
+                            vehicleNames = vehicleNames,
+                            showVehicleName = showVehicleNames,
+                            onLocationSelected = onLocationSelected,
+                            onDeleteLocation = onDeleteLocation,
                         )
                     }
-                    HorizontalDivider()
                 }
             }
         }
 
         Spacer(modifier = Modifier.height(32.dp))
     }
+}
+
+/**
+ * The title and every action of the sheet. The actions are icons with tooltips: three of them
+ * (map, list/calendar, clear) are only glyphs, and an unlabelled icon is a guess.
+ */
+@Composable
+private fun HistoryHeader(
+    hasLocations: Boolean,
+    isCalendar: Boolean,
+    clearLabel: String,
+    onToggleView: () -> Unit,
+    onRequestClearAll: () -> Unit,
+    onShowOnMap: (() -> Unit)?,
+    onShowAllVehiclesOnMap: (() -> Unit)?,
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = stringResource(R.string.history_title),
+            style = MaterialTheme.typography.titleLarge,
+            modifier = Modifier.weight(1f),
+        )
+        if (hasLocations) {
+            // One icon per scope: the map glyph means "this vehicle", the globe "all of them".
+            onShowOnMap?.let {
+                TooltippedIconButton(
+                    imageVector = Icons.Default.Map,
+                    label = stringResource(R.string.view_vehicle_on_map),
+                    onClick = it,
+                )
+            }
+            onShowAllVehiclesOnMap?.let {
+                TooltippedIconButton(
+                    imageVector = Icons.Default.Public,
+                    label = stringResource(R.string.view_all_on_map),
+                    onClick = it,
+                )
+            }
+            TooltippedIconButton(
+                // The icon shows where the tap takes you, not where you are.
+                imageVector =
+                    if (isCalendar) {
+                        Icons.AutoMirrored.Filled.ViewList
+                    } else {
+                        Icons.Default.CalendarMonth
+                    },
+                label =
+                    stringResource(
+                        if (isCalendar) R.string.history_list_view else R.string.history_calendar_view,
+                    ),
+                onClick = onToggleView,
+            )
+            TooltippedIconButton(
+                imageVector = Icons.Default.DeleteSweep,
+                label = clearLabel,
+                onClick = onRequestClearAll,
+                tint = MaterialTheme.colorScheme.error,
+            )
+        }
+    }
+}
+
+/** One spot in either face of the sheet: its time, where it was, and its own delete button. */
+@Composable
+internal fun HistoryRow(
+    location: ParkingLocationEntity,
+    timeFormatter: ParkingTimeFormatter,
+    nowMillis: Long,
+    vehicleNames: Map<Long, String>,
+    showVehicleName: Boolean,
+    onLocationSelected: (ParkingLocationEntity) -> Unit,
+    onDeleteLocation: (ParkingLocationEntity) -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .clickable { onLocationSelected(location) }
+                .padding(vertical = 12.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = timeFormatter.format(location.timestamp, nowMillis),
+                style = MaterialTheme.typography.bodyLarge,
+            )
+            Text(
+                text =
+                    detailLine(
+                        location = location,
+                        vehicleNames = vehicleNames,
+                        showVehicleName = showVehicleName,
+                    ),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+        TooltippedIconButton(
+            imageVector = Icons.Default.Delete,
+            label = stringResource(R.string.delete),
+            onClick = { onDeleteLocation(location) },
+            tint = MaterialTheme.colorScheme.error,
+        )
+    }
+    HorizontalDivider()
+}
+
+@Composable
+private fun EmptyHistory() {
+    Text(
+        text = stringResource(R.string.no_history),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .padding(vertical = 32.dp),
+        textAlign = TextAlign.Center,
+    )
 }
 
 /**

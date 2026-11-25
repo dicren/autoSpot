@@ -65,6 +65,12 @@
     <string name="view_all_on_map">Mostra tutti i veicoli sulla mappa</string>
     <string name="clear_group">Elimina gruppo</string>
     <string name="clear_group_message">Tutti i parcheggi salvati di questo gruppo verranno eliminati (%1$d).</string>
+    <string name="history_calendar_view">Vista calendario</string>
+    <string name="history_list_view">Vista elenco</string>
+    <string name="previous_month">Mese precedente</string>
+    <string name="next_month">Mese successivo</string>
+    <string name="no_spots_this_month">Nessun parcheggio in questo mese</string>
+    <string name="no_spots_this_day">Nessun parcheggio in questo giorno</string>
 
     <!-- Relative time -->
     <string name="just_now">Adesso</string>

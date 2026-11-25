@@ -8,6 +8,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
@@ -15,7 +17,9 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeRight
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dicren.autospot.data.ParkingLocationEntity
@@ -30,6 +34,9 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.ZoneId
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [34])
@@ -69,6 +76,31 @@ class ParkingComponentsTest {
             locality = "Getafe",
             addressResolved = true,
         )
+
+    /** A spot saved at noon on [day], so the calendar always groups it under that day. */
+    private fun spotOn(
+        day: LocalDate,
+        id: Long,
+        street: String? = null,
+    ): ParkingLocationEntity =
+        ParkingLocationEntity(
+            id = id,
+            vehicleId = vehicle.id,
+            latitude = 42.0,
+            longitude = -5.0,
+            timestamp =
+                day
+                    .atTime(12, 0)
+                    .atZone(ZoneId.systemDefault())
+                    .toInstant()
+                    .toEpochMilli(),
+            street = street,
+            addressResolved = street != null,
+        )
+
+    private fun dayOf(day: LocalDate): String = "$CALENDAR_DAY_TAG_PREFIX${day.toEpochDay()}"
+
+    private fun markOf(day: LocalDate): String = "$CALENDAR_MARK_TAG_PREFIX${day.toEpochDay()}"
 
     @Test
     fun `the empty state invites the user to save a location`() {
@@ -294,7 +326,7 @@ class ParkingComponentsTest {
 
         composeRule.onNodeWithText("History").assertIsDisplayed()
         composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
-        composeRule.onNodeWithText("Clear all").performClick()
+        composeRule.onNodeWithContentDescription("Clear all").performClick()
 
         assertTrue(cleared)
     }
@@ -468,8 +500,173 @@ class ParkingComponentsTest {
             }
         }
 
-        composeRule.onNodeWithText("Delete group").assertIsDisplayed()
-        composeRule.onNodeWithText("Clear all").assertDoesNotExist()
+        composeRule.onNodeWithText("Delete group").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Delete group").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Clear all").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the history switches between the list and the calendar`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithTag(HISTORY_CALENDAR_TAG).assertDoesNotExist()
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+        composeRule.onNodeWithTag(HISTORY_CALENDAR_TAG).assertIsDisplayed()
+
+        composeRule.onNodeWithContentDescription("List view").performClick()
+        composeRule.onNodeWithTag(HISTORY_CALENDAR_TAG).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("Calendar view").assertIsDisplayed()
+    }
+
+    @Test
+    fun `the calendar marks the days that hold a spot`() {
+        val firstDay = YearMonth.now().atDay(1)
+        val secondDay = firstDay.plusDays(1)
+        val emptyDay = firstDay.plusDays(2)
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(spotOn(firstDay, 1), spotOn(secondDay, 2)),
+                    timeFormatter = formatter,
+                    nowMillis = System.currentTimeMillis(),
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+
+        composeRule.onNodeWithTag(markOf(firstDay), useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithTag(markOf(secondDay), useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithTag(markOf(emptyDay), useUnmergedTree = true).assertDoesNotExist()
+    }
+
+    @Test
+    fun `tapping a marked day lists only that day's spots`() {
+        val month = YearMonth.now()
+        val olderDay = month.atDay(1)
+        val newerDay = month.atDay(2)
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations =
+                        listOf(
+                            spotOn(olderDay, 1, "Calle Uno"),
+                            spotOn(newerDay, 2, "Calle Dos"),
+                        ),
+                    timeFormatter = formatter,
+                    nowMillis = System.currentTimeMillis(),
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+
+        // The calendar opens on the newest spot's day.
+        composeRule.onNodeWithTag(HISTORY_CALENDAR_TAG).performScrollToNode(hasText("Calle Dos"))
+        composeRule.onNodeWithText("Calle Dos").assertIsDisplayed()
+
+        composeRule
+            .onNodeWithTag(HISTORY_CALENDAR_TAG)
+            .performScrollToNode(hasTestTag(dayOf(olderDay)))
+        composeRule.onNodeWithTag(dayOf(olderDay)).performClick()
+
+        composeRule.onNodeWithTag(HISTORY_CALENDAR_TAG).performScrollToNode(hasText("Calle Uno"))
+        composeRule.onNodeWithText("Calle Uno").assertIsDisplayed()
+        composeRule.onNodeWithText("Calle Dos").assertDoesNotExist()
+    }
+
+    /** The day's spots sit under the grid: without growing the sheet the tap looks inert. */
+    @Test
+    fun `picking a day asks the sheet to show its entries`() {
+        var revealed = 0
+        val day = YearMonth.now().atDay(1)
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(spotOn(day, 1, "Calle Uno")),
+                    timeFormatter = formatter,
+                    nowMillis = System.currentTimeMillis(),
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    onRevealEntries = { revealed++ },
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+        composeRule.onNodeWithTag(dayOf(day)).performClick()
+
+        assertEquals(1, revealed)
+    }
+
+    @Test
+    fun `swiping the calendar pages through the months`() {
+        val month = YearMonth.now()
+        val olderDay = month.minusMonths(1).atDay(5)
+        val newerDay = month.atDay(1)
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(spotOn(olderDay, 1), spotOn(newerDay, 2)),
+                    timeFormatter = formatter,
+                    nowMillis = System.currentTimeMillis(),
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+        composeRule.onNodeWithTag(markOf(olderDay), useUnmergedTree = true).assertDoesNotExist()
+
+        // Right is back in time: the calendar opens on the newest month.
+        composeRule.onNodeWithTag(CALENDAR_GRID_TAG).performTouchInput { swipeRight() }
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithTag(markOf(olderDay), useUnmergedTree = true).assertExists()
+        composeRule.onNodeWithContentDescription("Previous month").assertIsNotEnabled()
+    }
+
+    /** Paging through months that can never list anything would only make the user guess. */
+    @Test
+    fun `the calendar stops at the months that hold spots`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Calendar view").performClick()
+
+        composeRule.onNodeWithContentDescription("Previous month").assertIsNotEnabled()
+        composeRule.onNodeWithContentDescription("Next month").assertIsNotEnabled()
     }
 
     @Test

@@ -63,6 +63,12 @@
     <string name="view_all_on_map">모든 차량을 지도에서 보기</string>
     <string name="clear_group">그룹 삭제</string>
     <string name="clear_group_message">이 그룹의 저장된 위치가 모두 삭제됩니다(%1$d).</string>
+    <string name="history_calendar_view">캘린더 보기</string>
+    <string name="history_list_view">목록 보기</string>
+    <string name="previous_month">이전 달</string>
+    <string name="next_month">다음 달</string>
+    <string name="no_spots_this_month">이번 달 주차 기록이 없습니다</string>
+    <string name="no_spots_this_day">이 날짜의 주차 기록이 없습니다</string>
 
     <!-- Relative time -->
     <string name="just_now">방금</string>

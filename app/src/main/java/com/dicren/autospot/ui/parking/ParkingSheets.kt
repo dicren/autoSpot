@@ -6,7 +6,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.res.stringResource
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
@@ -15,6 +17,7 @@ import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.parking.components.HistorySheet
 import com.dicren.autospot.ui.parking.components.VehiclesSheet
 import com.dicren.autospot.util.BluetoothDeviceInfo
+import kotlinx.coroutines.launch
 
 /**
  * Every action the parking sheets can trigger. Grouping them keeps [ParkingSheets] readable as
@@ -80,8 +83,13 @@ fun ParkingSheets(
     }
 
     if (showHistory) {
+        // A half-expanded sheet leaves the calendar's day list off-screen, so the calendar asks
+        // for this state to grow when a day is picked.
+        val sheetState = rememberModalBottomSheetState()
+        val scope = rememberCoroutineScope()
         ModalBottomSheet(
             onDismissRequest = callbacks.onDismissHistory,
+            sheetState = sheetState,
         ) {
             HistorySheet(
                 // The sheet follows the card: a group the map is showing lists only its spots.
@@ -97,6 +105,7 @@ fun ParkingSheets(
                 onShowOnMap = callbacks.onShowVehicleOnMap,
                 onShowAllVehiclesOnMap =
                     if (state.vehicles.size > 1) callbacks.onShowAllVehiclesOnMap else null,
+                onRevealEntries = { scope.launch { sheetState.expand() } },
             )
         }
     }

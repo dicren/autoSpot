@@ -63,6 +63,12 @@
     <string name="view_all_on_map">在地图上查看所有车辆</string>
     <string name="clear_group">删除分组</string>
     <string name="clear_group_message">将删除此分组中的所有已保存位置（%1$d）。</string>
+    <string name="history_calendar_view">日历视图</string>
+    <string name="history_list_view">列表视图</string>
+    <string name="previous_month">上个月</string>
+    <string name="next_month">下个月</string>
+    <string name="no_spots_this_month">本月没有停车记录</string>
+    <string name="no_spots_this_day">当天没有停车记录</string>
 
     <!-- Relative time -->
     <string name="just_now">刚刚</string>
