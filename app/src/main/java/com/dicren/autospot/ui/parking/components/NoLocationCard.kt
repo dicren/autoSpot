@@ -32,10 +32,7 @@ fun NoLocationCard(
     Card(
         modifier = modifier.padding(32.dp),
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-        colors =
-            CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
-            ),
+        colors = parkingCardColors(),
     ) {
         Column(
             modifier = Modifier.padding(24.dp),

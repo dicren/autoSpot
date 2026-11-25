@@ -1,5 +1,10 @@
 package com.dicren.autospot.ui.parking.components
 
+import androidx.compose.material3.Card
+import androidx.compose.material3.LocalContentColor
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -15,6 +20,7 @@ import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 import com.dicren.autospot.util.BluetoothDeviceInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -149,6 +155,31 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Back to latest").performClick()
 
         assertTrue(backClicked)
+    }
+
+    /**
+     * The floating cards use a translucent surface, which `contentColorFor` cannot map back to a
+     * scheme color. Without an explicit content color the icons fell back to black and vanished
+     * over the dark theme, which is where the whole action row of the location card went.
+     */
+    @Test
+    fun `the floating cards keep a readable content color in the dark theme`() {
+        var expectedOnSurface: Color? = null
+        var cardContentColor: Color? = null
+
+        composeRule.setContent {
+            AutoSpotTheme(darkTheme = true, dynamicColor = false) {
+                expectedOnSurface = MaterialTheme.colorScheme.onSurface
+                Card(colors = parkingCardColors()) {
+                    val contentColor = LocalContentColor.current
+                    SideEffect { cardContentColor = contentColor }
+                }
+            }
+        }
+        composeRule.waitForIdle()
+
+        assertNotEquals(Color.Unspecified, cardContentColor)
+        assertEquals(expectedOnSurface, cardContentColor)
     }
 
     @Test

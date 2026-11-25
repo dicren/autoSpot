@@ -223,7 +223,8 @@ All UI is Compose, split in `ui/`:
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`,
   `BackgroundLocationDialog`) that take state and callbacks, which is what the Compose tests
-  render. `Previews.kt` holds the design-time previews.
+  render. `Previews.kt` holds the design-time previews. The cards that float over the map take
+  their colors from `parkingCardColors()`, which states the content color explicitly (trap 15).
   The edit dialog receives the paired-device list instead of reading the adapter, so it can be
   tested without Bluetooth; only `ParkingScreen` touches `BluetoothDevices.paired`.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
@@ -381,6 +382,14 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
     restricts, so this exact combination was verified on a Pixel 7 Pro (Android 16): app in the
     background, paired A2DP speaker disconnected, `LocationSaveService` started and the location
     was saved. Re-run that test before changing either type or merging the services.
+15. **A translucent container color has no content color.** `CardDefaults.cardColors(containerColor = …)`
+    resolves `contentColor` through `contentColorFor`, which only recognises the exact scheme
+    colors. `surface.copy(alpha = 0.95f)` — used by the cards over the map — matched nothing, so
+    the content color stayed unspecified, `Text`/`Icon` fell back to black and the whole action row
+    of the location card vanished over the dark theme (the reported "nothing in the bottom bar").
+    The cards now share `parkingCardColors()`, which passes `onSurface` explicitly;
+    `ParkingComponentsTest` renders a card in the dark theme and checks the inherited content
+    color, so the trap stays fixed. The same applies to any future translucent surface.
 
 ## Working rules for agents
 
