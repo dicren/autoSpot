@@ -15,7 +15,9 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
 import com.dicren.autospot.util.FakeParkingRepository
@@ -86,13 +88,14 @@ class ParkingViewModelTest {
         settings: SettingsRepository = FakeSettingsRepository(),
         vehicleRepository: VehicleRepository = vehicles,
         parkingRepository: ParkingRepository = parking,
+        saveParkingLocation: SaveParkingLocation? = null,
     ): ParkingViewModel =
         ParkingViewModel(
             vehicleRepository = vehicleRepository,
             parkingRepository = parkingRepository,
             settingsRepository = settings,
             saveParkingLocation =
-                SaveParkingLocationUseCase(
+                saveParkingLocation ?: SaveParkingLocationUseCase(
                     vehicleRepository = vehicleRepository,
                     parkingRepository = parkingRepository,
                     locationSource = source,
@@ -122,6 +125,10 @@ class ParkingViewModelTest {
     }
 
     /** Emits the new vehicle's history only after a delay, like a slow Room query. */
+    private class ThrowingSaveParkingLocation : SaveParkingLocation {
+        override suspend fun save(vehicleId: Long?): SaveResult = throw IllegalStateException("database closed")
+    }
+
     private class SlowSwitchParkingRepository(
         private val delegate: ParkingRepository,
         private val slowVehicleId: Long,
@@ -299,6 +306,19 @@ class ParkingViewModelTest {
             viewModel.events.test {
                 viewModel.saveCurrentLocation()
                 assertEquals(ParkingEvent.NoVehicle, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `an unexpected save failure reports a failure instead of crashing`() =
+        runTest {
+            addVehicle()
+            val viewModel = viewModel(saveParkingLocation = ThrowingSaveParkingLocation())
+
+            viewModel.events.test {
+                viewModel.saveCurrentLocation()
+                assertEquals(ParkingEvent.SaveFailed, awaitItem())
                 cancelAndIgnoreRemainingEvents()
             }
         }
