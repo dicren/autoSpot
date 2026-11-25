@@ -8,6 +8,8 @@ import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.LocateSelf
+import com.dicren.autospot.domain.LocateSelfUseCase
 import com.dicren.autospot.domain.ResolveLocationAddress
 import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
@@ -182,6 +184,13 @@ class FakeLocationSource(
     override suspend fun lastLocation(): LocationFix? = fix
 }
 
+/** Answers with [fix]: a test that does not care about "go to my location" needs no more. */
+class FakeLocateSelf(
+    private val fix: LocationFix? = null,
+) : LocateSelf {
+    override suspend fun find(): LocationFix? = fix
+}
+
 /**
  * Defaults to [AddressLookup.Unavailable]: a test that does not care about addresses must not see
  * rows silently rewritten. Tests about addresses pass the result they need.
@@ -212,6 +221,9 @@ class TestAppContainer(
             clock = clock,
             hasLocationPermission = { true },
         )
+
+    override val locateSelf: LocateSelf =
+        LocateSelfUseCase(locationSource = locationSource, hasLocationPermission = { true })
 
     override val resolveLocationAddressUseCase: ResolveLocationAddress =
         ResolveLocationAddressUseCase(

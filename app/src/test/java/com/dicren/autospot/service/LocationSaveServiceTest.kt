@@ -14,6 +14,8 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.LocateSelf
+import com.dicren.autospot.domain.LocateSelfUseCase
 import com.dicren.autospot.domain.ResolveLocationAddress
 import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
@@ -80,6 +82,8 @@ class LocationSaveServiceTest {
             ),
     ) : AppContainer {
         override val settingsRepository: SettingsRepository = TestSettingsRepository()
+
+        override val locateSelf: LocateSelf = LocateSelfUseCase(locationSource, { true })
 
         override val reverseGeocoder: ReverseGeocoder = FakeReverseGeocoder()
 

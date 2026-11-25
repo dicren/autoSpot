@@ -15,7 +15,8 @@
     <string name="marker_title">あなたの車</string>
     <string name="parked_at">駐車済み</string>
     <string name="navigate_button">Google Mapsでナビ</string>
-    <string name="center_map">地図を中央に</string>
+    <string name="go_to_my_car">自分の車へ</string>
+    <string name="go_to_my_location">現在地へ</string>
     <string name="reset_orientation">向きをリセット</string>
     <string name="share_location">位置を共有</string>
 
@@ -112,4 +113,5 @@
     <string name="location_services_disabled">駐車位置を保存するには位置情報サービスをオンにしてください。</string>
     <string name="open_settings">設定を開く</string>
     <string name="location_saved">駐車位置を保存しました。</string>
+    <string name="location_unavailable">現在地を取得できませんでした。</string>
 </resources>

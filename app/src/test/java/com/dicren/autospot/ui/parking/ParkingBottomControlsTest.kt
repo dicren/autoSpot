@@ -20,6 +20,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.theme.AutoSpotTheme
+import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.LatLng
+import com.google.maps.android.compose.CameraPositionState
+import com.google.maps.android.compose.rememberCameraPositionState
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Rule
@@ -47,6 +51,12 @@ class ParkingBottomControlsTest {
             timestamp = System.currentTimeMillis() - 5 * 60_000L,
         )
 
+    private val spot = LatLng(location.latitude, location.longitude)
+
+    /**
+     * Renders the bottom overlay with the camera sitting on the displayed spot, and returns the
+     * camera state so a test can move it (a pan) and see what the overlay does.
+     */
     private fun setContent(
         isShowingHistory: Boolean,
         canShowOlder: Boolean = true,
@@ -54,13 +64,20 @@ class ParkingBottomControlsTest {
         onOlder: () -> Unit = {},
         onNewer: () -> Unit = {},
         onHistory: () -> Unit = {},
-    ) {
+        onRecenter: () -> Unit = {},
+    ): CameraPositionState {
+        lateinit var cameraPositionState: CameraPositionState
         composeRule.setContent {
             AutoSpotTheme {
                 Box(modifier = Modifier.fillMaxSize()) {
+                    cameraPositionState =
+                        rememberCameraPositionState {
+                            position = CameraPosition.fromLatLngZoom(spot, 17f)
+                        }
                     ParkingBottomControls(
                         snackbarHostState = SnackbarHostState(),
                         location = location,
+                        cameraPositionState = cameraPositionState,
                         timeFormatter = formatter,
                         nowMillis = location.timestamp + 5 * 60_000L,
                         historyCount = 3,
@@ -71,7 +88,7 @@ class ParkingBottomControlsTest {
                             ParkingBottomCallbacks(
                                 onNavigate = {},
                                 onShare = {},
-                                onCenterMap = {},
+                                onRecenter = { onRecenter() },
                                 onHistory = onHistory,
                                 onBackToLatest = {},
                                 onOlder = onOlder,
@@ -82,6 +99,7 @@ class ParkingBottomControlsTest {
                 }
             }
         }
+        return cameraPositionState
     }
 
     /**
@@ -92,7 +110,7 @@ class ParkingBottomControlsTest {
     fun `the navigation button never overlaps the location card`() {
         setContent(isShowingHistory = false)
 
-        assertFabClearsCard()
+        assertFabClearsCard(NAVIGATE)
     }
 
     @Test
@@ -101,7 +119,68 @@ class ParkingBottomControlsTest {
 
         composeRule.onNodeWithContentDescription("Back to latest").assertIsDisplayed()
 
-        assertFabClearsCard()
+        assertFabClearsCard(NAVIGATE)
+    }
+
+    /**
+     * The card is where the address lives; the map button jumped out of it so the title keeps its
+     * width. It has to stay out: a fourth icon is what squeezed the card.
+     */
+    @Test
+    fun `the location card no longer carries the map button`() {
+        setContent(isShowingHistory = true)
+
+        composeRule.onNodeWithContentDescription(GO_TO_CAR).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a centered map does not offer to recenter`() {
+        setContent(isShowingHistory = false)
+
+        composeRule.onNodeWithContentDescription(GO_TO_CAR).assertDoesNotExist()
+    }
+
+    @Test
+    fun `panning away from the spot offers to recenter`() {
+        var recentered = 0
+        val camera = setContent(isShowingHistory = false, onRecenter = { recentered++ })
+
+        // A couple of kilometres away at zoom 17: the spot is well off the middle of the screen.
+        camera.position = CameraPosition.fromLatLngZoom(LatLng(42.02, -5.0), 17f)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithContentDescription(GO_TO_CAR).assertIsDisplayed().performClick()
+
+        assertEquals(1, recentered)
+    }
+
+    @Test
+    fun `a negligible drift keeps the recenter button hidden`() {
+        val camera = setContent(isShowingHistory = false)
+
+        // About five metres: inside the dead zone around the middle of the screen.
+        camera.position = CameraPosition.fromLatLngZoom(LatLng(42.00005, -5.0), 17f)
+        composeRule.waitForIdle()
+
+        composeRule.onNodeWithContentDescription(GO_TO_CAR).assertDoesNotExist()
+    }
+
+    @Test
+    fun `the recenter button appears above the navigation one and clear of the card`() {
+        val camera = setContent(isShowingHistory = true)
+
+        camera.position = CameraPosition.fromLatLngZoom(LatLng(42.02, -5.0), 17f)
+        composeRule.waitForIdle()
+
+        assertFabClearsCard(NAVIGATE)
+        assertFabClearsCard(GO_TO_CAR)
+
+        val recenter = composeRule.onNodeWithContentDescription(GO_TO_CAR).getUnclippedBoundsInRoot()
+        val navigate = composeRule.onNodeWithContentDescription(NAVIGATE).getUnclippedBoundsInRoot()
+        assertTrue(
+            "The recenter button should sit above the route button: $recenter, $navigate",
+            recenter.bottom <= navigate.top,
+        )
     }
 
     @Test
@@ -171,8 +250,8 @@ class ParkingBottomControlsTest {
     }
 
     /** The title sits 16 dp below the card's top edge, which is the card's own padding. */
-    private fun assertFabClearsCard() {
-        val fab = composeRule.onNodeWithContentDescription(NAVIGATE).getUnclippedBoundsInRoot()
+    private fun assertFabClearsCard(description: String) {
+        val fab = composeRule.onNodeWithContentDescription(description).getUnclippedBoundsInRoot()
         val cardTop = composeRule.onNodeWithText("Parked").getUnclippedBoundsInRoot().top - 16.dp
 
         assertTrue("The FAB overlaps the card: $fab, card top $cardTop", fab.bottom + 8.dp <= cardTop)
@@ -180,6 +259,7 @@ class ParkingBottomControlsTest {
 
     private companion object {
         const val NAVIGATE = "Navigate with Google Maps"
+        const val GO_TO_CAR = "Go to my car"
 
         /** Far enough to pass the 72 dp threshold at any density Robolectric may pick. */
         const val LEFT = -600f

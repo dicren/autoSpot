@@ -210,11 +210,36 @@ All UI is Compose, split in `ui/`:
 - `ui/parking/ParkingEffects.kt` — the side effects: refresh on resume, start/stop the monitor,
   request `POST_NOTIFICATIONS`, explain the background-location requirement and follow the
   displayed spot with the camera.
-- `ui/parking/ParkingControls.kt` — the top banners/vehicle card, the compass FAB, and
-  `ParkingBottomControls`: snackbar, navigate FAB and `LocationCard` stacked in **one column**. The
-  FAB used to be an overlay with a fixed bottom padding and the card grew on top of it whenever an
-  old spot was selected ("back to latest" was a second row); keep them in the column, never with
-  absolute offsets. `ParkingBottomControlsTest` asserts the FAB still clears the card.
+- `ui/parking/ParkingControls.kt` — the top banners/vehicle card, the map tool FABs, and
+  `ParkingBottomControls`: snackbar, recenter FAB (only while the map is off the spot), navigate FAB
+  and `LocationCard` stacked in **one column**. The FAB used to be an overlay with a fixed bottom
+  padding and the card grew on top of it whenever an old spot was selected ("back to latest" was a
+  second row); keep them in the column, never with absolute offsets. The recenter button is inserted
+  *above* the navigate button and its spacing lives inside its `AnimatedVisibility`, so it appears
+  and disappears without moving the route button; `ParkingBottomControlsTest` asserts both FABs
+  still clear the card.
+  The **top** column follows the same rule: the my-location and compass FABs sit in it, under the
+  vehicle card, because the banners make the card taller and the old fixed `top = 92.dp` put them
+  on top of it. `ParkingTopOverlayTest` pins both things.
+  Recentring is not a card action any more: a fourth icon squeezed the address out of the card.
+  `rememberIsOffCenter` (shared by the car button and the my-location one) decides when a button is
+  worth showing, from the camera position alone (`MapFocus.kt` computes the point's distance to the
+  centre of the screen in pixels with the Web Mercator scale, since
+  `CameraPositionState.projection` needs a laid-out map and is null in tests). The answer is
+  **latched while the map moves** (`recenterButtonVisibility`): a drag that starts on the spot does
+  not summon the button halfway, and a button already showing does not vanish under the finger of a
+  user who is still moving. When the map settles, the 24 dp dead zone
+  decides. Do not "simplify" it back to a plain `!isMoving && drift > deadZone`: that is what made
+  the button blink in and out during every camera animation.
+  The recenter keeps the zoom the user chose (`newLatLng`); `ParkingCameraEffect` is what sets
+  zoom 17, because jumping to another spot is a different action.
+  The two camera buttons are deliberately different glyphs: `DirectionsCar` (recentre on the saved
+  spot) and `MyLocation` (the blue dot, the user's own position). `MyLocationFab` only exists with
+  precise location and a saved spot: without either there is no blue dot or no map to move. It also
+  **hides itself once the camera sits on the dot** (same dead zone and same latch), because there
+  it would only send the map where it already is; `ParkingMyLocationEffect` keeps the dot's last
+  known position in the screen state for that comparison, read on every resume, and the button
+  stays visible while the position is still unknown (that tap is what asks for it).
   The card is also the handle for the history: `HistorySwipeContainer` wraps it and swiping it
   **left** shows the older spot, **right** returns towards the newest one, with a 72 dp threshold
   or a 1 200 px/s flick, a rubber-band bump when there is nothing on that side, one haptic tick per
@@ -289,7 +314,7 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   name and flips `addressResolved` in one statement.
 - **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`), the
   `ReverseGeocoder` (`location/ReverseGeocoder.kt`, implemented by `AndroidReverseGeocoder`) and
-  the shared `SaveParkingLocation` / `ResolveLocationAddress` use cases are built by
+  the shared `SaveParkingLocation` / `ResolveLocationAddress` / `LocateSelf` use cases are built by
   `di/AppContainer`; services and the ViewModel must take them from there instead of constructing
   their own. The container also exposes
   `ioDispatcher`, which the services and `BootReceiver` use for their scopes, so tests can replace
@@ -310,6 +335,11 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   below it; `Geocoder.isPresent()` false is treated as unavailable. The lookup is best effort: the
   UI always has the coordinates and the generic "Parked" title to fall back to, and there is no
   extra dependency, key or billing.
+- **`LocateSelfUseCase`** answers "where am I?" for the my-location button: the last known fix
+  first (instant, and it is exactly what the blue dot already shows), a fresh fix only when nothing
+  is cached. It stores nothing and does not validate the fix the way a save does; a null answer
+  becomes the `location_unavailable` snackbar. The blue dot is still Google's (the map enables it
+  through `isMyLocationEnabled`), so the button flies to the dot the user can see.
 - **`SettingsRepository`** wraps the `settings` DataStore. It treats an `IOException` (corrupt
   file) as "not onboarded" instead of crashing, and persists the onboarding flag plus the fact
   that the background-location rationale was shown and acted on. Writes are best effort: a failed
@@ -325,11 +355,24 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 85 strings plus 2 plurals (87 entries).
+  `ko`, `ru`, `zh`) and all currently carry the same 87 strings plus 2 plurals (89 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
   back to English. `LocaleResourcesTest` fails CI when the key sets differ or a translation
   changes the `%s`/`%d` arguments of a string or plural. Spanish, French and Italian need a
   `quantity="many"` item in plurals or lint fails.
+- **Tooltips on icon-only controls are mandatory.** An icon is the only label those buttons have
+  and the glyph is always a guess, so every `IconButton`, `FloatingActionButton` or other
+  icon-only control must explain itself on long press. Use `TooltippedIconButton` for an
+  `IconButton` and `IconTooltip { ... }` around anything custom (FABs, toggles); both live in
+  `ui/components/IconTooltip.kt`, and [label] is both the tooltip and the accessibility
+  description, so the two cannot disagree. Text buttons do not need one: their label is already on
+  screen.
+- **Tooltips must fit on screen.** `IconTooltip` places the bubble with
+  `EdgeSafeTooltipPositionProvider`: above the button when there is room, below when there is not,
+  then clamped inside `WindowInsets.safeDrawing` with a margin. Material's own provider positions
+  against the whole window, and the buttons here sit on the edges (map FABs, card arrows, sheet
+  actions), which is how they ended up cut. Keep the provider and `TooltipPositionTest` with it.
+  `ParkingTopOverlayTest` and `ParkingComponentsTest` assert that a long press actually reveals it.
 - **Permissions:** check runtime grants through `util/Permissions`, not raw
   `checkSelfPermission`. `Permissions.locationAccuracy` distinguishes `NONE` / `COARSE` /
   `PRECISE`: only precise is useful for a parking spot, and the banner names approximate access as

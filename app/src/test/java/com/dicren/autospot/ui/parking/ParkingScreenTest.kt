@@ -14,6 +14,7 @@ import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.ui.theme.AutoSpotTheme
+import com.dicren.autospot.util.FakeLocateSelf
 import com.dicren.autospot.util.FakeParkingRepository
 import com.dicren.autospot.util.FakeReverseGeocoder
 import com.dicren.autospot.util.FakeVehicleRepository
@@ -82,6 +83,7 @@ class ParkingScreenTest {
                         parkingRepository = FakeParkingRepository(),
                         reverseGeocoder = FakeReverseGeocoder(),
                     ),
+                locateSelf = FakeLocateSelf(),
                 hasMonitoringPermission = { true },
                 locationAccuracy = { LocationAccuracy.PRECISE },
                 hasBackgroundLocationPermission = { false },

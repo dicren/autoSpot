@@ -8,8 +8,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +17,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.ui.components.TooltippedIconButton
 
 @Composable
 fun VehicleCard(
@@ -49,12 +48,11 @@ fun VehicleCard(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
             )
-            IconButton(onClick = onSettingsClick) {
-                Icon(
-                    imageVector = Icons.Default.Settings,
-                    contentDescription = stringResource(R.string.vehicles_title),
-                )
-            }
+            TooltippedIconButton(
+                imageVector = Icons.Default.Settings,
+                label = stringResource(R.string.vehicles_title),
+                onClick = onSettingsClick,
+            )
         }
     }
 }

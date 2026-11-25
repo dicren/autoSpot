@@ -8,12 +8,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -23,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
+import com.dicren.autospot.ui.components.TooltippedIconButton
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.format.formatAddress
 
@@ -36,7 +34,6 @@ fun LocationCard(
     onShareClick: () -> Unit,
     onHistoryClick: () -> Unit,
     onBackToLatestClick: () -> Unit,
-    onCenterMapClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -73,33 +70,24 @@ fun LocationCard(
                     // Kept in the action row, not as a row of its own: a second line made the
                     // card taller every time an old spot was selected.
                     if (isFromHistory) {
-                        IconButton(onClick = onBackToLatestClick) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                contentDescription = stringResource(R.string.back_to_latest),
-                            )
-                        }
-                    }
-                    IconButton(onClick = onCenterMapClick) {
-                        Icon(
-                            imageVector = Icons.Default.MyLocation,
-                            contentDescription = stringResource(R.string.center_map),
+                        TooltippedIconButton(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            label = stringResource(R.string.back_to_latest),
+                            onClick = onBackToLatestClick,
                         )
                     }
                     if (historyCount > 1) {
-                        IconButton(onClick = onHistoryClick) {
-                            Icon(
-                                imageVector = Icons.Default.History,
-                                contentDescription = stringResource(R.string.history_title),
-                            )
-                        }
-                    }
-                    IconButton(onClick = onShareClick) {
-                        Icon(
-                            imageVector = Icons.Default.Share,
-                            contentDescription = stringResource(R.string.share_location),
+                        TooltippedIconButton(
+                            imageVector = Icons.Default.History,
+                            label = stringResource(R.string.history_title),
+                            onClick = onHistoryClick,
                         )
                     }
+                    TooltippedIconButton(
+                        imageVector = Icons.Default.Share,
+                        label = stringResource(R.string.share_location),
+                        onClick = onShareClick,
+                    )
                 }
             }
         }

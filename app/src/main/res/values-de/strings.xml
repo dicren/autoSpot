@@ -15,7 +15,8 @@
     <string name="marker_title">Ihr Auto</string>
     <string name="parked_at">Geparkt</string>
     <string name="navigate_button">Mit Google Maps navigieren</string>
-    <string name="center_map">Karte zentrieren</string>
+    <string name="go_to_my_car">Zu meinem Auto</string>
+    <string name="go_to_my_location">Zu meinem Standort</string>
     <string name="reset_orientation">Ausrichtung zurücksetzen</string>
     <string name="share_location">Standort teilen</string>
 
@@ -114,4 +115,5 @@
     <string name="location_services_disabled">Aktivieren Sie die Standortdienste, damit Ihr Parkplatz gespeichert werden kann.</string>
     <string name="open_settings">Einstellungen öffnen</string>
     <string name="location_saved">Parkplatz gespeichert.</string>
+    <string name="location_unavailable">Dein Standort konnte nicht ermittelt werden.</string>
 </resources>

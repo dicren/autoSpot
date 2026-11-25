@@ -16,9 +16,11 @@ import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.domain.AddressLookupOutcome
+import com.dicren.autospot.domain.LocateSelf
 import com.dicren.autospot.domain.ResolveLocationAddress
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
+import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CancellationException
@@ -46,6 +48,7 @@ class ParkingViewModel(
     private val settingsRepository: SettingsRepository,
     private val saveParkingLocation: SaveParkingLocation,
     private val resolveLocationAddress: ResolveLocationAddress,
+    private val locateSelf: LocateSelf,
     private val hasMonitoringPermission: () -> Boolean,
     private val locationAccuracy: () -> LocationAccuracy,
     private val hasBackgroundLocationPermission: () -> Boolean,
@@ -195,6 +198,12 @@ class ParkingViewModel(
         }
     }
 
+    /**
+     * The best guess at where the user is standing, for the "go to my location" camera move.
+     * Suspends while a fix is requested and never throws; null means "nothing to show".
+     */
+    suspend fun findMyLocation(): LocationFix? = locateSelf.find()
+
     fun selectLocation(location: ParkingLocationEntity) {
         selectedLocationId.value = location.id
     }
@@ -326,6 +335,7 @@ class ParkingViewModel(
                         settingsRepository = container.settingsRepository,
                         saveParkingLocation = container.saveParkingLocationUseCase,
                         resolveLocationAddress = container.resolveLocationAddressUseCase,
+                        locateSelf = container.locateSelf,
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
                         locationAccuracy = { Permissions.locationAccuracy(appContext) },
                         hasBackgroundLocationPermission = { Permissions.hasBackgroundLocation(appContext) },

@@ -13,8 +13,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,6 +24,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
+import com.dicren.autospot.ui.components.TooltippedIconButton
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.format.formatAddress
 import java.util.Locale
@@ -103,13 +102,12 @@ fun HistorySheet(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
-                        IconButton(onClick = { onDeleteLocation(location) }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringResource(R.string.delete),
-                                tint = MaterialTheme.colorScheme.error,
-                            )
-                        }
+                        TooltippedIconButton(
+                            imageVector = Icons.Default.Delete,
+                            label = stringResource(R.string.delete),
+                            onClick = { onDeleteLocation(location) },
+                            tint = MaterialTheme.colorScheme.error,
+                        )
                     }
                     HorizontalDivider()
                 }

@@ -15,7 +15,8 @@
     <string name="marker_title">Your car</string>
     <string name="parked_at">Parked</string>
     <string name="navigate_button">Navigate with Google Maps</string>
-    <string name="center_map">Center map</string>
+    <string name="go_to_my_car">Go to my car</string>
+    <string name="go_to_my_location">Go to my location</string>
     <string name="reset_orientation">Reset orientation</string>
     <string name="share_location">Share location</string>
 
@@ -114,4 +115,5 @@
     <string name="location_services_disabled">Turn on location services so your parking spot can be saved.</string>
     <string name="open_settings">Open settings</string>
     <string name="location_saved">Parking spot saved.</string>
+    <string name="location_unavailable">Couldn\'t get your location.</string>
 </resources>

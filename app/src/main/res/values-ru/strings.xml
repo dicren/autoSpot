@@ -15,7 +15,8 @@
     <string name="marker_title">Ваш автомобиль</string>
     <string name="parked_at">Припаркован</string>
     <string name="navigate_button">Навигация в Google Maps</string>
-    <string name="center_map">Центрировать карту</string>
+    <string name="go_to_my_car">К моей машине</string>
+    <string name="go_to_my_location">К моему местоположению</string>
     <string name="reset_orientation">Сбросить ориентацию</string>
     <string name="share_location">Поделиться местоположением</string>
 
@@ -118,4 +119,5 @@
     <string name="location_services_disabled">Включите геолокацию, чтобы сохранить место парковки.</string>
     <string name="open_settings">Открыть настройки</string>
     <string name="location_saved">Место парковки сохранено.</string>
+    <string name="location_unavailable">Не удалось определить ваше местоположение.</string>
 </resources>

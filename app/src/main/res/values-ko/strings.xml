@@ -15,7 +15,8 @@
     <string name="marker_title">내 차</string>
     <string name="parked_at">주차됨</string>
     <string name="navigate_button">Google 지도로 내비게이션</string>
-    <string name="center_map">지도 중앙으로</string>
+    <string name="go_to_my_car">내 차로 이동</string>
+    <string name="go_to_my_location">내 위치로 이동</string>
     <string name="reset_orientation">방향 초기화</string>
     <string name="share_location">위치 공유</string>
 
@@ -112,4 +113,5 @@
     <string name="location_services_disabled">주차 위치를 저장하려면 위치 서비스를 켜세요.</string>
     <string name="open_settings">설정 열기</string>
     <string name="location_saved">주차 위치를 저장했습니다.</string>
+    <string name="location_unavailable">현재 위치를 가져올 수 없습니다.</string>
 </resources>

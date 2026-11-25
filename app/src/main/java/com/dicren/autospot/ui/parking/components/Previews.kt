@@ -54,7 +54,6 @@ private fun LocationCardPreview() {
             onShareClick = {},
             onHistoryClick = {},
             onBackToLatestClick = {},
-            onCenterMapClick = {},
         )
     }
 }

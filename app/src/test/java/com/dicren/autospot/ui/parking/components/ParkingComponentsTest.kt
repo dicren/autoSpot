@@ -9,9 +9,12 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTouchInput
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dicren.autospot.data.ParkingLocationEntity
@@ -129,7 +132,6 @@ class ParkingComponentsTest {
                     onShareClick = {},
                     onHistoryClick = {},
                     onBackToLatestClick = {},
-                    onCenterMapClick = {},
                 )
             }
         }
@@ -137,6 +139,8 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Parked").assertIsDisplayed()
         composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("History").assertDoesNotExist()
+        // Recentring lives on the map now: the card keeps its width for the address.
+        composeRule.onNodeWithContentDescription("Center map").assertDoesNotExist()
     }
 
     @Test
@@ -152,7 +156,6 @@ class ParkingComponentsTest {
                     onShareClick = {},
                     onHistoryClick = {},
                     onBackToLatestClick = {},
-                    onCenterMapClick = {},
                 )
             }
         }
@@ -176,7 +179,6 @@ class ParkingComponentsTest {
                     onShareClick = {},
                     onHistoryClick = {},
                     onBackToLatestClick = { backClicked = true },
-                    onCenterMapClick = {},
                 )
             }
         }
@@ -185,6 +187,34 @@ class ParkingComponentsTest {
         composeRule.onNodeWithContentDescription("Back to latest").performClick()
 
         assertTrue(backClicked)
+    }
+
+    /**
+     * Every icon-only button explains itself on a long press. On the card it matters most: a
+     * crosshair, a clock arrow and a share glyph sit together and none of them is self-evident.
+     */
+    @Test
+    fun `the location card buttons explain themselves on long press`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                LocationCard(
+                    location = location,
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    historyCount = 3,
+                    isFromHistory = false,
+                    onShareClick = {},
+                    onHistoryClick = {},
+                    onBackToLatestClick = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("Share location").performTouchInput { longClick() }
+
+        composeRule.waitUntil(timeoutMillis = 2_000) {
+            composeRule.onAllNodesWithText("Share location").fetchSemanticsNodes().isNotEmpty()
+        }
     }
 
     /**

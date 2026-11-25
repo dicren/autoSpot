@@ -12,6 +12,8 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.data.settingsDataStore
+import com.dicren.autospot.domain.LocateSelf
+import com.dicren.autospot.domain.LocateSelfUseCase
 import com.dicren.autospot.domain.ResolveLocationAddress
 import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
@@ -36,6 +38,7 @@ interface AppContainer {
     val parkingRepository: ParkingRepository
     val settingsRepository: SettingsRepository
     val saveParkingLocationUseCase: SaveParkingLocation
+    val locateSelf: LocateSelf
     val reverseGeocoder: ReverseGeocoder
     val resolveLocationAddressUseCase: ResolveLocationAddress
 }
@@ -73,6 +76,13 @@ class DefaultAppContainer(
             parkingRepository = parkingRepository,
             locationSource = locationSource,
             clock = clock,
+            hasLocationPermission = { Permissions.hasLocation(appContext) },
+        )
+    }
+
+    override val locateSelf: LocateSelf by lazy {
+        LocateSelfUseCase(
+            locationSource = locationSource,
             hasLocationPermission = { Permissions.hasLocation(appContext) },
         )
     }

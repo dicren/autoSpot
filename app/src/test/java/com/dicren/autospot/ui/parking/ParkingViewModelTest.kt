@@ -15,6 +15,8 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
+import com.dicren.autospot.domain.LocateSelf
+import com.dicren.autospot.domain.LocateSelfUseCase
 import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
@@ -95,6 +97,7 @@ class ParkingViewModelTest {
         parkingRepository: ParkingRepository = parking,
         saveParkingLocation: SaveParkingLocation? = null,
         reverseGeocoder: ReverseGeocoder = FakeReverseGeocoder(),
+        locateSelf: LocateSelf = LocateSelfUseCase(locationSource = source, hasLocationPermission = { true }),
     ): ParkingViewModel =
         ParkingViewModel(
             vehicleRepository = vehicleRepository,
@@ -113,6 +116,7 @@ class ParkingViewModelTest {
                     parkingRepository = parkingRepository,
                     reverseGeocoder = reverseGeocoder,
                 ),
+            locateSelf = locateSelf,
             hasMonitoringPermission = { monitoringPermission },
             locationAccuracy = { accuracy },
             hasBackgroundLocationPermission = { backgroundLocation },

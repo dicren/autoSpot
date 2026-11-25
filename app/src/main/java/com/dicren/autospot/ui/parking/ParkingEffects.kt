@@ -14,6 +14,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
 import com.dicren.autospot.data.ParkingLocationEntity
+import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.util.Permissions
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -124,6 +125,34 @@ internal fun ParkingCameraEffect(
             cameraPositionState.animate(
                 CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f),
             )
+        }
+    }
+}
+
+/**
+ * Keeps the blue dot's last known position in the screen state.
+ *
+ * The "go to my location" button hides itself once the camera sits on that point, so the screen
+ * needs the point itself, not just the tap. The lookup is the same one the button uses (last known
+ * first) and runs on every resume: the user has usually moved since the last one. A failed lookup
+ * keeps the previous value, which is still better than showing a button that cannot tell whether
+ * it is needed.
+ */
+@Composable
+internal fun ParkingMyLocationEffect(
+    lifecycleOwner: LifecycleOwner,
+    hasLocationPermission: Boolean,
+    findMyLocation: suspend () -> LocationFix?,
+    onLocation: (LocationFix) -> Unit,
+) {
+    // The effect outlives configuration changes; both lambdas must come from the latest one.
+    val currentFind by rememberUpdatedState(findMyLocation)
+    val currentOnLocation by rememberUpdatedState(onLocation)
+
+    LaunchedEffect(lifecycleOwner, hasLocationPermission) {
+        if (!hasLocationPermission) return@LaunchedEffect
+        lifecycleOwner.lifecycle.repeatOnLifecycle(Lifecycle.State.RESUMED) {
+            currentFind()?.let(currentOnLocation)
         }
     }
 }

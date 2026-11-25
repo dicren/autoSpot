@@ -15,7 +15,8 @@
     <string name="marker_title">您的汽车</string>
     <string name="parked_at">已停车</string>
     <string name="navigate_button">使用Google地图导航</string>
-    <string name="center_map">居中地图</string>
+    <string name="go_to_my_car">前往我的车</string>
+    <string name="go_to_my_location">前往我的位置</string>
     <string name="reset_orientation">重置方向</string>
     <string name="share_location">分享位置</string>
 
@@ -112,4 +113,5 @@
     <string name="location_services_disabled">开启定位服务以保存停车位置。</string>
     <string name="open_settings">打开设置</string>
     <string name="location_saved">停车位置已保存。</string>
+    <string name="location_unavailable">无法获取你的位置。</string>
 </resources>

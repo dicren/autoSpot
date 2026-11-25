@@ -15,7 +15,8 @@
     <string name="marker_title">Votre voiture</string>
     <string name="parked_at">Garé</string>
     <string name="navigate_button">Naviguer avec Google Maps</string>
-    <string name="center_map">Centrer la carte</string>
+    <string name="go_to_my_car">Aller à ma voiture</string>
+    <string name="go_to_my_location">Aller à ma position</string>
     <string name="reset_orientation">Réinitialiser l\'orientation</string>
     <string name="share_location">Partager l\'emplacement</string>
 
@@ -116,4 +117,5 @@
     <string name="location_services_disabled">Activez la localisation pour pouvoir enregistrer votre place.</string>
     <string name="open_settings">Ouvrir les paramètres</string>
     <string name="location_saved">Place enregistrée.</string>
+    <string name="location_unavailable">Impossible d\'obtenir votre position.</string>
 </resources>

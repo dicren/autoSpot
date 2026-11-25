@@ -10,13 +10,7 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.WindowInsets
-import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.only
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeDrawing
-import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -33,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -98,6 +91,7 @@ fun ParkingScreen(
     val currentMessages by rememberUpdatedState(messages)
     val monitorFailedMessage = stringResource(R.string.monitor_failed_text)
     val mapsNotInstalled = stringResource(R.string.maps_not_found)
+    val locationUnavailable = stringResource(R.string.location_unavailable)
     val shareTitle = stringResource(R.string.share_location)
 
     // Android 11+ answers this request by sending the user to the system's location page; the
@@ -111,6 +105,9 @@ fun ParkingScreen(
     var showHistorySheet by rememberSaveable { mutableStateOf(false) }
     var confirmClearHistory by rememberSaveable { mutableStateOf(false) }
     var showBackgroundRationale by rememberSaveable { mutableStateOf(false) }
+    // Not saveable on purpose: a rotation re-reads it from the provider on the next resume, and a
+    // stale point is worse than a brief "unknown".
+    var myLocation by remember { mutableStateOf<LatLng?>(null) }
     val cameraPositionState = rememberCameraPositionState()
     val nowMillis = rememberNow()
     val canReadBluetooth = Permissions.hasBluetoothConnect(context)
@@ -135,6 +132,12 @@ fun ParkingScreen(
                 snackbarHostState.showSnackbar(monitorFailedMessage)
             }
         },
+    )
+    ParkingMyLocationEffect(
+        lifecycleOwner = lifecycleOwner,
+        hasLocationPermission = state.hasLocationPermission,
+        findMyLocation = viewModel::findMyLocation,
+        onLocation = { fix -> myLocation = LatLng(fix.latitude, fix.longitude) },
     )
     ParkingBackgroundLocationEffect(
         state = state,
@@ -165,15 +168,26 @@ fun ParkingScreen(
         ParkingTopOverlay(
             state = state,
             showBackgroundRationale = showBackgroundRationale,
+            cameraPositionState = cameraPositionState,
+            myLocation = myLocation,
             onGrantClick = { context.openAppSettings() },
             onLocationSettingsClick = { context.openLocationSettings() },
             onVehiclesClick = { showVehiclesSheet = true },
-            modifier = Modifier.align(Alignment.TopCenter),
-        )
-
-        CompassFab(
-            cameraPositionState = cameraPositionState,
-            onReset = {
+            onMyLocationClick = {
+                coroutineScope.launch {
+                    val fix = viewModel.findMyLocation()
+                    if (fix != null) {
+                        val position = LatLng(fix.latitude, fix.longitude)
+                        // Remembered so the button can hide itself once the camera gets there.
+                        myLocation = position
+                        // Only the centre moves: the zoom the user chose is kept.
+                        cameraPositionState.animate(CameraUpdateFactory.newLatLng(position))
+                    } else {
+                        snackbarHostState.showSnackbar(locationUnavailable)
+                    }
+                }
+            },
+            onResetBearing = {
                 coroutineScope.launch {
                     cameraPositionState.animate(
                         CameraUpdateFactory.newCameraPosition(
@@ -188,14 +202,7 @@ fun ParkingScreen(
                     )
                 }
             },
-            modifier =
-                Modifier
-                    .align(Alignment.TopEnd)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Top + WindowInsetsSides.End,
-                        ),
-                    ).padding(top = 92.dp, end = 16.dp),
+            modifier = Modifier.align(Alignment.TopCenter),
         )
 
         if (displayLocation == null && state.isReady) {
@@ -209,6 +216,7 @@ fun ParkingScreen(
         ParkingBottomControls(
             snackbarHostState = snackbarHostState,
             location = displayLocation,
+            cameraPositionState = cameraPositionState,
             timeFormatter = timeFormatter,
             nowMillis = nowMillis,
             historyCount = state.locations.size,
@@ -241,12 +249,12 @@ fun ParkingScreen(
                             )
                         }.onFailure { Log.w(TAG, "No app can share the location", it) }
                     },
-                    onCenterMap = { location ->
+                    onRecenter = { location ->
                         coroutineScope.launch {
+                            // Only the centre moves: the zoom the user chose is kept.
                             cameraPositionState.animate(
-                                CameraUpdateFactory.newLatLngZoom(
+                                CameraUpdateFactory.newLatLng(
                                     LatLng(location.latitude, location.longitude),
-                                    17f,
                                 ),
                             )
                         }

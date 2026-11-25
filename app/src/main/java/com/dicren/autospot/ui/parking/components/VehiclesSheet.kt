@@ -21,7 +21,6 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -37,6 +36,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.ui.components.TooltippedIconButton
 import com.dicren.autospot.util.BluetoothDeviceInfo
 
 @Composable
@@ -74,12 +74,11 @@ fun VehiclesSheet(
                 text = stringResource(R.string.vehicles_title),
                 style = MaterialTheme.typography.titleLarge,
             )
-            IconButton(onClick = { showAddDialog = true }) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringResource(R.string.add_vehicle),
-                )
-            }
+            TooltippedIconButton(
+                imageVector = Icons.Default.Add,
+                label = stringResource(R.string.add_vehicle),
+                onClick = { showAddDialog = true },
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -133,19 +132,17 @@ fun VehiclesSheet(
                             }
                         }
                         Row {
-                            IconButton(onClick = { editingVehicleId = vehicle.id }) {
-                                Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = stringResource(R.string.edit_vehicle),
-                                )
-                            }
-                            IconButton(onClick = { deletingVehicleId = vehicle.id }) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = stringResource(R.string.delete),
-                                    tint = MaterialTheme.colorScheme.error,
-                                )
-                            }
+                            TooltippedIconButton(
+                                imageVector = Icons.Default.Edit,
+                                label = stringResource(R.string.edit_vehicle),
+                                onClick = { editingVehicleId = vehicle.id },
+                            )
+                            TooltippedIconButton(
+                                imageVector = Icons.Default.Delete,
+                                label = stringResource(R.string.delete),
+                                onClick = { deletingVehicleId = vehicle.id },
+                                tint = MaterialTheme.colorScheme.error,
+                            )
                         }
                     }
                     HorizontalDivider()
