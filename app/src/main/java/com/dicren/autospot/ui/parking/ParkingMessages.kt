@@ -9,8 +9,6 @@ internal data class ParkingMessages(
     val duplicateVehicle: String,
     val updateConflict: String,
     val operationFailed: String,
-    val mapsNotInstalled: String,
-    val shareTitle: String,
 ) {
     fun forEvent(event: ParkingEvent): String =
         when (event) {

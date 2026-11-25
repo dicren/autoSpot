@@ -4,10 +4,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.SheetValue
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.dicren.autospot.R
@@ -58,13 +56,9 @@ fun ParkingSheets(
     confirmClearHistory: Boolean,
     callbacks: ParkingSheetCallbacks,
 ) {
-    val vehiclesSheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-    val historySheetState = rememberBottomSheetState(initialValue = SheetValue.Hidden)
-
     if (showVehicles) {
         ModalBottomSheet(
             onDismissRequest = callbacks.onDismissVehicles,
-            sheetState = vehiclesSheetState,
         ) {
             VehiclesSheet(
                 vehicles = state.vehicles,
@@ -82,7 +76,6 @@ fun ParkingSheets(
     if (showHistory) {
         ModalBottomSheet(
             onDismissRequest = callbacks.onDismissHistory,
-            sheetState = historySheetState,
         ) {
             HistorySheet(
                 locations = state.locations,
