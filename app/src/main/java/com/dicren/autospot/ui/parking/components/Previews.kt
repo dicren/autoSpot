@@ -51,8 +51,10 @@ private fun LocationCardPreview() {
             nowMillis = previewLocation.timestamp + 5 * 60_000L,
             historyCount = 3,
             isFromHistory = false,
+            canStepOlder = true,
+            canStepNewer = false,
             onShareClick = {},
-            onHistoryClick = {},
+            onOpenHistory = {},
             onBackToLatestClick = {},
         )
     }

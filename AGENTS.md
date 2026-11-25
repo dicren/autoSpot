@@ -240,14 +240,33 @@ All UI is Compose, split in `ui/`:
   it would only send the map where it already is; `ParkingMyLocationEffect` keeps the dot's last
   known position in the screen state for that comparison, read on every resume, and the button
   stays visible while the position is still unknown (that tap is what asks for it).
-  The card is also the handle for the history: `HistorySwipeContainer` wraps it and swiping it
-  **left** shows the older spot, **right** returns towards the newest one, with a 72 dp threshold
-  or a 1 200 px/s flick, a rubber-band bump when there is nothing on that side, one haptic tick per
-  step, and no wrap-around at either end. The drag offset is applied to the card, not to the node
-  that reads the pointer: moving the detector would drag the coordinate system its deltas are
-  measured in. The step animation runs on `rememberCoroutineScope`, not on the pointer-input scope,
-  because that one has no frame clock (it hangs under the Compose test rule). The gesture is
-  invisible by design, so the history sheet stays the discoverable and accessible path.
+  The card is the handle for the history, and it is the only one: the old History icon button was
+  removed. `HistorySwipeContainer` wraps it and swiping it **up** opens the history sheet, **left**
+  shows the older spot and **right** returns towards the newest one, with a 72 dp sideways
+  threshold (a 1 200 px/s flick also steps), a rubber-band bump when there is nothing on that side,
+  one haptic tick per step, and no wrap-around at either end. The upward drag is 1:1 with the
+  finger and the sheet starts opening the moment the lift crosses 32 dp, **with the finger down**
+  (48 dp cap; a 900 px/s flick also opens it): waiting for the release left the card frozen at the
+  top of the lift and then made it jump. The card stays lifted while `isHistorySheetOpen` is true
+  and comes down when the sheet closes, so closing the history is the reverse of opening it. That
+  reset is driven by the sheet's state on purpose: opening a `ModalBottomSheet` steals the window
+  and cancels the drag without `onDragStopped`, so a release-driven reset would leave the card
+  hanging. The map tools fade out with that lift (`graphicsLayer { alpha }`, driven by
+  `onLiftChange` and read at draw time) instead of being covered by the rising card. The
+  drag offsets are applied to the card, not to the node that reads the pointer: moving the detector
+  would drag the coordinate system its deltas are measured in. The step animation runs on
+  `rememberCoroutineScope`, not on the pointer-input scope, because that one has no frame clock (it
+  hangs under the Compose test rule).
+  The gestures need a visible invitation now that no button advertises the sheet:
+  `LocationCard`'s `HistoryHandle` draws a centred pill (the standard drag mark, and the only way
+  this card moves is up) flanked by two faint chevrons that say the card also pages sideways. The
+  chevrons dim at the ends of the history instead of disappearing, so the pair keeps reading as a
+  pager. The grabber is not a button: it has no pointer handler, so a tap on it still does nothing.
+  It does carry a semantics `onClick` labelled "History" (a semantics action, which accessibility
+  services invoke; it adds no touch target), and that is now the only accessible path to the sheet.
+  Both the grabber and its action exist only while `historyCount > 1`. `LOCATION_CARD_TAG` and
+  `HISTORY_HANDLE_TAG` let the layout tests measure the card and find the grabber without guessing
+  its padding.
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
   `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.

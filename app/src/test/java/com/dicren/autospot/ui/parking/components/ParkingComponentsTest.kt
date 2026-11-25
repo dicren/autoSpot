@@ -12,6 +12,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
@@ -129,8 +130,10 @@ class ParkingComponentsTest {
                     nowMillis = nowMillis,
                     historyCount = 1,
                     isFromHistory = false,
+                    canStepOlder = false,
+                    canStepNewer = false,
                     onShareClick = {},
-                    onHistoryClick = {},
+                    onOpenHistory = {},
                     onBackToLatestClick = {},
                 )
             }
@@ -138,7 +141,8 @@ class ParkingComponentsTest {
 
         composeRule.onNodeWithText("Parked").assertIsDisplayed()
         composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
-        composeRule.onNodeWithContentDescription("History").assertDoesNotExist()
+        // Nothing to page through and nothing to open, so the grabber stays out of the way.
+        composeRule.onNodeWithTag(HISTORY_HANDLE_TAG).assertDoesNotExist()
         // Recentring lives on the map now: the card keeps its width for the address.
         composeRule.onNodeWithContentDescription("Center map").assertDoesNotExist()
     }
@@ -153,8 +157,10 @@ class ParkingComponentsTest {
                     nowMillis = nowMillis,
                     historyCount = 1,
                     isFromHistory = false,
+                    canStepOlder = false,
+                    canStepNewer = false,
                     onShareClick = {},
-                    onHistoryClick = {},
+                    onOpenHistory = {},
                     onBackToLatestClick = {},
                 )
             }
@@ -176,14 +182,16 @@ class ParkingComponentsTest {
                     nowMillis = nowMillis,
                     historyCount = 3,
                     isFromHistory = true,
+                    canStepOlder = true,
+                    canStepNewer = true,
                     onShareClick = {},
-                    onHistoryClick = {},
+                    onOpenHistory = {},
                     onBackToLatestClick = { backClicked = true },
                 )
             }
         }
 
-        composeRule.onNodeWithContentDescription("History").assertIsDisplayed()
+        composeRule.onNodeWithTag(HISTORY_HANDLE_TAG).assertIsDisplayed()
         composeRule.onNodeWithContentDescription("Back to latest").performClick()
 
         assertTrue(backClicked)
@@ -203,8 +211,10 @@ class ParkingComponentsTest {
                     nowMillis = nowMillis,
                     historyCount = 3,
                     isFromHistory = false,
+                    canStepOlder = true,
+                    canStepNewer = false,
                     onShareClick = {},
-                    onHistoryClick = {},
+                    onOpenHistory = {},
                     onBackToLatestClick = {},
                 )
             }

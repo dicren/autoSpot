@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -45,6 +46,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
@@ -352,9 +354,9 @@ private const val SWIPE_IN_MILLIS = 180
  * them. The recenter button comes and goes without moving the route button: it is inserted above
  * it, and its spacing lives inside the animation so nothing is left behind when it hides.
  *
- * The card is also the handle for the history: swiping it left shows the older spot and swiping it
- * right comes back towards the newest one. [canShowOlder] and [canShowNewer] only control the
- * overscroll bump; the screen refuses the steps that would leave the history.
+ * The card is also the handle for the history: swiping it up opens the history sheet, left shows the
+ * older spot and right comes back towards the newest one. [canShowOlder] and [canShowNewer] only
+ * control the overscroll bump; the screen refuses the steps that would leave the history.
  */
 @Composable
 internal fun ParkingBottomControls(
@@ -365,11 +367,16 @@ internal fun ParkingBottomControls(
     nowMillis: Long,
     historyCount: Int,
     isShowingHistory: Boolean,
+    isHistorySheetOpen: Boolean,
     canShowOlder: Boolean,
     canShowNewer: Boolean,
     callbacks: ParkingBottomCallbacks,
     modifier: Modifier = Modifier,
 ) {
+    // 0 while the card rests, 1 at the top of the lift that opens the history. Read inside
+    // `graphicsLayer` below, so following the finger only invalidates the layer, not the screen.
+    val liftProgress = remember { mutableFloatStateOf(0f) }
+
     Column(
         modifier =
             modifier
@@ -389,26 +396,38 @@ internal fun ParkingBottomControls(
                 remember(location.latitude, location.longitude) {
                     LatLng(location.latitude, location.longitude)
                 }
-            AnimatedVisibility(
-                visible = rememberIsOffCenter(cameraPositionState, markerPosition),
-                enter = fadeIn(),
-                exit = fadeOut(),
-            ) {
-                Column(horizontalAlignment = Alignment.End) {
-                    RecenterFab(onClick = { callbacks.onRecenter(location) })
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
 
-            NavigateFab(onClick = { callbacks.onNavigate(location) })
+            // The card is being lifted into the sheet, and it would climb over the route button.
+            // The tools step aside instead: their job is done once the history is coming up.
+            Column(
+                modifier = Modifier.graphicsLayer { alpha = 1f - liftProgress.floatValue },
+                horizontalAlignment = Alignment.End,
+            ) {
+                AnimatedVisibility(
+                    visible = rememberIsOffCenter(cameraPositionState, markerPosition),
+                    enter = fadeIn(),
+                    exit = fadeOut(),
+                ) {
+                    Column(horizontalAlignment = Alignment.End) {
+                        RecenterFab(onClick = { callbacks.onRecenter(location) })
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
+                }
+
+                NavigateFab(onClick = { callbacks.onNavigate(location) })
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             HistorySwipeContainer(
                 canSwipeOlder = canShowOlder,
                 canSwipeNewer = canShowNewer,
+                canOpenHistory = historyCount > 1,
+                isHistorySheetOpen = isHistorySheetOpen,
                 onSwipeOlder = callbacks.onOlder,
                 onSwipeNewer = callbacks.onNewer,
+                onOpenHistory = callbacks.onHistory,
+                onLiftChange = { liftProgress.floatValue = it },
             ) {
                 LocationCard(
                     location = location,
@@ -416,8 +435,10 @@ internal fun ParkingBottomControls(
                     nowMillis = nowMillis,
                     historyCount = historyCount,
                     isFromHistory = isShowingHistory,
+                    canStepOlder = canShowOlder,
+                    canStepNewer = canShowNewer,
                     onShareClick = { callbacks.onShare(location) },
-                    onHistoryClick = callbacks.onHistory,
+                    onOpenHistory = callbacks.onHistory,
                     onBackToLatestClick = callbacks.onBackToLatest,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -426,34 +447,68 @@ internal fun ParkingBottomControls(
     }
 }
 
+/** How far the card has to be lifted, finger down, before the history sheet starts opening. */
+private val SWIPE_UP_THRESHOLD = 32.dp
+
+/** A quick upward flick opens the sheet even when the drag ends before [SWIPE_UP_THRESHOLD]. */
+private const val SWIPE_UP_FLING_VELOCITY = 900f
+
+/** Where the card stops following the finger; the sheet covers it from there. */
+private val SWIPE_UP_MAX_LIFT = 48.dp
+
+private const val SWIPE_UP_SNAP_BACK_MILLIS = 180
+
 /**
- * Turns the location card into a horizontal carousel over the parking history.
+ * Turns the location card into the handle of the parking history: up opens the history sheet and
+ * sideways walks the history one spot at a time.
  *
- * The gesture lives in this wrapper instead of [LocationCard] so the card stays a stateless
- * component, and the offset is applied to the card rather than to the wrapper that detects the
+ * The gestures live in this wrapper instead of [LocationCard] so the card stays a stateless
+ * component, and the offsets are applied to the card rather than to the wrapper that detects the
  * drag: moving the node that reads the pointer would drag the coordinate system the deltas are
  * measured in and the card would not follow the finger.
  *
- * A completed swipe animates the card out, swaps the displayed spot and slides the new one in, so
- * the change reads as one movement instead of the card's text changing under the finger. The
- * finger is ignored meanwhile; being able to grab the card half off-screen would be worse.
+ * A completed horizontal swipe animates the card out, swaps the displayed spot and slides the new
+ * one in, so the change reads as one movement instead of the card's text changing under the
+ * finger. The finger is ignored meanwhile; being able to grab the card half off-screen would be
+ * worse.
+ *
+ * The upward drag is 1:1 with the finger and the sheet starts opening the moment the lift crosses
+ * [SWIPE_UP_THRESHOLD], with the finger still down: waiting for the release froze the gesture at
+ * the top of the lift and then made it jump. The card stays lifted while [isHistorySheetOpen] is
+ * true — it is the top edge the sheet grows from — and comes back down when the sheet is dismissed.
+ * That also keeps it out of trouble when the sheet steals the window mid-gesture and the drag ends
+ * without a release.
+ *
+ * A gesture has no accessible twin, so the grabber drawn by [LocationCard] also carries a
+ * semantics "click" (see `HistoryHandle`): that is what TalkBack and switch access announce, and it
+ * keeps the sheet reachable once the old button is gone.
  */
 @Composable
 private fun HistorySwipeContainer(
     canSwipeOlder: Boolean,
     canSwipeNewer: Boolean,
+    canOpenHistory: Boolean,
+    isHistorySheetOpen: Boolean,
     onSwipeOlder: () -> Unit,
     onSwipeNewer: () -> Unit,
+    onOpenHistory: () -> Unit,
+    /** How much of the upward lift is in effect, from 0 (resting) to 1 (about to open the sheet). */
+    onLiftChange: (Float) -> Unit,
     modifier: Modifier = Modifier,
     content: @Composable () -> Unit,
 ) {
     val scope = rememberCoroutineScope()
     val offsetX = remember { Animatable(0f) }
+    val offsetY = remember { Animatable(0f) }
     val haptics = LocalHapticFeedback.current
     val density = LocalDensity.current
     val threshold = with(density) { SWIPE_STEP_THRESHOLD.toPx() }
+    val openThreshold = with(density) { SWIPE_UP_THRESHOLD.toPx() }
+    val maxLift = with(density) { SWIPE_UP_MAX_LIFT.toPx() }
     var width by remember { mutableIntStateOf(0) }
     var isStepping by remember { mutableStateOf(false) }
+    // One request per gesture: the lift can sit past the threshold for several frames.
+    var isOpeningHistory by remember { mutableStateOf(false) }
 
     val dragState =
         rememberDraggableState { delta ->
@@ -470,12 +525,63 @@ private fun HistorySwipeContainer(
             }
         }
 
+    // The map tools fade with the lift, including the snap back, so they follow the same curve the
+    // card draws. `snapshotFlow` keeps this out of composition: it only fires when the value moves.
+    LaunchedEffect(offsetY, maxLift) {
+        snapshotFlow { offsetY.value }.collect { onLiftChange((-it / maxLift).coerceIn(0f, 1f)) }
+    }
+
+    // The lift comes down with the sheet, not with the release. Opening the sheet steals the
+    // window and cancels the drag without an `onDragStopped`, so a release-driven reset would
+    // leave the card hanging; and closing the history then reads as the reverse of opening it.
+    LaunchedEffect(isHistorySheetOpen) {
+        if (!isHistorySheetOpen && offsetY.value != 0f) {
+            offsetY.animateTo(0f, tween(SWIPE_UP_SNAP_BACK_MILLIS))
+        }
+    }
+
+    fun requestHistory() {
+        if (isOpeningHistory) return
+        isOpeningHistory = true
+        haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        onOpenHistory()
+    }
+
+    // Downward drags are ignored instead of resisted: nothing lives below the card, so a rubber
+    // band there would only suggest a gesture that does not exist. Upward ones are 1:1: the card
+    // is the top edge of the sheet, and any lag between finger and card reads as "stuck".
+    val liftState =
+        rememberDraggableState { delta ->
+            if (!isStepping && !isOpeningHistory) {
+                val lifted = (offsetY.value + delta).coerceIn(-maxLift, 0f)
+                scope.launch { offsetY.snapTo(lifted) }
+                if (-lifted >= openThreshold) requestHistory()
+            }
+        }
+
     Box(
         modifier =
             modifier
                 .fillMaxWidth()
                 .onSizeChanged { width = it.width }
                 .draggable(
+                    state = liftState,
+                    orientation = Orientation.Vertical,
+                    enabled = canOpenHistory,
+                    onDragStarted = { isOpeningHistory = false },
+                    onDragStopped = { velocity ->
+                        // Once the sheet is coming up it owns the lift: the card goes down with it.
+                        if (!isOpeningHistory) {
+                            if (velocity <= -SWIPE_UP_FLING_VELOCITY) {
+                                requestHistory()
+                            } else {
+                                scope.launch {
+                                    offsetY.animateTo(0f, tween(SWIPE_UP_SNAP_BACK_MILLIS))
+                                }
+                            }
+                        }
+                    },
+                ).draggable(
                     state = dragState,
                     orientation = Orientation.Horizontal,
                     onDragStopped = { velocity ->
@@ -515,7 +621,12 @@ private fun HistorySwipeContainer(
                     },
                 ),
     ) {
-        Box(modifier = Modifier.offset { IntOffset(offsetX.value.roundToInt(), 0) }) {
+        Box(
+            modifier =
+                Modifier.offset {
+                    IntOffset(offsetX.value.roundToInt(), offsetY.value.roundToInt())
+                },
+        ) {
             content()
         }
     }

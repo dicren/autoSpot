@@ -6,12 +6,15 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.unit.dp
@@ -19,6 +22,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.parking.components.HISTORY_HANDLE_TAG
+import com.dicren.autospot.ui.parking.components.LOCATION_CARD_TAG
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
@@ -61,6 +66,8 @@ class ParkingBottomControlsTest {
         isShowingHistory: Boolean,
         canShowOlder: Boolean = true,
         canShowNewer: Boolean = true,
+        historyCount: Int = 3,
+        isHistorySheetOpen: Boolean = false,
         onOlder: () -> Unit = {},
         onNewer: () -> Unit = {},
         onHistory: () -> Unit = {},
@@ -80,8 +87,9 @@ class ParkingBottomControlsTest {
                         cameraPositionState = cameraPositionState,
                         timeFormatter = formatter,
                         nowMillis = location.timestamp + 5 * 60_000L,
-                        historyCount = 3,
+                        historyCount = historyCount,
                         isShowingHistory = isShowingHistory,
+                        isHistorySheetOpen = isHistorySheetOpen,
                         canShowOlder = canShowOlder,
                         canShowNewer = canShowNewer,
                         callbacks =
@@ -186,11 +194,13 @@ class ParkingBottomControlsTest {
     @Test
     fun `swiping the card left shows the older spot`() {
         var older = 0
-        setContent(isShowingHistory = true, onOlder = { older++ })
+        var opened = 0
+        setContent(isShowingHistory = true, onOlder = { older++ }, onHistory = { opened++ })
 
         swipeCard(LEFT)
 
         composeRule.waitUntil(timeoutMillis = 2_000) { older == 1 }
+        assertEquals("A horizontal swipe must not open the sheet", 0, opened)
     }
 
     @Test
@@ -226,33 +236,96 @@ class ParkingBottomControlsTest {
     }
 
     @Test
-    fun `the card buttons still work inside the swipe area`() {
+    fun `swiping the card up opens the history sheet`() {
         var opened = 0
-        setContent(isShowingHistory = true, onHistory = { opened++ })
+        setContent(isShowingHistory = false, onHistory = { opened++ })
 
-        composeRule.onNodeWithContentDescription("History").performClick()
+        swipeCard(dy = UP)
+
+        composeRule.waitUntil(timeoutMillis = 2_000) { opened == 1 }
+    }
+
+    /**
+     * The sheet used to wait for the release, so the card sat at the end of the lift with nothing
+     * happening. It now starts while the finger is still down, as soon as the lift crosses the
+     * threshold.
+     */
+    @Test
+    fun `the history opens mid-gesture without waiting for the release`() {
+        var opened = 0
+        setContent(isShowingHistory = false, onHistory = { opened++ })
+
+        composeRule.onNodeWithText("Parked").performTouchInput {
+            down(center)
+            moveBy(Offset(0f, UP))
+        }
+        composeRule.waitForIdle()
+
+        assertEquals("The sheet must not wait for the finger to lift", 1, opened)
+
+        composeRule.onNodeWithText("Parked").performTouchInput { up() }
+    }
+
+    /**
+     * The swipe is the only visible way in, so the sheet also has to stay reachable without a
+     * gesture: the grabber exposes a semantics click that TalkBack and switch access can invoke.
+     */
+    @Test
+    fun `the grabber offers the history to accessibility services`() {
+        var opened = 0
+        setContent(isShowingHistory = false, onHistory = { opened++ })
+
+        composeRule
+            .onNodeWithContentDescription("History")
+            .performSemanticsAction(SemanticsActions.OnClick)
 
         assertEquals(1, opened)
+    }
+
+    /** A tap on the card is still a tap: only a real drag may open the sheet. */
+    @Test
+    fun `tapping the card does not open the history`() {
+        var opened = 0
+        setContent(isShowingHistory = false, onHistory = { opened++ })
+
+        composeRule.onNodeWithText("Parked").performClick()
+
+        assertEquals(0, opened)
+    }
+
+    @Test
+    fun `a single spot has no history to open`() {
+        var opened = 0
+        setContent(isShowingHistory = false, historyCount = 1, onHistory = { opened++ })
+
+        composeRule.onNodeWithTag(HISTORY_HANDLE_TAG).assertDoesNotExist()
+
+        swipeCard(dy = UP)
+        composeRule.waitForIdle()
+
+        assertEquals(0, opened)
     }
 
     /**
      * Swipes the card by hand instead of with `swipeLeft()`: that helper only travels the width of
      * the text node, which is less than the 72 dp the card has to move to count as a step.
      */
-    private fun swipeCard(distancePx: Float) {
+    private fun swipeCard(
+        dx: Float = 0f,
+        dy: Float = 0f,
+    ) {
         composeRule.onNodeWithText("Parked").performTouchInput {
             swipe(
                 start = center,
-                end = center + Offset(distancePx, 0f),
+                end = center + Offset(dx, dy),
                 durationMillis = 100,
             )
         }
     }
 
-    /** The title sits 16 dp below the card's top edge, which is the card's own padding. */
     private fun assertFabClearsCard(description: String) {
         val fab = composeRule.onNodeWithContentDescription(description).getUnclippedBoundsInRoot()
-        val cardTop = composeRule.onNodeWithText("Parked").getUnclippedBoundsInRoot().top - 16.dp
+        val cardTop = composeRule.onNodeWithTag(LOCATION_CARD_TAG).getUnclippedBoundsInRoot().top
 
         assertTrue("The FAB overlaps the card: $fab, card top $cardTop", fab.bottom + 8.dp <= cardTop)
     }
@@ -261,8 +334,9 @@ class ParkingBottomControlsTest {
         const val NAVIGATE = "Navigate with Google Maps"
         const val GO_TO_CAR = "Go to my car"
 
-        /** Far enough to pass the 72 dp threshold at any density Robolectric may pick. */
+        /** Far enough to pass the 72 dp (and 32 dp upward) threshold at any Robolectric density. */
         const val LEFT = -600f
         const val RIGHT = 600f
+        const val UP = -600f
     }
 }

@@ -221,6 +221,7 @@ fun ParkingScreen(
             nowMillis = nowMillis,
             historyCount = state.locations.size,
             isShowingHistory = state.isShowingHistory,
+            isHistorySheetOpen = showHistorySheet,
             canShowOlder = state.canStepOlder,
             canShowNewer = state.canStepNewer,
             callbacks =
