@@ -89,6 +89,10 @@ fun ParkingMap(
             MapUiSettings(
                 zoomControlsEnabled = false,
                 myLocationButtonEnabled = false,
+                // The SDK compass is pinned to the top-left corner of the map view, which sits
+                // under the status bar, and it duplicates CompassFab. The app's own button is the
+                // only way back to the original rotation.
+                compassEnabled = false,
             ),
         onMapClick = { onMapClick() },
     ) {

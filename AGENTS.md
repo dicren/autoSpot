@@ -221,7 +221,10 @@ All UI is Compose, split in `ui/`:
   still clear the card.
   The **top** column follows the same rule: the my-location and compass FABs sit in it, under the
   vehicle card, because the banners make the card taller and the old fixed `top = 92.dp` put them
-  on top of it. `ParkingTopOverlayTest` pins both things.
+  on top of it. `ParkingTopOverlayTest` pins both things. The SDK's own compass is disabled in
+  `MapUiSettings` (`compassEnabled = false`): it is anchored to the map view's top-left corner, so
+  it landed under the status bar, and it duplicated `CompassFab`, which is the only way back to
+  the original rotation.
   Recentring is not a card action any more: a fourth icon squeezed the address out of the card.
   `rememberIsOffCenter` (shared by the car button and the my-location one) decides when a button is
   worth showing, from the camera position alone (`MapFocus.kt` computes the point's distance to the
