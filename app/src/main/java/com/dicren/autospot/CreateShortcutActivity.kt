@@ -90,12 +90,15 @@ private fun VehicleSelectionDialog(
 ) {
     val context = LocalContext.current
     val app = remember(context) { context.applicationContext as AutoSpotApp }
-    val vehicles by app.container.vehicleRepository.vehicles
-        .catch { error ->
-            if (error is CancellationException) throw error
-            Log.e(TAG, "Could not read the vehicle list", error)
-            emit(emptyList())
-        }.collectAsStateWithLifecycle(initialValue = emptyList())
+    val vehiclesFlow =
+        remember(app) {
+            app.container.vehicleRepository.vehicles.catch { error ->
+                if (error is CancellationException) throw error
+                Log.e(TAG, "Could not read the vehicle list", error)
+                emit(emptyList())
+            }
+        }
+    val vehicles by vehiclesFlow.collectAsStateWithLifecycle(initialValue = emptyList())
 
     Box(
         modifier =
