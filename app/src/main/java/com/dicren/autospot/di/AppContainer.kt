@@ -12,6 +12,7 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.data.settingsDataStore
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.FusedLocationSource
 import com.dicren.autospot.location.LocationSource
@@ -27,7 +28,7 @@ interface AppContainer {
     val vehicleRepository: VehicleRepository
     val parkingRepository: ParkingRepository
     val settingsRepository: SettingsRepository
-    val saveParkingLocationUseCase: SaveParkingLocationUseCase
+    val saveParkingLocationUseCase: SaveParkingLocation
 }
 
 class DefaultAppContainer(

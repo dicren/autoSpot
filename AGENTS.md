@@ -164,11 +164,12 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted when
   the channels are created because Android ignores importance changes on an existing channel.
 - **`LocationSaveService`** — one-shot foreground service. Refuses to start without location
-  permission, then runs `SaveParkingLocationUseCase`: a fresh high-accuracy fix bounded by a 15 s
+  permission, then runs `SaveParkingLocation`: a fresh high-accuracy fix bounded by a 15 s
   timeout, falling back to `lastLocation` only if it is younger than 5 minutes and, like the fresh
   fix, its reported accuracy is at most 100 m. The two sources are asked independently: an
   exception from the fresh fix (Play Services unavailable) still tries the last known one. Saves
-  are serialised with a `Mutex` and each start stops with `stopSelfResult(startId)`. A failed save
+  are serialised with a `Mutex` and each start stops with `stopSelfResult(startId)` in a `finally`,
+  so even an unexpected failure cannot leave the foreground notification alive. A failed save
   posts a notification instead of failing silently.
 - **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
   an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
@@ -239,8 +240,10 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `insertAndPrune` are transactional. Parking history orders by `timestamp DESC, id DESC` so
   entries saved in the same millisecond still have a stable newest one.
 - **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`) and the
-  shared `SaveParkingLocationUseCase` are built by `di/AppContainer`; services and the ViewModel
-  must take the use case from there instead of constructing their own. `addVehicle` uses
+  shared `SaveParkingLocation` use case are built by `di/AppContainer`; services and the ViewModel
+  must take the use case from there instead of constructing their own. `SaveParkingLocationUseCase`
+  is total: every non-cancellation failure becomes `SaveResult.Error` instead of escaping to a
+  service or view-model coroutine. `addVehicle` uses
   `INSERT OR IGNORE` on the unique Bluetooth address and returns `Added`/`Duplicate` without
   depending on a driver-specific exception; deleting the active vehicle activates another; the
   history is capped at 100 rows per vehicle.

@@ -19,7 +19,14 @@ import kotlin.coroutines.cancellation.CancellationException
  *   two-kilometre cell-tower fix as "where the car is" is worse than reporting a failure.
  * - Each source is asked independently. A failure while requesting the fresh fix must not skip
  *   the last known one: Play Services can reject the request while still holding a usable fix.
+ * - The whole operation is total: any storage or permission-check failure becomes
+ *   [SaveResult.Error] instead of escaping to a service or view-model coroutine, where it would
+ *   leave the foreground service running or crash the process.
  */
+interface SaveParkingLocation {
+    suspend fun save(vehicleId: Long? = null): SaveResult
+}
+
 class SaveParkingLocationUseCase(
     private val vehicleRepository: VehicleRepository,
     private val parkingRepository: ParkingRepository,
@@ -28,27 +35,27 @@ class SaveParkingLocationUseCase(
     private val hasLocationPermission: () -> Boolean,
     private val maxFixAgeMillis: Long = DEFAULT_MAX_FIX_AGE_MILLIS,
     private val maxAccuracyMeters: Float = DEFAULT_MAX_ACCURACY_METERS,
-) {
-    suspend fun save(vehicleId: Long? = null): SaveResult {
-        if (!hasLocationPermission()) return SaveResult.NoPermission
+) : SaveParkingLocation {
+    override suspend fun save(vehicleId: Long?): SaveResult =
+        try {
+            if (!hasLocationPermission()) return SaveResult.NoPermission
 
-        val vehicle =
-            if (vehicleId != null) {
-                vehicleRepository.getVehicleByIdOnce(vehicleId) ?: return SaveResult.NoVehicle
-            } else {
-                vehicleRepository.getActiveVehicleOnce() ?: return SaveResult.NoVehicle
+            val vehicle =
+                if (vehicleId != null) {
+                    vehicleRepository.getVehicleByIdOnce(vehicleId) ?: return SaveResult.NoVehicle
+                } else {
+                    vehicleRepository.getActiveVehicleOnce() ?: return SaveResult.NoVehicle
+                }
+
+            val now = clock.nowMillis()
+            val current = fetchFix(now) { locationSource.currentLocation() }
+            val last = if (current.getOrNull() == null) fetchFix(now) { locationSource.lastLocation() } else null
+            val fix = current.getOrNull() ?: last?.getOrNull()
+            if (fix == null) {
+                val error = last?.exceptionOrNull() ?: current.exceptionOrNull()
+                return if (error != null) SaveResult.Error(error) else SaveResult.NoFix
             }
 
-        val now = clock.nowMillis()
-        val current = fetchFix(now) { locationSource.currentLocation() }
-        val last = if (current.getOrNull() == null) fetchFix(now) { locationSource.lastLocation() } else null
-        val fix = current.getOrNull() ?: last?.getOrNull()
-        if (fix == null) {
-            val error = last?.exceptionOrNull() ?: current.exceptionOrNull()
-            return if (error != null) SaveResult.Error(error) else SaveResult.NoFix
-        }
-
-        return try {
             parkingRepository.saveLocation(vehicle.id, fix.latitude, fix.longitude)
             SaveResult.Saved(
                 vehicleId = vehicle.id,
@@ -61,7 +68,6 @@ class SaveParkingLocationUseCase(
         } catch (e: Exception) {
             SaveResult.Error(e)
         }
-    }
 
     /**
      * Requests one fix, turning an expected failure into an empty result instead of aborting the

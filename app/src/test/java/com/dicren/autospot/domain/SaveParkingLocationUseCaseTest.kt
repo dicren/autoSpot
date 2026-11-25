@@ -10,6 +10,7 @@ import com.dicren.autospot.data.AppDatabase
 import com.dicren.autospot.data.ParkingRepository
 import com.dicren.autospot.data.RoomParkingRepository
 import com.dicren.autospot.data.RoomVehicleRepository
+import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
@@ -60,6 +61,15 @@ class SaveParkingLocationUseCaseTest {
         ): Long = throw IllegalStateException("disk full")
     }
 
+    private class FailingVehicleRepository(
+        private val delegate: VehicleRepository,
+    ) : VehicleRepository by delegate {
+        override suspend fun getActiveVehicleOnce(): VehicleEntity? = throw IllegalStateException("database closed")
+
+        override suspend fun getVehicleByIdOnce(id: Long): VehicleEntity? =
+            throw IllegalStateException("database closed")
+    }
+
     private val clock = FakeClock(NOW)
     private lateinit var db: AppDatabase
     private lateinit var vehicles: VehicleRepository
@@ -85,15 +95,17 @@ class SaveParkingLocationUseCaseTest {
     @After
     fun tearDown() = db.close()
 
-    private fun useCase(repository: ParkingRepository = parking) =
-        SaveParkingLocationUseCase(
-            vehicleRepository = vehicles,
-            parkingRepository = repository,
-            locationSource = source,
-            clock = clock,
-            hasLocationPermission = { permission },
-            maxFixAgeMillis = 5 * 60_000L,
-        )
+    private fun useCase(
+        repository: ParkingRepository = parking,
+        vehicleRepository: VehicleRepository = vehicles,
+    ) = SaveParkingLocationUseCase(
+        vehicleRepository = vehicleRepository,
+        parkingRepository = repository,
+        locationSource = source,
+        clock = clock,
+        hasLocationPermission = { permission },
+        maxFixAgeMillis = 5 * 60_000L,
+    )
 
     private var vehicleCount = 0
 
@@ -307,6 +319,32 @@ class SaveParkingLocationUseCaseTest {
 
             assertTrue(result is SaveResult.Error)
             assertTrue(parking.latestLocationOnce(id) == null)
+        }
+
+    @Test
+    fun `a vehicle lookup failure is reported instead of escaping`() =
+        runTest {
+            addVehicle()
+            source.current = fix()
+
+            val result =
+                useCase(vehicleRepository = FailingVehicleRepository(vehicles))
+                    .save(null)
+
+            assertTrue(result is SaveResult.Error)
+        }
+
+    @Test
+    fun `a vehicle lookup by id failure is reported instead of escaping`() =
+        runTest {
+            val id = addVehicle()
+            source.current = fix()
+
+            val result =
+                useCase(vehicleRepository = FailingVehicleRepository(vehicles))
+                    .save(id)
+
+            assertTrue(result is SaveResult.Error)
         }
 
     @Test

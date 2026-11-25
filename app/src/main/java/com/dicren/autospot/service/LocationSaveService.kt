@@ -7,9 +7,10 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.ServiceCompat
 import com.dicren.autospot.di.appContainer
-import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.util.Permissions
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,7 +28,7 @@ import kotlinx.coroutines.sync.withLock
 class LocationSaveService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val saveMutex = Mutex()
-    private lateinit var useCase: SaveParkingLocationUseCase
+    private lateinit var useCase: SaveParkingLocation
     private lateinit var notifications: AppNotifications
 
     override fun onCreate() {
@@ -70,38 +71,47 @@ class LocationSaveService : Service() {
         val vehicleId = intent?.getLongExtra(EXTRA_VEHICLE_ID, -1L)?.takeIf { it > 0 }
 
         serviceScope.launch {
-            val result = saveMutex.withLock { useCase.save(vehicleId) }
+            try {
+                val result = saveMutex.withLock { useCase.save(vehicleId) }
 
-            when (result) {
-                is SaveResult.Saved -> {
-                    Log.d(
-                        TAG,
-                        "Location saved for vehicle ${result.vehicleId}: " +
-                            "${result.latitude}, ${result.longitude} (accuracy ${result.accuracyMeters})",
-                    )
-                }
+                when (result) {
+                    is SaveResult.Saved -> {
+                        Log.d(
+                            TAG,
+                            "Location saved for vehicle ${result.vehicleId}: " +
+                                "${result.latitude}, ${result.longitude} (accuracy ${result.accuracyMeters})",
+                        )
+                    }
 
-                SaveResult.NoPermission -> {
-                    Log.w(TAG, "Location permission disappeared")
-                    notifications.notifySaveFailed()
-                }
+                    SaveResult.NoPermission -> {
+                        Log.w(TAG, "Location permission disappeared")
+                        notifications.notifySaveFailed()
+                    }
 
-                SaveResult.NoVehicle -> {
-                    Log.w(TAG, "No vehicle to save the location for")
-                }
+                    SaveResult.NoVehicle -> {
+                        Log.w(TAG, "No vehicle to save the location for")
+                    }
 
-                SaveResult.NoFix -> {
-                    Log.w(TAG, "No usable location fix")
-                    notifications.notifySaveFailed()
-                }
+                    SaveResult.NoFix -> {
+                        Log.w(TAG, "No usable location fix")
+                        notifications.notifySaveFailed()
+                    }
 
-                is SaveResult.Error -> {
-                    Log.e(TAG, "Could not save the location", result.cause)
-                    notifications.notifySaveFailed()
+                    is SaveResult.Error -> {
+                        Log.e(TAG, "Could not save the location", result.cause)
+                        notifications.notifySaveFailed()
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // The use case is total, but a future regression must never leave the foreground
+                // service (and its "saving" notification) alive forever.
+                Log.e(TAG, "Unexpected error while saving the location", e)
+                notifications.notifySaveFailed()
+            } finally {
+                stopSelfResult(startId)
             }
-
-            stopSelfResult(startId)
         }
 
         return START_NOT_STICKY

@@ -14,7 +14,9 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
 import kotlinx.coroutines.delay
@@ -26,6 +28,7 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -60,16 +63,20 @@ class LocationSaveServiceTest {
         override val locationSource: LocationSource,
         override val vehicleRepository: VehicleRepository,
         override val parkingRepository: ParkingRepository,
-    ) : AppContainer {
-        override val settingsRepository: SettingsRepository = TestSettingsRepository()
-        override val saveParkingLocationUseCase: SaveParkingLocationUseCase =
+        override val saveParkingLocationUseCase: SaveParkingLocation =
             SaveParkingLocationUseCase(
                 vehicleRepository = vehicleRepository,
                 parkingRepository = parkingRepository,
                 locationSource = locationSource,
                 clock = clock,
                 hasLocationPermission = { true },
-            )
+            ),
+    ) : AppContainer {
+        override val settingsRepository: SettingsRepository = TestSettingsRepository()
+    }
+
+    private class ThrowingSaveParkingLocation : SaveParkingLocation {
+        override suspend fun save(vehicleId: Long?): SaveResult = throw IllegalStateException("database closed")
     }
 
     private lateinit var app: AutoSpotApp
@@ -97,6 +104,7 @@ class LocationSaveServiceTest {
         shadowOf(app).grantPermissions(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.POST_NOTIFICATIONS,
         )
     }
 
@@ -150,6 +158,30 @@ class LocationSaveServiceTest {
         val saved = runBlocking { parking.latestLocationOnce(vehicleId) }
         assertNull(saved)
 
+        controller.destroy()
+    }
+
+    @Test
+    fun `an unexpected save failure still stops the service`() {
+        addVehicle()
+        app.containerOverride =
+            TestContainer(
+                clock = clock,
+                locationSource = source,
+                vehicleRepository = vehicles,
+                parkingRepository = parking,
+                saveParkingLocationUseCase = ThrowingSaveParkingLocation(),
+            )
+
+        val controller = startService()
+
+        runBlocking {
+            withTimeout(5_000) {
+                while (!shadowOf(controller.get()).isStoppedBySelf) delay(20)
+            }
+        }
+
+        assertTrue(shadowOf(controller.get()).isStoppedBySelf)
         controller.destroy()
     }
 

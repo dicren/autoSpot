@@ -8,6 +8,7 @@ import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
@@ -165,7 +166,7 @@ class TestAppContainer(
     override val parkingRepository: ParkingRepository = FakeParkingRepository(),
     override val settingsRepository: SettingsRepository = FakeSettingsRepository(),
 ) : AppContainer {
-    override val saveParkingLocationUseCase: SaveParkingLocationUseCase =
+    override val saveParkingLocationUseCase: SaveParkingLocation =
         SaveParkingLocationUseCase(
             vehicleRepository = vehicleRepository,
             parkingRepository = parkingRepository,

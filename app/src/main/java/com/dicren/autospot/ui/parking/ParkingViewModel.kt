@@ -15,7 +15,7 @@ import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
-import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.Permissions
@@ -40,7 +40,7 @@ class ParkingViewModel(
     private val vehicleRepository: VehicleRepository,
     private val parkingRepository: ParkingRepository,
     private val settingsRepository: SettingsRepository,
-    private val saveParkingLocation: SaveParkingLocationUseCase,
+    private val saveParkingLocation: SaveParkingLocation,
     private val hasMonitoringPermission: () -> Boolean,
     private val locationAccuracy: () -> LocationAccuracy,
     private val hasBackgroundLocationPermission: () -> Boolean,
@@ -162,6 +162,12 @@ class ParkingViewModel(
                         SaveResult.NoFix, is SaveResult.Error -> ParkingEvent.SaveFailed
                     },
                 )
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // The use case is total, but never let an unexpected failure take the process down.
+                Log.e(TAG, "Manual location save failed", e)
+                eventsFlow.emit(ParkingEvent.SaveFailed)
             } finally {
                 // Also runs when the view model is cleared mid-save.
                 isSaving.value = false
