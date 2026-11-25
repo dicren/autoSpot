@@ -45,13 +45,9 @@ class LocationSaveService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
-        if (!Permissions.hasLocation(this)) {
-            Log.w(TAG, "Location permission not granted, not saving")
-            notifications.notifySaveFailed()
-            stopSelf(startId)
-            return START_NOT_STICKY
-        }
-
+        // The service is started with startForegroundService(), so it must call
+        // startForeground() even when it is about to stop: stopping first makes Android throw
+        // ForegroundServiceDidNotStartInTimeException and kill the process.
         try {
             ServiceCompat.startForeground(
                 this,
@@ -63,6 +59,13 @@ class LocationSaveService : Service() {
             // The system refuses a location-typed foreground service without permission, or when
             // started from the background without background location access.
             Log.e(TAG, "Cannot start foreground location service", e)
+            notifications.notifySaveFailed()
+            stopSelf(startId)
+            return START_NOT_STICKY
+        }
+
+        if (!Permissions.hasLocation(this)) {
+            Log.w(TAG, "Location permission not granted, not saving")
             notifications.notifySaveFailed()
             stopSelf(startId)
             return START_NOT_STICKY

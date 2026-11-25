@@ -171,6 +171,24 @@ class LocationSaveServiceTest {
     }
 
     @Test
+    fun `without the location permission it enters the foreground before stopping`() {
+        val vehicleId = addVehicle()
+        shadowOf(app).denyPermissions(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        )
+
+        val controller = startService()
+
+        assertTrue(shadowOf(controller.get()).isStoppedBySelf)
+        // Stopping without entering the foreground first makes Android kill the process.
+        assertNotNull(shadowOf(controller.get()).lastForegroundNotification)
+        assertNull(runBlocking { parking.latestLocationOnce(vehicleId) })
+
+        controller.destroy()
+    }
+
+    @Test
     fun `an unexpected save failure still stops the service`() {
         addVehicle()
         app.containerOverride =
