@@ -159,7 +159,8 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   there is no concurrent access to shared state. It calls `stopSelf()` when
   `Permissions.canMonitor` is false at start **and again before every disconnection**, because
   permissions can be revoked while it runs. It catches `Exception` from `startForeground` and
-  posts a failure notification instead of losing the save silently. Its
+  posts the "auto-save is disabled" notification instead of losing the save silently; the parking
+  screen shows a snackbar when the service cannot even be started. Its
   notification is built by `AppNotifications` (`bluetooth_monitor_channel_v2`, `IMPORTANCE_MIN`,
   monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted when
   the channels are created because Android ignores importance changes on an existing channel.
@@ -262,7 +263,7 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 83 strings plus 2 plurals (85 entries).
+  `ko`, `ru`, `zh`) and all currently carry the same 85 strings plus 2 plurals (87 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
   back to English. `LocaleResourcesTest` fails CI when the key sets differ. Spanish, French and
   Italian need a `quantity="many"` item in plurals or lint fails.

@@ -8,6 +8,8 @@
     <string name="notification_text">車の位置を保存しています…</string>
     <string name="notification_save_failed_title">駐車位置を保存できませんでした</string>
     <string name="notification_save_failed_text">AutoSpotを開いて手動で位置を保存してください。</string>
+    <string name="monitor_failed_title">自動保存が無効になっています</string>
+    <string name="monitor_failed_text">AutoSpotはBluetoothモニターを開始できませんでした。アプリを開いて権限を確認してください。</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">あなたの車</string>

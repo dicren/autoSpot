@@ -8,6 +8,8 @@
     <string name="notification_text">Сохранение местоположения вашего автомобиля…</string>
     <string name="notification_save_failed_title">Не удалось сохранить место парковки</string>
     <string name="notification_save_failed_text">Откройте AutoSpot и сохраните местоположение вручную.</string>
+    <string name="monitor_failed_title">Автосохранение отключено</string>
+    <string name="monitor_failed_text">AutoSpot не удалось запустить монитор Bluetooth. Откройте приложение, чтобы проверить разрешения.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Ваш автомобиль</string>

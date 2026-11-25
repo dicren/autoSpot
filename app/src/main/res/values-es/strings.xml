@@ -8,6 +8,8 @@
     <string name="notification_text">Guardando la ubicación de tu coche…</string>
     <string name="notification_save_failed_title">No se pudo guardar tu plaza</string>
     <string name="notification_save_failed_text">Abre AutoSpot y guarda la ubicación manualmente.</string>
+    <string name="monitor_failed_title">El guardado automático está desactivado</string>
+    <string name="monitor_failed_text">AutoSpot no pudo iniciar el monitor Bluetooth. Abre la app para revisar los permisos.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Tu coche</string>

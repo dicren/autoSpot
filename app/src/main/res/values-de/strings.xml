@@ -8,6 +8,8 @@
     <string name="notification_text">Ihr Autostandort wird gespeichert…</string>
     <string name="notification_save_failed_title">Parkplatz konnte nicht gespeichert werden</string>
     <string name="notification_save_failed_text">Öffnen Sie AutoSpot und speichern Sie den Standort manuell.</string>
+    <string name="monitor_failed_title">Automatisches Speichern ist deaktiviert</string>
+    <string name="monitor_failed_text">AutoSpot konnte den Bluetooth-Monitor nicht starten. Öffnen Sie die App, um die Berechtigungen zu prüfen.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Ihr Auto</string>

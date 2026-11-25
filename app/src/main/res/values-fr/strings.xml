@@ -8,6 +8,8 @@
     <string name="notification_text">Enregistrement de l\'emplacement de votre voiture…</string>
     <string name="notification_save_failed_title">Impossible d\'enregistrer votre place</string>
     <string name="notification_save_failed_text">Ouvrez AutoSpot et enregistrez la position manuellement.</string>
+    <string name="monitor_failed_title">L\'enregistrement automatique est désactivé</string>
+    <string name="monitor_failed_text">AutoSpot n\'a pas pu démarrer le moniteur Bluetooth. Ouvrez l\'application pour vérifier les autorisations.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Votre voiture</string>

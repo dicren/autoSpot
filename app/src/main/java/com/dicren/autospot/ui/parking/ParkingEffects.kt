@@ -42,6 +42,7 @@ internal fun ParkingEnvironmentEffect(
 internal fun ParkingMonitorEffect(
     state: ParkingUiState,
     context: Context,
+    onStartFailed: () -> Unit,
 ) {
     val notificationPermissionLauncher =
         rememberLauncherForActivityResult(
@@ -58,6 +59,7 @@ internal fun ParkingMonitorEffect(
                 )
             } catch (e: Exception) {
                 Log.w(TAG, "Could not start the Bluetooth monitor", e)
+                onStartFailed()
             }
         } else {
             context.stopService(Intent(context, BluetoothMonitorService::class.java))

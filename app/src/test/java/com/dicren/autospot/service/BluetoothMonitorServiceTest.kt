@@ -1,6 +1,8 @@
 package com.dicren.autospot.service
 
 import android.Manifest
+import android.app.Notification
+import android.app.NotificationManager
 import android.app.Service
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothDevice
@@ -8,6 +10,7 @@ import android.content.Intent
 import android.os.Looper
 import androidx.test.core.app.ApplicationProvider
 import com.dicren.autospot.AutoSpotApp
+import com.dicren.autospot.R
 import com.dicren.autospot.core.Clock
 import com.dicren.autospot.data.AddVehicleResult
 import com.dicren.autospot.util.FakeVehicleRepository
@@ -177,6 +180,16 @@ class BluetoothMonitorServiceTest {
 
         assertEquals(Service.START_NOT_STICKY, result)
         assertTrue(shadowOf(controller.get()).isStoppedBySelf)
+
+        val manager = app.getSystemService(NotificationManager::class.java)
+        val posted = shadowOf(manager).allNotifications
+        assertTrue(
+            posted.any {
+                it.extras.getString(Notification.EXTRA_TITLE) ==
+                    app.getString(R.string.monitor_failed_title)
+            },
+        )
+
         controller.destroy()
     }
 

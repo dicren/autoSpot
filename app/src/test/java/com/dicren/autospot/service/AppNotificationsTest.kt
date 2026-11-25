@@ -68,6 +68,24 @@ class AppNotificationsTest {
     }
 
     @Test
+    fun `the monitor failure notice explains that auto-save is off`() {
+        notifications.createChannels()
+
+        notifications.notifyMonitorFailed()
+
+        val posted = shadowOf(manager).allNotifications
+        assertEquals(1, posted.size)
+        assertEquals(
+            context.getString(R.string.monitor_failed_title),
+            posted.single().extras.getString(Notification.EXTRA_TITLE),
+        )
+        assertEquals(
+            context.getString(R.string.monitor_failed_text),
+            posted.single().extras.getString(Notification.EXTRA_TEXT),
+        )
+    }
+
+    @Test
     fun `a denied notification permission does not crash the failure notice`() {
         shadowOf(context as Application).denyPermissions(Manifest.permission.POST_NOTIFICATIONS)
         notifications.createChannels()

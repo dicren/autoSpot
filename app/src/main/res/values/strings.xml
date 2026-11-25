@@ -8,6 +8,8 @@
     <string name="notification_text">Saving your car location…</string>
     <string name="notification_save_failed_title">Couldn\'t save your parking spot</string>
     <string name="notification_save_failed_text">Open AutoSpot and save your location manually.</string>
+    <string name="monitor_failed_title">Auto-save is disabled</string>
+    <string name="monitor_failed_text">AutoSpot couldn\'t start the Bluetooth monitor. Open the app to check permissions.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">Your car</string>

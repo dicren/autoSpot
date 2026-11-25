@@ -8,6 +8,8 @@
     <string name="notification_text">Salvataggio della posizione della tua auto…</string>
     <string name="notification_save_failed_title">Impossibile salvare il parcheggio</string>
     <string name="notification_save_failed_text">Apri AutoSpot e salva la posizione manualmente.</string>
+    <string name="monitor_failed_title">Il salvataggio automatico è disattivato</string>
+    <string name="monitor_failed_text">AutoSpot non è riuscito ad avviare il monitor Bluetooth. Apri l\'app per controllare i permessi.</string>
 
     <!-- Parking Screen -->
     <string name="marker_title">La tua auto</string>

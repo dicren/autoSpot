@@ -99,6 +99,7 @@ fun ParkingScreen(
             mapsNotInstalled = stringResource(R.string.maps_not_found),
             shareTitle = stringResource(R.string.share_location),
         )
+    val monitorFailedMessage = stringResource(R.string.monitor_failed_text)
 
     // Android 11+ answers this request by sending the user to the system's location page; the
     // flags are refreshed on resume, and immediately here for the versions that answer inline.
@@ -127,7 +128,15 @@ fun ParkingScreen(
     }
 
     ParkingEnvironmentEffect(viewModel = viewModel, lifecycleOwner = lifecycleOwner)
-    ParkingMonitorEffect(state = state, context = context)
+    ParkingMonitorEffect(
+        state = state,
+        context = context,
+        onStartFailed = {
+            coroutineScope.launch {
+                snackbarHostState.showSnackbar(monitorFailedMessage)
+            }
+        },
+    )
     ParkingBackgroundLocationEffect(
         state = state,
         viewModel = viewModel,

@@ -77,11 +77,32 @@ class AppNotifications(
 
     /** Tells the user the automatic save failed, instead of failing silently. */
     fun notifySaveFailed() {
+        notifyFailure(
+            id = SAVE_FAILED_NOTIFICATION_ID,
+            title = context.getString(R.string.notification_save_failed_title),
+            text = context.getString(R.string.notification_save_failed_text),
+        )
+    }
+
+    /** Tells the user that auto-save is off because the monitor could not start. */
+    fun notifyMonitorFailed() {
+        notifyFailure(
+            id = MONITOR_FAILED_NOTIFICATION_ID,
+            title = context.getString(R.string.monitor_failed_title),
+            text = context.getString(R.string.monitor_failed_text),
+        )
+    }
+
+    private fun notifyFailure(
+        id: Int,
+        title: String,
+        text: String,
+    ) {
         val notification =
             NotificationCompat
                 .Builder(context, SAVE_CHANNEL_ID)
-                .setContentTitle(context.getString(R.string.notification_save_failed_title))
-                .setContentText(context.getString(R.string.notification_save_failed_text))
+                .setContentTitle(title)
+                .setContentText(text)
                 .setSmallIcon(R.drawable.ic_notification)
                 .setPriority(NotificationCompat.PRIORITY_LOW)
                 .setAutoCancel(true)
@@ -95,7 +116,7 @@ class AppNotifications(
                 ).build()
 
         try {
-            NotificationManagerCompat.from(context).notify(SAVE_FAILED_NOTIFICATION_ID, notification)
+            NotificationManagerCompat.from(context).notify(id, notification)
         } catch (e: SecurityException) {
             // POST_NOTIFICATIONS was denied; the failure is still in logcat.
         }
@@ -105,6 +126,7 @@ class AppNotifications(
         const val MONITOR_NOTIFICATION_ID = 3
         const val SAVE_NOTIFICATION_ID = 1
         private const val SAVE_FAILED_NOTIFICATION_ID = 2
+        private const val MONITOR_FAILED_NOTIFICATION_ID = 4
 
         private const val MONITOR_CHANNEL_ID = "bluetooth_monitor_channel_v2"
         private const val LEGACY_MONITOR_CHANNEL_ID = "bluetooth_monitor_channel"

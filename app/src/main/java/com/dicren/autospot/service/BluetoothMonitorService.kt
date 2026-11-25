@@ -171,6 +171,7 @@ class BluetoothMonitorService : Service() {
     ): Int {
         if (!Permissions.canMonitor(this)) {
             Log.w(TAG, "Location or Bluetooth permission missing, stopping monitor")
+            notifications.notifyMonitorFailed()
             stopSelf()
             return START_NOT_STICKY
         }
@@ -187,6 +188,7 @@ class BluetoothMonitorService : Service() {
             // SecurityException when a location permission is missing, and
             // ForegroundServiceStartNotAllowedException when the system refuses the start.
             Log.e(TAG, "Cannot start foreground monitor", e)
+            notifications.notifyMonitorFailed()
             stopSelf()
             START_NOT_STICKY
         }
