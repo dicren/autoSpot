@@ -32,6 +32,9 @@ class BaselineProfileGenerator {
                 GrantPermissionRule.grant(
                     Manifest.permission.ACCESS_FINE_LOCATION,
                     Manifest.permission.ACCESS_COARSE_LOCATION,
+                    // Without this the app profiles the "allow all the time" rationale and the
+                    // permission banner, which no configured user sees.
+                    Manifest.permission.ACCESS_BACKGROUND_LOCATION,
                     Manifest.permission.BLUETOOTH_CONNECT,
                 ),
             ).around(baselineProfile)
