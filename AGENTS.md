@@ -92,10 +92,15 @@ startup profile on a connected device or emulator (API 33+, no root needed):
 a test APK, then uninstalls both when the connected test finishes, which wipes the app data. Use a
 dedicated emulator.
 
-The generator test sets `includeInStartupProfile = true`. The plugin writes
+The generator test sets `includeInStartupProfile = true` and grants
+`ACCESS_BACKGROUND_LOCATION` as well, so the parking screen is profiled without the permission
+banner and the rationale dialog in the way. The plugin writes
 `app/src/release/generated/baselineProfiles/{baseline-prof.txt,startup-prof.txt}`, which are
-committed and embedded in the release APK as `assets/dexopt/baseline.prof`; debug builds ignore
-them.
+committed; debug builds ignore them. **The two files are not duplicates of each other:** AGP
+compiles the first into `assets/dexopt/baseline.prof` and the second into
+`assets/dexopt/baseline.profm` (the startup profile), so both must stay committed even when the
+text is identical. With a single test that sets `includeInStartupProfile`, identical text is the
+expected result; do not "clean up" one of them.
 
 **Regenerate and commit the profile in the same change whenever startup-critical code changes**
 (the activity/application entry points, `AutoSpotApp`/`AppContainer`, the first Compose screen,
@@ -159,14 +164,16 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   Events pass through `DisconnectionDebouncer` (10 s per vehicle, `Mutex` + injected clock), so
   there is no concurrent access to shared state. It calls `stopSelf()` when
   `Permissions.canMonitor` is false at start **and again before every disconnection**, because
-  permissions can be revoked while it runs. It catches `Exception` from `startForeground` and
-  posts the "auto-save is disabled" notification instead of losing the save silently; the parking
-  screen shows a snackbar when the service cannot even be started. Its
+  permissions can be revoked while it runs; in the second case it posts the "auto-save is
+  disabled" notification, since nothing was being saved. It catches `Exception` from
+  `startForeground` and posts the same notification instead of losing the save silently; the
+  parking screen shows a snackbar when the service cannot even be started. Its
   notification is built by `AppNotifications` (`bluetooth_monitor_channel_v2`, `IMPORTANCE_MIN`,
   monochrome `ic_notification`, dismissible). The old `bluetooth_monitor_channel` is deleted when
   the channels are created because Android ignores importance changes on an existing channel.
-- **`LocationSaveService`** — one-shot foreground service. Refuses to start without location
-  permission, then runs `SaveParkingLocation`: a fresh high-accuracy fix bounded by a 15 s
+- **`LocationSaveService`** — one-shot foreground service. Enters the foreground first and stops
+  with the failure notification when the location permission is gone (trap 13), then runs
+  `SaveParkingLocation`: a fresh high-accuracy fix bounded by a 15 s
   timeout, falling back to `lastLocation` only if it is younger than 5 minutes and, like the fresh
   fix, its reported accuracy is at most 100 m. The two sources are asked independently: an
   exception from the fresh fix (Play Services unavailable) still tries the last known one. Saves
@@ -290,14 +297,16 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 - **State:** screens collect a `StateFlow<UiState>` from their ViewModel with
   `collectAsStateWithLifecycle`; ViewModels never hold `Context` (the factory captures the
   application context) and expose actions as methods. Keep one-shot messages in a `SharedFlow`.
+  A collector that lives as long as the screen (one keyed on the ViewModel) must read translated
+  strings through `rememberUpdatedState`: the ViewModel survives a configuration change, so a
+  per-app language switch would otherwise leave it showing the previous locale.
 - **Coroutines:** ViewModels own UI work through `viewModelScope`; services own a
   `CoroutineScope(SupervisorJob() + Dispatchers.IO)` and cancel it in `onDestroy`. Do not create
   ad-hoc `CoroutineScope`s for database writes. `rememberCoroutineScope` is only for animations.
 - **Versioning:** bump `versionCode` / `versionName` in `app/build.gradle.kts` (`2` / `1.1`
   today) before a store release. Release builds are minified by R8.
 - **Branding assets** live at the repo root: `logo.png`, `logo512.png`, `logo.xcf`,
-  `claim.png`, `claim.xcf`, plus `app/src/main/ic_launcher-playstore.png`. `_config.yml` is a
-  leftover GitHub Pages theme, not used by the Android build.
+  `claim.png`, `claim.xcf`, plus `app/src/main/ic_launcher-playstore.png`.
 
 ## Known issues and traps
 
@@ -359,12 +368,13 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
     12+), `hasLocation` is false, the monitor does not start and the manual save cannot work. The
     banner now says "Precise location required" instead of the generic permissions notice.
 13. **A `startForegroundService` start must reach `startForeground`, even if the service stops.**
-    `BluetoothMonitorService` used to check its permissions first and call `stopSelf()` when they
-    were gone. Android 12+ then killed the process with
+    Both services used to check their permissions first and call `stopSelf()` when they were gone.
+    Android 12+ then killed the process with
     `ForegroundServiceDidNotStartInTimeException: startForegroundService() did not then call
-    Service.startForeground()`. It now enters the foreground before checking permissions and stops
-    afterwards; verified on an API 37 emulator by revoking background location and starting the
-    service as the app UID. Covered by `BluetoothMonitorServiceTest`.
+    Service.startForeground()`. `BluetoothMonitorService` and `LocationSaveService` now enter the
+    foreground before checking permissions and stop afterwards; the monitor fix was verified on an
+    API 37 emulator by revoking background location and starting the service as the app UID.
+    Covered by the `BluetoothMonitorServiceTest` and `LocationSaveServiceTest` permission tests.
 14. **The monitor and the save service use different foreground-service types.** The monitor is
     `connectedDevice` (it only watches Bluetooth); `LocationSaveService` is `location`. The save
     service is started from the background while the monitor is running, which Android 14+
