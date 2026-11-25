@@ -24,7 +24,6 @@ import com.dicren.autospot.di.appContainer
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -35,7 +34,9 @@ class BluetoothMonitorService : Service() {
         private const val DEBOUNCE_TIME_MS = 10_000L // 10 seconds
     }
 
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val serviceScope: CoroutineScope by lazy {
+        CoroutineScope(SupervisorJob() + applicationContext.appContainer.ioDispatcher)
+    }
     private val vehicleRepository: VehicleRepository by lazy {
         applicationContext.appContainer.vehicleRepository
     }

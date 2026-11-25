@@ -12,6 +12,8 @@ import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
@@ -161,6 +163,7 @@ class FakeLocationSource(
 
 class TestAppContainer(
     override val clock: Clock = Clock { 0L },
+    override val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     override val locationSource: LocationSource = FakeLocationSource(),
     override val vehicleRepository: VehicleRepository = FakeVehicleRepository(),
     override val parkingRepository: ParkingRepository = FakeParkingRepository(),

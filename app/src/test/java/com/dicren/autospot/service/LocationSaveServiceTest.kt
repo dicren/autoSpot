@@ -19,6 +19,8 @@ import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -60,6 +62,7 @@ class LocationSaveServiceTest {
 
     private class TestContainer(
         override val clock: Clock,
+        override val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
         override val locationSource: LocationSource,
         override val vehicleRepository: VehicleRepository,
         override val parkingRepository: ParkingRepository,
@@ -100,7 +103,13 @@ class LocationSaveServiceTest {
                 .build()
         vehicles = RoomVehicleRepository(db.vehicleDao())
         parking = RoomParkingRepository(db.parkingLocationDao(), clock)
-        app.containerOverride = TestContainer(clock, source, vehicles, parking)
+        app.containerOverride =
+            TestContainer(
+                clock = clock,
+                locationSource = source,
+                vehicleRepository = vehicles,
+                parkingRepository = parking,
+            )
         shadowOf(app).grantPermissions(
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION,

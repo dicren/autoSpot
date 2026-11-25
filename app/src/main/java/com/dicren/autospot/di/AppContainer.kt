@@ -17,6 +17,8 @@ import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.location.FusedLocationSource
 import com.dicren.autospot.location.LocationSource
 import com.dicren.autospot.util.Permissions
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 
 /**
  * Tiny manual service locator. Deliberately not Hilt: there is one activity, two services and
@@ -24,6 +26,7 @@ import com.dicren.autospot.util.Permissions
  */
 interface AppContainer {
     val clock: Clock
+    val ioDispatcher: CoroutineDispatcher
     val locationSource: LocationSource
     val vehicleRepository: VehicleRepository
     val parkingRepository: ParkingRepository
@@ -34,6 +37,7 @@ interface AppContainer {
 class DefaultAppContainer(
     context: Context,
     override val clock: Clock = DefaultClock,
+    override val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) : AppContainer {
     private val appContext = context.applicationContext
 

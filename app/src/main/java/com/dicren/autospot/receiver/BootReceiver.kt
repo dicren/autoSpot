@@ -11,7 +11,6 @@ import com.dicren.autospot.service.BluetoothMonitorService
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -28,7 +27,7 @@ class BootReceiver : BroadcastReceiver() {
         Log.d(TAG, "Device booted or app updated, checking if any vehicle is configured")
 
         val pendingResult = goAsync()
-        val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+        val scope = CoroutineScope(SupervisorJob() + context.appContainer.ioDispatcher)
 
         scope.launch {
             try {

@@ -197,6 +197,8 @@ All UI is Compose, split in `ui/`:
 - `ui/parking/ParkingScreen.kt` — layout and state orchestration: map, overlays, cards, snackbar
   and sheets. It reads `ParkingViewModel.uiState`, sends user actions to the ViewModel, and
   keeps the relative "parked at" text fresh with a one-minute ticker (`rememberNow`).
+- `ui/parking/ParkingMessages.kt` — maps each one-shot `ParkingEvent` to its localized snackbar
+  text, kept out of the screen.
 - `ui/parking/ParkingEffects.kt` — the side effects: refresh on resume, start/stop the monitor,
   request `POST_NOTIFICATIONS`, explain the background-location requirement and follow the
   displayed spot with the camera.
@@ -247,7 +249,9 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   entries saved in the same millisecond still have a stable newest one.
 - **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`) and the
   shared `SaveParkingLocation` use case are built by `di/AppContainer`; services and the ViewModel
-  must take the use case from there instead of constructing their own. `SaveParkingLocationUseCase`
+  must take the use case from there instead of constructing their own. The container also exposes
+  `ioDispatcher`, which the services and `BootReceiver` use for their scopes, so tests can replace
+  it with a deterministic dispatcher. `SaveParkingLocationUseCase`
   is total: every non-cancellation failure becomes `SaveResult.Error` instead of escaping to a
   service or view-model coroutine. `addVehicle` uses
   `INSERT OR IGNORE` on the unique Bluetooth address and returns `Added`/`Duplicate` without
