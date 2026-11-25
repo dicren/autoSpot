@@ -109,7 +109,8 @@ class BluetoothMonitorService : Service() {
                 // of only in onStartCommand, avoids a silent failure on the next disconnection.
                 if (!Permissions.canMonitor(this@BluetoothMonitorService)) {
                     Log.w(TAG, "Monitoring permissions disappeared, stopping the monitor")
-                    notifications.notifySaveFailed()
+                    // Nothing was being saved: the monitor itself is what stopped.
+                    notifications.notifyMonitorFailed()
                     stopSelf()
                     return@launch
                 }

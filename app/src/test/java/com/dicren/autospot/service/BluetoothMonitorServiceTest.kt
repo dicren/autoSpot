@@ -20,6 +20,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -170,6 +171,13 @@ class BluetoothMonitorServiceTest {
 
         assertTrue(shadowOf(controller.get()).isStoppedBySelf)
         assertNull(shadowOf(app).peekNextStartedService())
+
+        // What stopped is the monitor, so the message must not claim that a save failed.
+        val manager = app.getSystemService(NotificationManager::class.java)
+        val titles = shadowOf(manager).allNotifications.map { it.extras.getString(Notification.EXTRA_TITLE) }
+        assertTrue(titles.contains(app.getString(R.string.monitor_failed_title)))
+        assertFalse(titles.contains(app.getString(R.string.notification_save_failed_title)))
+
         controller.destroy()
     }
 
