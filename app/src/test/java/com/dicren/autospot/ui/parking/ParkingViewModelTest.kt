@@ -15,16 +15,21 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
+import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
+import com.dicren.autospot.location.AddressLookup
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.location.ReverseGeocoder
 import com.dicren.autospot.util.FakeParkingRepository
+import com.dicren.autospot.util.FakeReverseGeocoder
 import com.dicren.autospot.util.FakeSettingsRepository
 import com.dicren.autospot.util.FakeVehicleRepository
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -89,6 +94,7 @@ class ParkingViewModelTest {
         vehicleRepository: VehicleRepository = vehicles,
         parkingRepository: ParkingRepository = parking,
         saveParkingLocation: SaveParkingLocation? = null,
+        reverseGeocoder: ReverseGeocoder = FakeReverseGeocoder(),
     ): ParkingViewModel =
         ParkingViewModel(
             vehicleRepository = vehicleRepository,
@@ -101,6 +107,11 @@ class ParkingViewModelTest {
                     locationSource = source,
                     clock = Clock { NOW },
                     hasLocationPermission = { accuracy == LocationAccuracy.PRECISE },
+                ),
+            resolveLocationAddress =
+                ResolveLocationAddressUseCase(
+                    parkingRepository = parkingRepository,
+                    reverseGeocoder = reverseGeocoder,
                 ),
             hasMonitoringPermission = { monitoringPermission },
             locationAccuracy = { accuracy },
@@ -127,6 +138,25 @@ class ParkingViewModelTest {
     /** Emits the new vehicle's history only after a delay, like a slow Room query. */
     private class ThrowingSaveParkingLocation : SaveParkingLocation {
         override suspend fun save(vehicleId: Long?): SaveResult = throw IllegalStateException("database closed")
+    }
+
+    /** Answers [result] and signals every call, so a test can wait for the lookup to happen. */
+    private class ScriptedReverseGeocoder(
+        initial: AddressLookup,
+    ) : ReverseGeocoder {
+        @Volatile
+        var result: AddressLookup = initial
+
+        val calls = Channel<Unit>(Channel.UNLIMITED)
+
+        override suspend fun lookup(
+            latitude: Double,
+            longitude: Double,
+        ): AddressLookup {
+            val answer = result
+            calls.trySend(Unit)
+            return answer
+        }
     }
 
     private class SlowSwitchParkingRepository(
@@ -294,6 +324,54 @@ class ParkingViewModelTest {
                 var state = awaitItem()
                 while (state.locations.isEmpty()) state = awaitItem()
                 assertEquals(1, state.locations.size)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a stored spot gets its address resolved in the background`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 42.0, -5.0)
+            val viewModel =
+                viewModel(
+                    reverseGeocoder =
+                        FakeReverseGeocoder(AddressLookup.Found("Calle Mayor 12", "Getafe")),
+                )
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.latestLocation?.street == null) state = awaitItem()
+
+                // The coordinates stay intact: the address is an extra, not a replacement.
+                assertEquals(42.0, state.latestLocation?.latitude ?: 0.0, 0.0)
+                assertEquals("Calle Mayor 12", state.latestLocation?.street)
+                assertEquals("Getafe", state.latestLocation?.locality)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `an address that could not be resolved is retried when the app resumes`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 42.0, -5.0)
+            val geocoder = ScriptedReverseGeocoder(AddressLookup.Unavailable)
+            val viewModel = viewModel(reverseGeocoder = geocoder)
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.latestLocation == null) state = awaitItem()
+
+                // The first pass ran and the geocoder had no network.
+                geocoder.calls.receive()
+                assertNull(state.latestLocation?.street)
+
+                geocoder.result = AddressLookup.Found("Calle Mayor 12", "Getafe")
+                viewModel.refreshEnvironment()
+
+                while (state.latestLocation?.street == null) state = awaitItem()
+                assertEquals("Calle Mayor 12", state.latestLocation?.street)
                 cancelAndIgnoreRemainingEvents()
             }
         }

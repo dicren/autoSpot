@@ -179,7 +179,8 @@ signed automatically. Without it, release builds are unsigned — only debug bui
   exception from the fresh fix (Play Services unavailable) still tries the last known one. Saves
   are serialised with a `Mutex` and each start stops with `stopSelfResult(startId)` in a `finally`,
   so even an unexpected failure cannot leave the foreground notification alive. A failed save
-  posts a notification instead of failing silently.
+  posts a notification instead of failing silently. It stores coordinates only: the street name is
+  resolved later by the parking screen (see "Address resolution"), never here.
 - **`BootReceiver`** — on `BOOT_COMPLETED` **and** `MY_PACKAGE_REPLACED` (the process is killed by
   an app update), restarts `BluetoothMonitorService` only if at least one vehicle is stored
   **and** `Permissions.canMonitor` is true. The receiver is not exported: both actions are system
@@ -235,7 +236,8 @@ All UI is Compose, split in `ui/`:
   derives the history position (`displayIndex`, `canStepOlder`, `canStepNewer`, `stepIndex`), which
   is what the swipe uses: index 0 is the newest spot and is represented by a null
   `selectedLocationId`, so stepping back to the newest spot must clear the selection instead of
-  selecting it, or the "back to latest" arrow would stay on screen.
+  selecting it, or the "back to latest" arrow would stay on screen. Its `init` also runs the
+  address fill-in worker described under "Address resolution".
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`,
   `BackgroundLocationDialog`) that take state and callbacks, which is what the Compose tests
@@ -243,8 +245,16 @@ All UI is Compose, split in `ui/`:
   their colors from `parkingCardColors()`, which states the content color explicitly (trap 15).
   The edit dialog receives the paired-device list instead of reading the adapter, so it can be
   tested without Bluetooth; only `ParkingScreen` touches `BluetoothDevices.paired`.
+  The address text lives in exactly two places and has the same fallback rule in both:
+  `LocationCard` shows `formatAddress(street, locality)` as its title and falls back to
+  `parked_at` ("Parked") until a lookup succeeds, and `HistorySheet` replaces the coordinates with
+  the same line, falling back to them when there is no address. The time stays the primary line in
+  the history and the second line on the card.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
   absolute fallback.
+- `ui/format/AddressFormatter.kt` — `formatAddress(street, locality)` joins the stored components
+  as "Calle Mayor 12, Getafe" and returns null when there is nothing usable, which is what the
+  fallbacks key off.
 - `OnboardingScreen.kt` — `HorizontalPager` intro; the final page writes the DataStore flag.
 - `ui/theme/` — Material 3 color scheme, typography, `AutoSpotTheme`. The window themes have a
   `values-night` variant so the startup/splash background follows the system dark mode.
@@ -253,12 +263,13 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 ### Data layer
 
-- **`AppDatabase`** — Room **3** (`androidx.room3`), version **4**, database name
+- **`AppDatabase`** — Room **3** (`androidx.room3`), version **5**, database name
   `parking_database`, singleton via `getDatabase(context)`, `exportSchema = true`. Schemas are
   generated into `app/schemas/` (KSP `room.schemaLocation`) and committed. The builder sets
   `BundledSQLiteDriver()` on devices (same SQLite build everywhere); migrations are `suspend` and
   use `SQLiteConnection` + `androidx.sqlite.async.executeSQL`. `MIGRATION_3_4` adds the unique
-  Bluetooth index and repairs duplicates;
+  Bluetooth index and repairs duplicates; `MIGRATION_4_5` adds the address columns
+  (`street`, `locality`, `addressResolved`) with every existing row left unresolved;
   `fallbackToDestructiveMigrationFrom(dropAllTables = true, 1, 2)` covers the unknown legacy
   schemas only. From v3 onward every version bump must ship an explicit `Migration`, or the app
   crashes on upgrade. The Room 3 package and the Room 2 one are different: never mix them.
@@ -266,14 +277,21 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   display name, and a single `isActive` flag. Room cannot express a partial unique index for the
   active flag, so `VehicleDao` keeps the invariant with `@Transaction` methods.
 - **`ParkingLocationEntity`** — `parking_locations` table, foreign key on `vehicleId` with
-  `CASCADE` delete and an index on `vehicleId`.
+  `CASCADE` delete and an index on `vehicleId`. Besides the coordinates and timestamp it carries
+  the resolved `street` and `locality` (nullable) and `addressResolved`, a boolean with
+  `@ColumnInfo(defaultValue = "0")` so the entity schema matches the `ALTER TABLE` default (a
+  plain Boolean would declare no default and fail migration validation). Resolved means "a lookup
+  finished", even when it found nothing: only unresolved rows are retried.
 - **DAOs** expose `Flow` queries for UI plus `...Once` `suspend` variants for services.
   `activateOnly`, `insertVehicleAndActivate`, `deleteVehicleAndKeepOneActive` and
   `insertAndPrune` are transactional. Parking history orders by `timestamp DESC, id DESC` so
-  entries saved in the same millisecond still have a stable newest one.
-- **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`) and the
-  shared `SaveParkingLocation` use case are built by `di/AppContainer`; services and the ViewModel
-  must take the use case from there instead of constructing their own. The container also exposes
+  entries saved in the same millisecond still have a stable newest one. `updateAddress` writes the
+  name and flips `addressResolved` in one statement.
+- **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`), the
+  `ReverseGeocoder` (`location/ReverseGeocoder.kt`, implemented by `AndroidReverseGeocoder`) and
+  the shared `SaveParkingLocation` / `ResolveLocationAddress` use cases are built by
+  `di/AppContainer`; services and the ViewModel must take them from there instead of constructing
+  their own. The container also exposes
   `ioDispatcher`, which the services and `BootReceiver` use for their scopes, so tests can replace
   it with a deterministic dispatcher. `SaveParkingLocationUseCase`
   is total: every non-cancellation failure becomes `SaveResult.Error` instead of escaping to a
@@ -281,6 +299,17 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `INSERT OR IGNORE` on the unique Bluetooth address and returns `Added`/`Duplicate` without
   depending on a driver-specific exception; deleting the active vehicle activates another; the
   history is capped at 100 rows per vehicle.
+- **Address resolution** (`ResolveLocationAddressUseCase`) is deliberately outside the save path:
+  the platform `Geocoder` needs the network and can take seconds, so a spot is stored first and
+  named afterwards. The ViewModel runs a small worker that reads the pending rows of the active
+  vehicle, resolves them one at a time (the geocoder is a shared service, no bursts) and stops at
+  the first `AddressLookup.Unavailable`; it retries on the next new spot or on
+  `refreshEnvironment()` (resume). `AddressLookup` separates "no address here" (`NotFound`, stored
+  as resolved so it is never asked again) from "could not answer" (`Unavailable`, left pending).
+  The Android implementation uses the listener API on API 33+ and the deprecated blocking call
+  below it; `Geocoder.isPresent()` false is treated as unavailable. The lookup is best effort: the
+  UI always has the coordinates and the generic "Parked" title to fall back to, and there is no
+  extra dependency, key or billing.
 - **`SettingsRepository`** wraps the `settings` DataStore. It treats an `IOException` (corrupt
   file) as "not onboarded" instead of crashing, and persists the onboarding flag plus the fact
   that the background-location rationale was shown and acted on. Writes are best effort: a failed
@@ -309,7 +338,9 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `SecurityException` without `BLUETOOTH_CONNECT` (done in `util/BluetoothDevices`).
 - **Tests:** Robolectric tests that need a container use the shared doubles in
   `app/src/test/java/com/dicren/autospot/util/TestDoubles.kt`. `FakeParkingRepository` suspends on
-  purpose so headless activities are tested with a real suspension.
+  purpose so headless activities are tested with a real suspension. `FakeReverseGeocoder` answers
+  `Unavailable` by default, so a test that does not care about addresses sees no rows rewritten;
+  address tests pass the result they need (`AddressLookup.Found` / `NotFound`) or script it.
 - **Code identifiers, comments and KDoc:** English. Committed docs: English.
 - **State:** screens collect a `StateFlow<UiState>` from their ViewModel with
   `collectAsStateWithLifecycle`; ViewModels never hold `Context` (the factory captures the
@@ -406,6 +437,14 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
     The cards now share `parkingCardColors()`, which passes `onSurface` explicitly;
     `ParkingComponentsTest` renders a card in the dark theme and checks the inherited content
     color, so the trap stays fixed. The same applies to any future translucent surface.
+16. **Geocoding must never gate a save.** The platform `Geocoder` is a network call and, on some
+    devices or with no connectivity, a blocking one that can hang for seconds. It is therefore not
+    part of `SaveParkingLocation`, `LocationSaveService` or the monitor: the coordinates are
+    written first (that is the promise the app makes) and the address is filled in by the parking
+    screen's background worker. Do not move the lookup into the save path to "avoid the extra
+    frame" where the card shows "Parked": an unreachable geocoder would then become a failed save.
+    For the same reason `addressResolved` exists: a lookup that answered "nothing here" must not be
+    repeated on every visit, while one that could not answer must stay pending.
 
 ## Working rules for agents
 

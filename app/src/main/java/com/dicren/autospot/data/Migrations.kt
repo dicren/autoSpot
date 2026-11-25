@@ -5,6 +5,24 @@ import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.async.executeSQL
 
 /**
+ * v4 → v5: parking spots can carry the human-readable address resolved from their coordinates.
+ *
+ * Existing rows stay unresolved (`addressResolved = 0`) so the app fills them in on next launch;
+ * geocoding is best effort and never part of the migration itself.
+ */
+val MIGRATION_4_5 =
+    object : Migration(4, 5) {
+        override suspend fun migrate(connection: SQLiteConnection) {
+            connection.executeSQL("ALTER TABLE `parking_locations` ADD COLUMN `street` TEXT")
+            connection.executeSQL("ALTER TABLE `parking_locations` ADD COLUMN `locality` TEXT")
+            connection.executeSQL(
+                "ALTER TABLE `parking_locations` " +
+                    "ADD COLUMN `addressResolved` INTEGER NOT NULL DEFAULT 0",
+            )
+        }
+    }
+
+/**
  * v3 → v4: the Bluetooth address becomes unique and the "one active vehicle" invariant is
  * repaired for existing installs.
  *

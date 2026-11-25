@@ -15,12 +15,15 @@ import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.appContainer
+import com.dicren.autospot.domain.AddressLookupOutcome
+import com.dicren.autospot.domain.ResolveLocationAddress
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +32,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -41,6 +45,7 @@ class ParkingViewModel(
     private val parkingRepository: ParkingRepository,
     private val settingsRepository: SettingsRepository,
     private val saveParkingLocation: SaveParkingLocation,
+    private val resolveLocationAddress: ResolveLocationAddress,
     private val hasMonitoringPermission: () -> Boolean,
     private val locationAccuracy: () -> LocationAccuracy,
     private val hasBackgroundLocationPermission: () -> Boolean,
@@ -76,6 +81,12 @@ class ParkingViewModel(
 
     private val eventsFlow = MutableSharedFlow<ParkingEvent>(extraBufferCapacity = 4)
     val events = eventsFlow.asSharedFlow()
+
+    /**
+     * Requests to fill in missing addresses. Conflated on purpose: while a pass runs, more than one
+     * request only means "look again", and the worker always reads the current list.
+     */
+    private val addressLookupRequests = Channel<Unit>(Channel.CONFLATED)
 
     private val locations: Flow<List<ParkingLocationEntity>> =
         vehicleRepository.activeVehicle.flatMapLatest { vehicle ->
@@ -130,6 +141,41 @@ class ParkingViewModel(
                 .distinctUntilChanged()
                 .collect { selectedLocationId.value = null }
         }
+
+        // Address fill-in runs here, not in the save path: it is network work that can take
+        // seconds, and saving the coordinates must never wait for it. A spot saved while the app
+        // was closed gets its name the next time the app is opened.
+        viewModelScope.launch {
+            while (true) {
+                addressLookupRequests.receive()
+                try {
+                    resolvePendingAddresses()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    // A storage failure must not kill the worker for the whole session.
+                    Log.e(TAG, "Address lookup failed", e)
+                }
+            }
+        }
+        viewModelScope.launch {
+            locations.collect { stored ->
+                if (stored.any { !it.addressResolved }) addressLookupRequests.trySend(Unit)
+            }
+        }
+        addressLookupRequests.trySend(Unit)
+    }
+
+    /**
+     * One pass over the stored spots of the active vehicle, oldest requests included. Sequential
+     * on purpose: the platform geocoder is a shared service and does not like bursts. A pass stops
+     * at the first [AddressLookupOutcome.Unavailable], so an offline phone does not fire one failed
+     * request per row; [refreshEnvironment] starts it again.
+     */
+    private suspend fun resolvePendingAddresses() {
+        for (location in locations.first().filterNot { it.addressResolved }) {
+            if (resolveLocationAddress.resolve(location) == AddressLookupOutcome.Unavailable) return
+        }
     }
 
     /** Re-reads permissions and the system location switch; call on every resume. */
@@ -141,6 +187,12 @@ class ParkingViewModel(
                 hasBackgroundLocationPermission = hasBackgroundLocationPermission(),
                 isLocationEnabled = isLocationEnabled(),
             )
+
+        // Coming back to the app is the natural moment to retry a lookup that had no network. The
+        // pass itself needs a fresh read, so only ask when something is still pending.
+        if (uiState.value.locations.any { !it.addressResolved }) {
+            addressLookupRequests.trySend(Unit)
+        }
     }
 
     fun selectLocation(location: ParkingLocationEntity) {
@@ -273,6 +325,7 @@ class ParkingViewModel(
                         parkingRepository = container.parkingRepository,
                         settingsRepository = container.settingsRepository,
                         saveParkingLocation = container.saveParkingLocationUseCase,
+                        resolveLocationAddress = container.resolveLocationAddressUseCase,
                         hasMonitoringPermission = { Permissions.canMonitor(appContext) },
                         locationAccuracy = { Permissions.locationAccuracy(appContext) },
                         hasBackgroundLocationPermission = { Permissions.hasBackgroundLocation(appContext) },

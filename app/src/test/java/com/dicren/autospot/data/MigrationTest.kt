@@ -125,4 +125,46 @@ class MigrationTest {
 
             migrated.close()
         }
+
+    @Test
+    fun `v4 to v5 adds the address columns with every old spot unresolved`() =
+        runTest {
+            val v4 = helper.createDatabase(4)
+            v4.executeSQL(
+                "INSERT INTO vehicles (id, name, bluetoothAddress, bluetoothName, isActive) " +
+                    "VALUES (1, 'Car', 'AA:BB:CC:DD:EE:01', 'Car', 1)",
+            )
+            v4.executeSQL(
+                "INSERT INTO parking_locations (vehicleId, latitude, longitude, timestamp) " +
+                    "VALUES (1, 42.0, -5.0, 100)",
+            )
+            v4.close()
+
+            val migrated = helper.runMigrationsAndValidate(5, listOf(MIGRATION_4_5))
+
+            // Existing rows keep their coordinates and are picked up by the app lookup.
+            assertEquals(1L, migrated.scalarLong("SELECT COUNT(*) FROM parking_locations"))
+            assertEquals(0L, migrated.scalarLong("SELECT addressResolved FROM parking_locations"))
+            assertEquals(
+                1L,
+                migrated.scalarLong(
+                    "SELECT COUNT(*) FROM parking_locations " +
+                        "WHERE street IS NULL AND locality IS NULL",
+                ),
+            )
+
+            // The new columns are writable.
+            migrated.executeSQL(
+                "UPDATE parking_locations SET street = 'Calle Mayor 12', " +
+                    "locality = 'Getafe', addressResolved = 1 WHERE id = 1",
+            )
+            assertEquals(
+                1L,
+                migrated.scalarLong(
+                    "SELECT addressResolved FROM parking_locations WHERE locality = 'Getafe'",
+                ),
+            )
+
+            migrated.close()
+        }
 }

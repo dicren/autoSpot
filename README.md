@@ -9,6 +9,7 @@ AutoSpot is an open-source Android app that automatically saves your parking loc
 ## Features
 
 - **Automatic Location Saving** - Detects when you disconnect from your car's Bluetooth and saves your location automatically
+- **Street Names** - Each saved spot is named after its street and town, not just coordinates, and the history shows the address too
 - **Multiple Vehicles** - Support for multiple cars, each with its own parking history
 - **Navigation** - One-tap navigation to your parked car via Google Maps
 - **Parking History** - View all your previous parking locations
@@ -28,7 +29,7 @@ The app runs a background service that monitors Bluetooth connections. When it d
 ## Requirements
 
 - Android 12 (API 31) or higher
-- Google Play Services (for Google Maps)
+- Google Play Services (for Google Maps and the street-name lookup)
 - Bluetooth capability
 - Precise location permission (including "Allow all the time" for background access)
 
@@ -133,6 +134,7 @@ AutoSpot respects your privacy:
 
 - **No data collection** - We never receive your data; it stays on your device or in your own Android backup
 - **Backups stay in your account** - If you enable Android backup, your vehicles and parking history are copied to your own Google account, encrypted by the platform. AutoSpot does not receive or have access to that backup. You can disable or delete it from your Google account settings.
+- **Street names use the platform geocoder** - To show the street and town of a saved spot, the app sends only that spot's coordinates to the device's geocoding service (Google on most phones) and stores the returned address locally. AutoSpot receives nothing else and keeps no server.
 - **No analytics** - We don't track how you use the app
 - **No ads** - The app is completely ad-free
 - **No accounts** - No sign-up required

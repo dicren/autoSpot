@@ -12,10 +12,14 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.data.settingsDataStore
+import com.dicren.autospot.domain.ResolveLocationAddress
+import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.location.AndroidReverseGeocoder
 import com.dicren.autospot.location.FusedLocationSource
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.location.ReverseGeocoder
 import com.dicren.autospot.util.Permissions
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
@@ -32,6 +36,8 @@ interface AppContainer {
     val parkingRepository: ParkingRepository
     val settingsRepository: SettingsRepository
     val saveParkingLocationUseCase: SaveParkingLocation
+    val reverseGeocoder: ReverseGeocoder
+    val resolveLocationAddressUseCase: ResolveLocationAddress
 }
 
 class DefaultAppContainer(
@@ -68,6 +74,17 @@ class DefaultAppContainer(
             locationSource = locationSource,
             clock = clock,
             hasLocationPermission = { Permissions.hasLocation(appContext) },
+        )
+    }
+
+    override val reverseGeocoder: ReverseGeocoder by lazy {
+        AndroidReverseGeocoder(appContext, ioDispatcher)
+    }
+
+    override val resolveLocationAddressUseCase: ResolveLocationAddressUseCase by lazy {
+        ResolveLocationAddressUseCase(
+            parkingRepository = parkingRepository,
+            reverseGeocoder = reverseGeocoder,
         )
     }
 }

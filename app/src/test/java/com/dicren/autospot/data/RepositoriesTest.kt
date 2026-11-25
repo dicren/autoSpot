@@ -10,6 +10,7 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -102,6 +103,49 @@ class RepositoriesTest {
             val saved = parking.latestLocationOnce(vehicle.id)
             assertEquals(FIXED_NOW, saved?.timestamp)
             assertEquals(42.0, saved?.latitude ?: 0.0, 0.0)
+        }
+
+    @Test
+    fun `a new spot is stored without an address and marked unresolved`() =
+        runTest {
+            val vehicle = vehicles.addVehicle("A", "AA:BB:CC:DD:EE:01", "Car") as AddVehicleResult.Added
+
+            val id = parking.saveLocation(vehicle.id, 42.0, -5.0)
+
+            val saved = parking.latestLocationOnce(vehicle.id)!!
+            assertEquals(id, saved.id)
+            assertNull(saved.street)
+            assertNull(saved.locality)
+            assertFalse(saved.addressResolved)
+        }
+
+    @Test
+    fun `an address lookup updates the spot without touching the coordinates`() =
+        runTest {
+            val vehicle = vehicles.addVehicle("A", "AA:BB:CC:DD:EE:01", "Car") as AddVehicleResult.Added
+            val id = parking.saveLocation(vehicle.id, 42.0, -5.0)
+
+            parking.updateAddress(id, "Calle Mayor 12", "Getafe")
+
+            val saved = parking.latestLocationOnce(vehicle.id)!!
+            assertEquals("Calle Mayor 12", saved.street)
+            assertEquals("Getafe", saved.locality)
+            assertTrue(saved.addressResolved)
+            assertEquals(42.0, saved.latitude, 0.0)
+            assertEquals(-5.0, saved.longitude, 0.0)
+        }
+
+    @Test
+    fun `a failed lookup can still mark the spot as resolved with no name`() =
+        runTest {
+            val vehicle = vehicles.addVehicle("A", "AA:BB:CC:DD:EE:01", "Car") as AddVehicleResult.Added
+            val id = parking.saveLocation(vehicle.id, 42.0, -5.0)
+
+            parking.updateAddress(id, null, null)
+
+            val saved = parking.latestLocationOnce(vehicle.id)!!
+            assertTrue(saved.addressResolved)
+            assertNull(saved.street)
         }
 
     @Test

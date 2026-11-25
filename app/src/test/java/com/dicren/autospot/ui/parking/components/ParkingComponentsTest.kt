@@ -59,6 +59,13 @@ class ParkingComponentsTest {
     /** A clock five minutes after the saved spot, so the rendered text is deterministic. */
     private val nowMillis = location.timestamp + 5 * 60_000L
 
+    private val addressedLocation =
+        location.copy(
+            street = "Calle Mayor 12",
+            locality = "Getafe",
+            addressResolved = true,
+        )
+
     @Test
     fun `the empty state invites the user to save a location`() {
         var clicked = false
@@ -130,6 +137,29 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Parked").assertIsDisplayed()
         composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
         composeRule.onNodeWithContentDescription("History").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the location card shows the street and the town instead of the generic title`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                LocationCard(
+                    location = addressedLocation,
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    historyCount = 1,
+                    isFromHistory = false,
+                    onShareClick = {},
+                    onHistoryClick = {},
+                    onBackToLatestClick = {},
+                    onCenterMapClick = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Calle Mayor 12, Getafe").assertIsDisplayed()
+        composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
+        composeRule.onNodeWithText("Parked").assertDoesNotExist()
     }
 
     @Test
@@ -227,6 +257,43 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Clear all").performClick()
 
         assertTrue(cleared)
+    }
+
+    @Test
+    fun `the history sheet shows the address where the coordinates used to be`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(addressedLocation),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Calle Mayor 12, Getafe").assertIsDisplayed()
+        composeRule.onNodeWithText("42.000000, -5.000000").assertDoesNotExist()
+    }
+
+    @Test
+    fun `a spot with no address still shows its coordinates in the history`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("42.000000, -5.000000").assertIsDisplayed()
     }
 
     @Test

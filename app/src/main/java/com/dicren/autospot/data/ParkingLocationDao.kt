@@ -20,6 +20,20 @@ interface ParkingLocationDao {
     @Query("DELETE FROM parking_locations WHERE id = :id")
     suspend fun deleteLocation(id: Long)
 
+    /** Stores the resolved address and marks the row as attempted, even when no address was found. */
+    @Query(
+        """
+        UPDATE parking_locations
+        SET street = :street, locality = :locality, addressResolved = 1
+        WHERE id = :id
+        """,
+    )
+    suspend fun updateAddress(
+        id: Long,
+        street: String?,
+        locality: String?,
+    )
+
     @Query("DELETE FROM parking_locations WHERE vehicleId = :vehicleId")
     suspend fun deleteAllLocationsByVehicle(vehicleId: Long)
 

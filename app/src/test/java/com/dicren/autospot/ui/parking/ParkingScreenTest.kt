@@ -10,10 +10,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.dicren.autospot.R
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
+import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.ui.theme.AutoSpotTheme
 import com.dicren.autospot.util.FakeParkingRepository
+import com.dicren.autospot.util.FakeReverseGeocoder
 import com.dicren.autospot.util.FakeVehicleRepository
 import com.dicren.autospot.util.LocationAccuracy
 import kotlinx.coroutines.flow.Flow
@@ -75,6 +77,11 @@ class ParkingScreenTest {
                 parkingRepository = FakeParkingRepository(),
                 settingsRepository = settings,
                 saveParkingLocation = NoSave(),
+                resolveLocationAddress =
+                    ResolveLocationAddressUseCase(
+                        parkingRepository = FakeParkingRepository(),
+                        reverseGeocoder = FakeReverseGeocoder(),
+                    ),
                 hasMonitoringPermission = { true },
                 locationAccuracy = { LocationAccuracy.PRECISE },
                 hasBackgroundLocationPermission = { false },

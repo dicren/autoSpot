@@ -27,6 +27,7 @@ import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.format.formatAddress
 import java.util.Locale
 
 @Composable
@@ -95,7 +96,9 @@ fun HistorySheet(
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             Text(
-                                text = formatCoordinates(location.latitude, location.longitude),
+                                text =
+                                    formatAddress(location.street, location.locality)
+                                        ?: formatCoordinates(location.latitude, location.longitude),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )

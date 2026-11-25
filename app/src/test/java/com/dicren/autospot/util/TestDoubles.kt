@@ -8,10 +8,14 @@ import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleEntity
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.ResolveLocationAddress
+import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
+import com.dicren.autospot.location.AddressLookup
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.location.ReverseGeocoder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -124,6 +128,23 @@ class FakeParkingRepository(
         history.replaceAll { _, locations -> locations.filterNot { it.id == id } }
     }
 
+    override suspend fun updateAddress(
+        id: Long,
+        street: String?,
+        locality: String?,
+    ) {
+        yield()
+        history.replaceAll { _, locations ->
+            locations.map { location ->
+                if (location.id == id) {
+                    location.copy(street = street, locality = locality, addressResolved = true)
+                } else {
+                    location
+                }
+            }
+        }
+    }
+
     override suspend fun clearLocations(vehicleId: Long) {
         yield()
         history.remove(vehicleId)
@@ -161,6 +182,19 @@ class FakeLocationSource(
     override suspend fun lastLocation(): LocationFix? = fix
 }
 
+/**
+ * Defaults to [AddressLookup.Unavailable]: a test that does not care about addresses must not see
+ * rows silently rewritten. Tests about addresses pass the result they need.
+ */
+class FakeReverseGeocoder(
+    private val result: AddressLookup = AddressLookup.Unavailable,
+) : ReverseGeocoder {
+    override suspend fun lookup(
+        latitude: Double,
+        longitude: Double,
+    ): AddressLookup = result
+}
+
 class TestAppContainer(
     override val clock: Clock = Clock { 0L },
     override val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
@@ -168,6 +202,7 @@ class TestAppContainer(
     override val vehicleRepository: VehicleRepository = FakeVehicleRepository(),
     override val parkingRepository: ParkingRepository = FakeParkingRepository(),
     override val settingsRepository: SettingsRepository = FakeSettingsRepository(),
+    override val reverseGeocoder: ReverseGeocoder = FakeReverseGeocoder(),
 ) : AppContainer {
     override val saveParkingLocationUseCase: SaveParkingLocation =
         SaveParkingLocationUseCase(
@@ -176,5 +211,11 @@ class TestAppContainer(
             locationSource = locationSource,
             clock = clock,
             hasLocationPermission = { true },
+        )
+
+    override val resolveLocationAddressUseCase: ResolveLocationAddress =
+        ResolveLocationAddressUseCase(
+            parkingRepository = parkingRepository,
+            reverseGeocoder = reverseGeocoder,
         )
 }

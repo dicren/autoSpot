@@ -28,6 +28,9 @@ private val previewLocation =
         latitude = 42.2406,
         longitude = -8.7207,
         timestamp = 1_700_000_000_000L,
+        street = "Rúa Nova 5",
+        locality = "Santiago de Compostela",
+        addressResolved = true,
     )
 
 @Preview(showBackground = true)

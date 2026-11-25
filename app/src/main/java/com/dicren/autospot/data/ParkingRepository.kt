@@ -14,6 +14,13 @@ interface ParkingRepository {
 
     suspend fun deleteLocation(id: Long)
 
+    /** Fills in the address of an already stored spot; used by the background lookup. */
+    suspend fun updateAddress(
+        id: Long,
+        street: String?,
+        locality: String?,
+    )
+
     suspend fun clearLocations(vehicleId: Long)
 
     suspend fun latestLocationOnce(vehicleId: Long): ParkingLocationEntity?
@@ -46,6 +53,12 @@ class RoomParkingRepository(
         )
 
     override suspend fun deleteLocation(id: Long) = dao.deleteLocation(id)
+
+    override suspend fun updateAddress(
+        id: Long,
+        street: String?,
+        locality: String?,
+    ) = dao.updateAddress(id, street, locality)
 
     override suspend fun clearLocations(vehicleId: Long) = dao.deleteAllLocationsByVehicle(vehicleId)
 

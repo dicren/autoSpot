@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.format.formatAddress
 
 @Composable
 fun LocationCard(
@@ -50,8 +51,12 @@ fun LocationCard(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Column(modifier = Modifier.weight(1f)) {
+                    // The street name replaces "Parked" once the background lookup finds it; until
+                    // then (or when it finds nothing) the generic title stays.
                     Text(
-                        text = stringResource(R.string.parked_at),
+                        text =
+                            formatAddress(location.street, location.locality)
+                                ?: stringResource(R.string.parked_at),
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(

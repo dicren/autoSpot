@@ -8,7 +8,7 @@ import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 
 @Database(
     entities = [ParkingLocationEntity::class, VehicleEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -36,7 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
                         .setDriver(BundledSQLiteDriver())
                         // Pre-v3 schemas are unknown, so drop them. From v3 onward every version
                         // bump must ship an explicit Migration; schemas live in app/schemas/.
-                        .addMigrations(MIGRATION_3_4)
+                        .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
                         .fallbackToDestructiveMigrationFrom(true, 1, 2)
                         .build()
                 instance = database

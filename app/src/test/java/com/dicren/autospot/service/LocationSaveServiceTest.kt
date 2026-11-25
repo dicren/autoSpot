@@ -14,11 +14,15 @@ import com.dicren.autospot.data.RoomVehicleRepository
 import com.dicren.autospot.data.SettingsRepository
 import com.dicren.autospot.data.VehicleRepository
 import com.dicren.autospot.di.AppContainer
+import com.dicren.autospot.domain.ResolveLocationAddress
+import com.dicren.autospot.domain.ResolveLocationAddressUseCase
 import com.dicren.autospot.domain.SaveParkingLocation
 import com.dicren.autospot.domain.SaveParkingLocationUseCase
 import com.dicren.autospot.domain.SaveResult
 import com.dicren.autospot.location.LocationFix
 import com.dicren.autospot.location.LocationSource
+import com.dicren.autospot.location.ReverseGeocoder
+import com.dicren.autospot.util.FakeReverseGeocoder
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -76,6 +80,14 @@ class LocationSaveServiceTest {
             ),
     ) : AppContainer {
         override val settingsRepository: SettingsRepository = TestSettingsRepository()
+
+        override val reverseGeocoder: ReverseGeocoder = FakeReverseGeocoder()
+
+        override val resolveLocationAddressUseCase: ResolveLocationAddress =
+            ResolveLocationAddressUseCase(
+                parkingRepository = parkingRepository,
+                reverseGeocoder = reverseGeocoder,
+            )
     }
 
     private class ThrowingSaveParkingLocation : SaveParkingLocation {
