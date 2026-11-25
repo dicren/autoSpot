@@ -7,6 +7,7 @@ import android.content.Intent
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
@@ -25,8 +26,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -153,14 +156,41 @@ fun ParkingScreen(
     }
 
     val displayLocation = state.displayLocation
-    ParkingCameraEffect(displayLocation = displayLocation, cameraPositionState = cameraPositionState)
+    ParkingCameraEffect(
+        displayLocation = displayLocation,
+        isOverviewing = state.isOverviewing,
+        cameraPositionState = cameraPositionState,
+    )
+    ParkingOverviewCameraEffect(state = state, cameraPositionState = cameraPositionState)
+
+    // Room left around the spots a cluster frames, so its markers are not cut by the screen edges.
+    val overviewPaddingPx = with(LocalDensity.current) { OVERVIEW_PADDING_DP.dp.roundToPx() }
+
+    /** Shows [ids] on the card and frames them; used by a marker tap and by a cluster tap. */
+    fun focusSpots(ids: Set<Long>) {
+        viewModel.focusCluster(ids)
+        val spots = state.overviewLocations.filter { it.id in ids }
+        cameraUpdateFor(spots, overviewPaddingPx)?.let { update ->
+            coroutineScope.launch { cameraPositionState.animate(update) }
+        }
+    }
+
+    // Back leaves the overview instead of the app: the mode is a place the user went to.
+    BackHandler(enabled = state.isOverviewing) { viewModel.closeOverview() }
 
     Box(modifier = modifier.fillMaxSize()) {
-        if (displayLocation != null) {
+        // The overview needs the map even with no card on screen, since the spots are the point.
+        if (displayLocation != null || (state.isOverviewing && state.overviewLocations.isNotEmpty())) {
             ParkingMap(
                 location = displayLocation,
+                overviewSpots = if (state.isOverviewing) state.overviewLocations else null,
+                latestSpotIds = state.latestSpotIds,
                 isMyLocationEnabled = state.hasLocationPermission,
                 cameraPositionState = cameraPositionState,
+                onSpotClick = { id -> focusSpots(setOf(id)) },
+                onClusterClick = { ids -> focusSpots(ids) },
+                // An empty tap on the map drops the card and goes back to every spot.
+                onMapClick = { if (state.isClusterFocused) viewModel.clearClusterFocus() },
                 modifier = Modifier.fillMaxSize(),
             )
         }
@@ -202,10 +232,11 @@ fun ParkingScreen(
                     )
                 }
             },
+            onExitOverview = viewModel::closeOverview,
             modifier = Modifier.align(Alignment.TopCenter),
         )
 
-        if (displayLocation == null && state.isReady) {
+        if (displayLocation == null && !state.isOverviewing && state.isReady) {
             NoLocationCard(
                 isSaving = state.isSaving,
                 onSaveLocationClick = viewModel::saveCurrentLocation,
@@ -219,11 +250,20 @@ fun ParkingScreen(
             cameraPositionState = cameraPositionState,
             timeFormatter = timeFormatter,
             nowMillis = nowMillis,
-            historyCount = state.locations.size,
+            historyCount = state.historyLocations.size,
             isShowingHistory = state.isShowingHistory,
             isHistorySheetOpen = showHistorySheet,
             canShowOlder = state.canStepOlder,
             canShowNewer = state.canStepNewer,
+            isOverviewing = state.isOverviewing,
+            onShowAllSpots = {
+                // "Show all spots" is the way back to the scope: keeping a group's card on screen
+                // would leave one spot in front of the view it is meant to restore.
+                viewModel.clearClusterFocus()
+                cameraUpdateFor(state.overviewLocations, overviewPaddingPx)?.let { update ->
+                    coroutineScope.launch { cameraPositionState.animate(update) }
+                }
+            },
             callbacks =
                 ParkingBottomCallbacks(
                     onNavigate = { location ->
@@ -297,6 +337,21 @@ fun ParkingScreen(
                     confirmClearHistory = false
                     showHistorySheet = false
                 },
+                onClearCluster = {
+                    viewModel.clearClusterHistory()
+                    confirmClearHistory = false
+                    // The list would otherwise swap from the group to the whole scope under the
+                    // user, which is not what "delete this group" means.
+                    showHistorySheet = false
+                },
+                onShowVehicleOnMap = {
+                    viewModel.showOverviewOnMap(MapScope.ACTIVE_VEHICLE)
+                    showHistorySheet = false
+                },
+                onShowAllVehiclesOnMap = {
+                    viewModel.showOverviewOnMap(MapScope.ALL_VEHICLES)
+                    showHistorySheet = false
+                },
                 onActivateVehicle = viewModel::activateVehicle,
                 onAddVehicle = viewModel::addVehicle,
                 onEditVehicle = viewModel::updateVehicle,
@@ -338,12 +393,15 @@ private fun rememberNow(): Long {
  * Shows the spot at [index] of the newest-first history. Index 0 is the latest spot, which is
  * represented by clearing the selection: selecting it explicitly would keep the "back to latest"
  * arrow on screen while the card is already showing the newest spot.
+ *
+ * It indexes [ParkingUiState.historyLocations], not the raw list: in the overview the history is
+ * the group the user picked.
  */
 private fun ParkingViewModel.showSpotAt(
     state: ParkingUiState,
     index: Int,
 ) {
-    if (index == 0) showLatestLocation() else selectLocation(state.locations[index])
+    if (index == 0) showLatestLocation() else selectLocation(state.historyLocations[index])
 }
 
 private fun Context.openLocationSettings() {

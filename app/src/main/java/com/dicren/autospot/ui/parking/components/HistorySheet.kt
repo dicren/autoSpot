@@ -12,6 +12,8 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Public
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,6 +31,13 @@ import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.format.formatAddress
 import java.util.Locale
 
+/**
+ * The parking history, either the whole of a scope or only the group of spots the map is showing.
+ *
+ * The header carries the way out to the map: one vehicle at a time, and — only when there is more
+ * than one — every vehicle at once. Both need at least one spot, because there would be nothing
+ * to draw.
+ */
 @Composable
 fun HistorySheet(
     locations: List<ParkingLocationEntity>,
@@ -38,6 +47,16 @@ fun HistorySheet(
     onDeleteLocation: (ParkingLocationEntity) -> Unit,
     onRequestClearAll: () -> Unit,
     modifier: Modifier = Modifier,
+    /** Vehicle names by id; only read when [showVehicleNames] is true. */
+    vehicleNames: Map<Long, String> = emptyMap(),
+    /** True while the list mixes vehicles, so each row says which one its spot belongs to. */
+    showVehicleNames: Boolean = false,
+    /** True when the list holds a map cluster instead of a vehicle's history. */
+    isClusterScoped: Boolean = false,
+    /** Null hides the button (nothing to show, or the screen has no map). */
+    onShowOnMap: (() -> Unit)? = null,
+    /** Non-null only when there is more than one vehicle to show. */
+    onShowAllVehiclesOnMap: (() -> Unit)? = null,
 ) {
     Column(
         modifier =
@@ -53,11 +72,30 @@ fun HistorySheet(
             Text(
                 text = stringResource(R.string.history_title),
                 style = MaterialTheme.typography.titleLarge,
+                modifier = Modifier.weight(1f),
             )
             if (locations.isNotEmpty()) {
+                // One icon per scope: the map glyph means "this vehicle", the globe "all of them".
+                onShowOnMap?.let {
+                    TooltippedIconButton(
+                        imageVector = Icons.Default.Map,
+                        label = stringResource(R.string.view_vehicle_on_map),
+                        onClick = it,
+                    )
+                }
+                onShowAllVehiclesOnMap?.let {
+                    TooltippedIconButton(
+                        imageVector = Icons.Default.Public,
+                        label = stringResource(R.string.view_all_on_map),
+                        onClick = it,
+                    )
+                }
                 TextButton(onClick = onRequestClearAll) {
                     Text(
-                        text = stringResource(R.string.clear_all),
+                        text =
+                            stringResource(
+                                if (isClusterScoped) R.string.clear_group else R.string.clear_all,
+                            ),
                         color = MaterialTheme.colorScheme.error,
                     )
                 }
@@ -96,8 +134,11 @@ fun HistorySheet(
                             )
                             Text(
                                 text =
-                                    formatAddress(location.street, location.locality)
-                                        ?: formatCoordinates(location.latitude, location.longitude),
+                                    detailLine(
+                                        location = location,
+                                        vehicleNames = vehicleNames,
+                                        showVehicleName = showVehicleNames,
+                                    ),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -115,6 +156,25 @@ fun HistorySheet(
         }
 
         Spacer(modifier = Modifier.height(32.dp))
+    }
+}
+
+/**
+ * The second line of a row: the address when it is known, the coordinates otherwise, and the
+ * vehicle in front of it while the list mixes vehicles.
+ */
+private fun detailLine(
+    location: ParkingLocationEntity,
+    vehicleNames: Map<Long, String>,
+    showVehicleName: Boolean,
+): String {
+    val where =
+        formatAddress(location.street, location.locality)
+            ?: formatCoordinates(location.latitude, location.longitude)
+    return if (showVehicleName) {
+        listOfNotNull(vehicleNames[location.vehicleId], where).joinToString(" · ")
+    } else {
+        where
     }
 }
 

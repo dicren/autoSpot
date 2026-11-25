@@ -19,6 +19,12 @@
     <string name="go_to_my_location">前往我的位置</string>
     <string name="reset_orientation">重置方向</string>
     <string name="share_location">分享位置</string>
+    <string name="exit_overview">退出概览</string>
+    <string name="show_all_spots">显示所有位置</string>
+    <string name="all_vehicles">所有车辆</string>
+    <plurals name="saved_spots">
+        <item quantity="other">%d 个已保存位置</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">没有保存的位置</string>
@@ -53,6 +59,10 @@
     <string name="clear_all">全部清除</string>
     <string name="delete">删除</string>
     <string name="back_to_latest">返回最新</string>
+    <string name="view_vehicle_on_map">在地图上查看此车辆</string>
+    <string name="view_all_on_map">在地图上查看所有车辆</string>
+    <string name="clear_group">删除分组</string>
+    <string name="clear_group_message">将删除此分组中的所有已保存位置（%1$d）。</string>
 
     <!-- Relative time -->
     <string name="just_now">刚刚</string>

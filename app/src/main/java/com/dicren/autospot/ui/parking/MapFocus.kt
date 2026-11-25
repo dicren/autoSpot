@@ -1,6 +1,10 @@
 package com.dicren.autospot.ui.parking
 
+import com.dicren.autospot.data.ParkingLocationEntity
+import com.google.android.gms.maps.CameraUpdate
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.LatLngBounds
 import kotlin.math.cos
 import kotlin.math.hypot
 import kotlin.math.pow
@@ -9,6 +13,12 @@ import kotlin.math.pow
 private const val TILE_SIZE_PX = 256.0
 
 private const val DEGREES_PER_TURN = 360.0
+
+/** The zoom a single parking spot is framed at; street level, where the car is recognisable. */
+internal const val SPOT_ZOOM = 17f
+
+/** Room left around a group of spots so its markers are not cut by the edges of the screen. */
+internal const val OVERVIEW_PADDING_DP = 48
 
 /**
  * Distance in screen pixels between [marker] and the centre of the map when the camera looks at
@@ -49,3 +59,35 @@ internal fun recenterButtonVisibility(
     driftPx: Double,
     deadZonePx: Float,
 ): Boolean = if (isMoving) wasVisible else driftPx > deadZonePx
+
+/** Bounds that contain every [spot], or null when there is none. */
+internal fun spotBounds(spots: List<ParkingLocationEntity>): LatLngBounds? {
+    if (spots.isEmpty()) return null
+    val builder = LatLngBounds.builder()
+    spots.forEach { builder.include(LatLng(it.latitude, it.longitude)) }
+    return builder.build()
+}
+
+/**
+ * The camera move that shows every [spot]: a group is framed with [paddingPx] to spare, while a
+ * single spot is framed at [SPOT_ZOOM], which is the zoom the card has always used for a spot.
+ *
+ * Fitting a one-point bounds would ask for the maximum zoom, which is a street corner rather than
+ * the car.
+ */
+internal fun cameraUpdateFor(
+    spots: List<ParkingLocationEntity>,
+    paddingPx: Int,
+): CameraUpdate? {
+    val single = spots.singleOrNull()
+    if (single != null) {
+        return CameraUpdateFactory.newLatLngZoom(LatLng(single.latitude, single.longitude), SPOT_ZOOM)
+    }
+    val bounds = spotBounds(spots) ?: return null
+    // Spots saved at the same coordinate have no extent to fit, and an empty bounds asks for the
+    // maximum zoom: a group like that needs the street-level zoom of a single spot instead.
+    if (bounds.northeast == bounds.southwest) {
+        return CameraUpdateFactory.newLatLngZoom(bounds.center, SPOT_ZOOM)
+    }
+    return CameraUpdateFactory.newLatLngBounds(bounds, paddingPx)
+}

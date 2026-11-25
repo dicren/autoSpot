@@ -19,6 +19,13 @@
     <string name="go_to_my_location">Zu meinem Standort</string>
     <string name="reset_orientation">Ausrichtung zurücksetzen</string>
     <string name="share_location">Standort teilen</string>
+    <string name="exit_overview">Übersicht verlassen</string>
+    <string name="show_all_spots">Alle Punkte anzeigen</string>
+    <string name="all_vehicles">Alle Fahrzeuge</string>
+    <plurals name="saved_spots">
+        <item quantity="one">%d gespeicherter Parkplatz</item>
+        <item quantity="other">%d gespeicherte Parkplätze</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">Kein gespeicherter Standort</string>
@@ -53,6 +60,10 @@
     <string name="clear_all">Alles löschen</string>
     <string name="delete">Löschen</string>
     <string name="back_to_latest">Zurück zum neuesten</string>
+    <string name="view_vehicle_on_map">Dieses Fahrzeug auf der Karte anzeigen</string>
+    <string name="view_all_on_map">Alle Fahrzeuge auf der Karte anzeigen</string>
+    <string name="clear_group">Gruppe löschen</string>
+    <string name="clear_group_message">Alle gespeicherten Parkplätze dieser Gruppe werden gelöscht (%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">Gerade eben</string>

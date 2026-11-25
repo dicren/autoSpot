@@ -1,6 +1,7 @@
 package com.dicren.autospot.ui.parking
 
 import android.content.Context
+import androidx.lifecycle.viewModelScope
 import androidx.room3.Room
 import androidx.sqlite.driver.AndroidSQLiteDriver
 import androidx.test.core.app.ApplicationProvider
@@ -31,6 +32,7 @@ import com.dicren.autospot.util.FakeSettingsRepository
 import com.dicren.autospot.util.FakeVehicleRepository
 import com.dicren.autospot.util.LocationAccuracy
 import com.dicren.autospot.util.MainDispatcherRule
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -73,6 +75,9 @@ class ParkingViewModelTest {
     private var gpsEnabled = true
     private var vehicleCount = 0
 
+    /** View models built by the test; their scopes are cancelled before the main dispatcher goes. */
+    private val createdViewModels = mutableListOf<ParkingViewModel>()
+
     @Before
     fun setUp() {
         db =
@@ -89,7 +94,14 @@ class ParkingViewModelTest {
     }
 
     @After
-    fun tearDown() = db.close()
+    fun tearDown() {
+        // A view model keeps collecting Room flows on Dispatchers.Main; left alive, the next test
+        // resets the main dispatcher while those collectors resume, which fails as
+        // "Dispatchers.Main is used concurrently with setting it".
+        createdViewModels.forEach { it.viewModelScope.cancel() }
+        createdViewModels.clear()
+        db.close()
+    }
 
     private fun viewModel(
         settings: SettingsRepository = FakeSettingsRepository(),
@@ -121,7 +133,7 @@ class ParkingViewModelTest {
             locationAccuracy = { accuracy },
             hasBackgroundLocationPermission = { backgroundLocation },
             isLocationEnabled = { gpsEnabled },
-        )
+        ).also { createdViewModels += it }
 
     private class FailingVehicleRepository(
         private val delegate: VehicleRepository,
@@ -640,6 +652,123 @@ class ParkingViewModelTest {
                 viewModel.deleteLocation(location)
 
                 assertEquals(ParkingEvent.OperationFailed, awaitItem())
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `the overview leaves the active vehicle alone and closing it comes back`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 1.0, 1.0)
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locations.isEmpty()) state = awaitItem()
+
+                viewModel.showOverviewOnMap(MapScope.ALL_VEHICLES)
+                while (!state.isOverviewing) state = awaitItem()
+
+                assertTrue(state.isShowingAllVehicles)
+                assertEquals(id, state.activeVehicle?.id)
+                assertEquals(1, state.overviewLocations.size)
+                assertNull("A scope is not a card", state.displayLocation)
+
+                viewModel.closeOverview()
+                while (state.isOverviewing) state = awaitItem()
+
+                assertEquals(id, state.activeVehicle?.id)
+                assertEquals(state.locations.first().id, state.displayLocation?.id)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `a picked group is the only history the card pages through`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 1.0, 1.0)
+            parking.saveLocation(id, 2.0, 2.0)
+            parking.saveLocation(id, 3.0, 3.0)
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locations.size != 3) state = awaitItem()
+                val newest = state.locations[0]
+                val oldest = state.locations[2]
+
+                viewModel.showOverviewOnMap(MapScope.ACTIVE_VEHICLE)
+                while (!state.isOverviewing) state = awaitItem()
+
+                viewModel.focusCluster(setOf(newest.id, oldest.id))
+                while (!state.isClusterFocused) state = awaitItem()
+
+                assertEquals(listOf(newest.id, oldest.id), state.historyLocations.map { it.id })
+                assertEquals(newest.id, state.displayLocation?.id)
+                assertTrue(state.canStepOlder)
+                assertFalse(state.canStepNewer)
+
+                viewModel.clearClusterFocus()
+                while (state.isClusterFocused) state = awaitItem()
+                assertNull(state.displayLocation)
+                assertEquals(3, state.historyLocations.size)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `deleting a group clears the focus and leaves the overview when nothing is left`() =
+        runTest {
+            val id = addVehicle()
+            parking.saveLocation(id, 1.0, 1.0)
+            parking.saveLocation(id, 2.0, 2.0)
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locations.size != 2) state = awaitItem()
+
+                viewModel.showOverviewOnMap(MapScope.ACTIVE_VEHICLE)
+                while (!state.isOverviewing) state = awaitItem()
+
+                viewModel.focusCluster(state.locations.map { it.id }.toSet())
+                while (!state.isClusterFocused) state = awaitItem()
+
+                viewModel.clearClusterHistory()
+                // That group was the whole history, so there is nothing left to frame.
+                while (state.isOverviewing || state.locations.isNotEmpty()) state = awaitItem()
+
+                assertTrue(state.locations.isEmpty())
+                assertNull(state.displayLocation)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `switching vehicles leaves the overview`() =
+        runTest {
+            val first = addVehicle("A")
+            parking.saveLocation(first, 1.0, 1.0)
+            val second = addVehicle("B")
+            parking.saveLocation(second, 2.0, 2.0)
+            vehicles.activateVehicle(first)
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.activeVehicle?.id != first || state.locations.isEmpty()) {
+                    state = awaitItem()
+                }
+
+                viewModel.showOverviewOnMap(MapScope.ALL_VEHICLES)
+                while (!state.isOverviewing) state = awaitItem()
+
+                vehicles.activateVehicle(second)
+                while (state.isOverviewing || state.activeVehicle?.id != second) state = awaitItem()
+
+                assertFalse(state.isOverviewing)
                 cancelAndIgnoreRemainingEvents()
             }
         }

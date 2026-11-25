@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.v2.createComposeRule
 import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTouchInput
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -59,6 +60,8 @@ class ParkingTopOverlayTest {
         hasLocation: Boolean = true,
         myLocation: LatLng? = null,
         cameraTarget: LatLng = carSpot,
+        overview: MapOverview? = null,
+        onExitOverview: () -> Unit = {},
     ): CameraPositionState {
         lateinit var cameraPositionState: CameraPositionState
         composeRule.setContent {
@@ -73,6 +76,8 @@ class ParkingTopOverlayTest {
                             vehicles = listOf(vehicle),
                             activeVehicle = vehicle,
                             locations = if (hasLocation) listOf(location) else emptyList(),
+                            allLocations = if (hasLocation) listOf(location) else emptyList(),
+                            overview = overview,
                             hasMonitoringPermission = true,
                             locationAccuracy = accuracy,
                             isReady = true,
@@ -85,6 +90,7 @@ class ParkingTopOverlayTest {
                     onVehiclesClick = {},
                     onMyLocationClick = onMyLocation,
                     onResetBearing = {},
+                    onExitOverview = onExitOverview,
                 )
             }
         }
@@ -171,7 +177,46 @@ class ParkingTopOverlayTest {
         }
     }
 
+    /** The overview is a mode, so leaving it belongs with the map tools, not with a spot. */
+    @Test
+    fun `the way out of the overview sits with the map tools`() {
+        var exited = 0
+        setContent(
+            accuracy = LocationAccuracy.PRECISE,
+            overview = MapOverview(MapScope.ACTIVE_VEHICLE),
+            onExitOverview = { exited++ },
+        )
+
+        composeRule.onNodeWithContentDescription(EXIT_OVERVIEW).assertIsDisplayed().performClick()
+
+        assertEquals(1, exited)
+    }
+
+    @Test
+    fun `the regular view has no way out of the overview`() {
+        setContent(accuracy = LocationAccuracy.PRECISE)
+
+        composeRule.onNodeWithContentDescription(EXIT_OVERVIEW).assertDoesNotExist()
+    }
+
+    /**
+     * In the all-vehicles overview no car is selected, so the card names the scope instead of the
+     * vehicle the app would otherwise keep pointing at.
+     */
+    @Test
+    fun `the all vehicles overview names no single car`() {
+        setContent(
+            accuracy = LocationAccuracy.PRECISE,
+            overview = MapOverview(MapScope.ALL_VEHICLES),
+        )
+
+        composeRule.onNodeWithText("All vehicles").assertIsDisplayed()
+        composeRule.onNodeWithContentDescription("Vehicles").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(EXIT_OVERVIEW).assertIsDisplayed()
+    }
+
     private companion object {
         const val GO_TO_MY_LOCATION = "Go to my location"
+        const val EXIT_OVERVIEW = "Exit overview"
     }
 }

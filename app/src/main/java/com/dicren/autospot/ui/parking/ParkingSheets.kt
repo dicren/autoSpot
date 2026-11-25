@@ -28,6 +28,12 @@ data class ParkingSheetCallbacks(
     val onDeleteLocation: (ParkingLocationEntity) -> Unit,
     val onRequestClearHistory: () -> Unit,
     val onClearHistory: () -> Unit,
+    /** Deletes only the group the overview is showing. */
+    val onClearCluster: () -> Unit,
+    /** Opens the overview on the active vehicle's spots. */
+    val onShowVehicleOnMap: () -> Unit,
+    /** Opens the overview on every vehicle's spots. */
+    val onShowAllVehiclesOnMap: () -> Unit,
     val onActivateVehicle: (VehicleEntity) -> Unit,
     val onAddVehicle: (
         name: String,
@@ -78,30 +84,56 @@ fun ParkingSheets(
             onDismissRequest = callbacks.onDismissHistory,
         ) {
             HistorySheet(
-                locations = state.locations,
+                // The sheet follows the card: a group the map is showing lists only its spots.
+                locations = state.historyLocations,
                 timeFormatter = timeFormatter,
                 nowMillis = nowMillis,
                 onLocationSelected = callbacks.onSelectLocation,
                 onDeleteLocation = callbacks.onDeleteLocation,
                 onRequestClearAll = callbacks.onRequestClearHistory,
+                vehicleNames = state.vehicleNames,
+                showVehicleNames = state.isShowingAllVehicles,
+                isClusterScoped = state.isClusterFocused,
+                onShowOnMap = callbacks.onShowVehicleOnMap,
+                onShowAllVehiclesOnMap =
+                    if (state.vehicles.size > 1) callbacks.onShowAllVehiclesOnMap else null,
             )
         }
     }
 
     if (confirmClearHistory) {
+        // A group of spots can span vehicles, so "every location of <vehicle>" would be a lie.
+        val clearingCluster = state.isClusterFocused
         AlertDialog(
             onDismissRequest = callbacks.onCancelClearHistory,
-            title = { Text(stringResource(R.string.clear_all)) },
-            text = {
+            title = {
                 Text(
                     stringResource(
-                        R.string.clear_all_message,
-                        state.activeVehicle?.name.orEmpty(),
+                        if (clearingCluster) R.string.clear_group else R.string.clear_all,
                     ),
                 )
             },
+            text = {
+                Text(
+                    if (clearingCluster) {
+                        stringResource(
+                            R.string.clear_group_message,
+                            state.historyLocations.size,
+                        )
+                    } else {
+                        stringResource(
+                            R.string.clear_all_message,
+                            state.activeVehicle?.name.orEmpty(),
+                        )
+                    },
+                )
+            },
             confirmButton = {
-                Button(onClick = callbacks.onClearHistory) {
+                Button(
+                    onClick = {
+                        if (clearingCluster) callbacks.onClearCluster() else callbacks.onClearHistory()
+                    },
+                ) {
                     Text(stringResource(R.string.delete))
                 }
             },

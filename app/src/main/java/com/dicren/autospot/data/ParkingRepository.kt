@@ -6,6 +6,9 @@ import kotlinx.coroutines.flow.Flow
 interface ParkingRepository {
     fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
+    /** Every vehicle's history, newest first. Only the map overview needs it. */
+    fun allLocations(): Flow<List<ParkingLocationEntity>>
+
     suspend fun saveLocation(
         vehicleId: Long,
         latitude: Double,
@@ -13,6 +16,9 @@ interface ParkingRepository {
     ): Long
 
     suspend fun deleteLocation(id: Long)
+
+    /** Deletes every spot in [ids]; the map overview clears a cluster with it. */
+    suspend fun deleteLocations(ids: Collection<Long>)
 
     /** Fills in the address of an already stored spot; used by the background lookup. */
     suspend fun updateAddress(
@@ -37,6 +43,8 @@ class RoomParkingRepository(
 ) : ParkingRepository {
     override fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>> = dao.getLocationsByVehicle(vehicleId)
 
+    override fun allLocations(): Flow<List<ParkingLocationEntity>> = dao.getAllLocations()
+
     override suspend fun saveLocation(
         vehicleId: Long,
         latitude: Double,
@@ -53,6 +61,8 @@ class RoomParkingRepository(
         )
 
     override suspend fun deleteLocation(id: Long) = dao.deleteLocation(id)
+
+    override suspend fun deleteLocations(ids: Collection<Long>) = dao.deleteLocations(ids.toList())
 
     override suspend fun updateAddress(
         id: Long,

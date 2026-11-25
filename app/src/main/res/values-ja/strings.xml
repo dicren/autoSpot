@@ -19,6 +19,12 @@
     <string name="go_to_my_location">現在地へ</string>
     <string name="reset_orientation">向きをリセット</string>
     <string name="share_location">位置を共有</string>
+    <string name="exit_overview">概要を終了</string>
+    <string name="show_all_spots">すべての地点を表示</string>
+    <string name="all_vehicles">すべての車両</string>
+    <plurals name="saved_spots">
+        <item quantity="other">%d件の保存地点</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">保存された位置がありません</string>
@@ -53,6 +59,10 @@
     <string name="clear_all">すべて消去</string>
     <string name="delete">削除</string>
     <string name="back_to_latest">最新に戻る</string>
+    <string name="view_vehicle_on_map">この車両を地図に表示</string>
+    <string name="view_all_on_map">すべての車両を地図に表示</string>
+    <string name="clear_group">グループを削除</string>
+    <string name="clear_group_message">このグループの保存地点をすべて削除します（%1$d）。</string>
 
     <!-- Relative time -->
     <string name="just_now">たった今</string>

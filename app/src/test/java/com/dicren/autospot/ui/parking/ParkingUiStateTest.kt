@@ -126,4 +126,103 @@ class ParkingUiStateTest {
         assertNull(empty.stepIndex(older = true))
         assertNull(empty.stepIndex(older = false))
     }
+
+    private fun spot(
+        id: Long,
+        vehicleId: Long = vehicle.id,
+        timestamp: Long = id,
+    ) = ParkingLocationEntity(
+        id = id,
+        vehicleId = vehicleId,
+        latitude = 42.0,
+        longitude = -5.0,
+        timestamp = timestamp,
+    )
+
+    @Test
+    fun `each scope of the overview draws the spots it is about`() {
+        val mine = history(3, 2, 1)
+        val otherVehicle = spot(id = 9, vehicleId = 2, timestamp = 9)
+        val state = ParkingUiState(locations = mine, allLocations = listOf(otherVehicle) + mine)
+
+        assertFalse("Nothing is an overview until it is opened", state.isOverviewing)
+        assertEquals(mine, state.overviewLocations)
+
+        val oneVehicle = state.copy(overview = MapOverview(MapScope.ACTIVE_VEHICLE))
+        assertTrue(oneVehicle.isOverviewing)
+        assertFalse(oneVehicle.isShowingAllVehicles)
+        assertEquals(mine, oneVehicle.overviewLocations)
+
+        val everyVehicle = state.copy(overview = MapOverview(MapScope.ALL_VEHICLES))
+        assertTrue(everyVehicle.isShowingAllVehicles)
+        assertEquals(4, everyVehicle.overviewLocations.size)
+    }
+
+    /** The mode exists to see every spot, so no card is shown until a group is picked. */
+    @Test
+    fun `the overview shows no card until a group is picked`() {
+        val state =
+            ParkingUiState(
+                locations = history(3, 2, 1),
+                overview = MapOverview(MapScope.ACTIVE_VEHICLE),
+            )
+
+        assertFalse(state.isClusterFocused)
+        assertNull(state.displayLocation)
+        assertEquals(3, state.historyLocations.size)
+    }
+
+    @Test
+    fun `a picked group pages only through its own spots`() {
+        val state =
+            ParkingUiState(
+                locations = history(5, 4, 3, 2, 1),
+                overview = MapOverview(MapScope.ACTIVE_VEHICLE, setOf(4L, 2L)),
+            )
+
+        assertTrue(state.isClusterFocused)
+        assertEquals(listOf(4L, 2L), state.historyLocations.map { it.id })
+        assertEquals(4L, state.displayLocation?.id)
+        assertEquals(0, state.displayIndex)
+        assertTrue(state.canStepOlder)
+        assertFalse(state.canStepNewer)
+        assertEquals(1, state.stepIndex(older = true))
+        assertNull(state.stepIndex(older = false))
+
+        val oldest = state.copy(selectedLocationId = 2)
+        assertEquals(1, oldest.displayIndex)
+        assertNull(oldest.stepIndex(older = true))
+        assertTrue(oldest.canStepNewer)
+    }
+
+    @Test
+    fun `a group of a single spot behaves like a one-entry history`() {
+        val state =
+            ParkingUiState(
+                locations = history(3, 2, 1),
+                overview = MapOverview(MapScope.ACTIVE_VEHICLE, setOf(2L)),
+            )
+
+        assertEquals(listOf(2L), state.historyLocations.map { it.id })
+        assertEquals(2L, state.displayLocation?.id)
+        assertFalse(state.canStepOlder)
+        assertFalse(state.canStepNewer)
+        assertNull(state.stepIndex(older = true))
+    }
+
+    @Test
+    fun `the newest spot of each vehicle is the one drawn as a car`() {
+        val older = spot(id = 1, timestamp = 1)
+        val newestMine = spot(id = 2, timestamp = 2)
+        val newestOther = spot(id = 7, vehicleId = 2, timestamp = 7)
+        val olderOther = spot(id = 6, vehicleId = 2, timestamp = 6)
+
+        val state =
+            ParkingUiState(
+                allLocations = listOf(newestMine, newestOther, olderOther, older),
+                overview = MapOverview(MapScope.ALL_VEHICLES),
+            )
+
+        assertEquals(setOf(newestMine.id, newestOther.id), state.latestSpotIds)
+    }
 }

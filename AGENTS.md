@@ -28,7 +28,8 @@ a different app on the Play Store and orphan existing installs.
 
 - **Language:** Kotlin 2.4.21 (AGP 9 built-in Kotlin), JVM target 17
 - **UI:** Jetpack Compose, Material 3, `material-icons-extended`; Compose BOM `2026.11.01`
-- **Maps:** Google Maps SDK + `maps-compose` 9.0.1
+- **Maps:** Google Maps SDK + `maps-compose` 9.0.1 + `maps-compose-utils` 9.0.1 (clustering in
+  the map overview)
 - **Location:** `play-services-location` 21.4.0 (FusedLocationProviderClient)
 - **Persistence:** Room 3.0.3 (KSP, `androidx.room3`) + DataStore Preferences 1.3.0
 - **Build:** Gradle 9.9.2 wrapper, AGP 9.5.2, KSP 2.3.14, `compileSdk` 37.1
@@ -267,7 +268,28 @@ All UI is Compose, split in `ui/`:
   Both the grabber and its action exist only while `historyCount > 1`. `LOCATION_CARD_TAG` and
   `HISTORY_HANDLE_TAG` let the layout tests measure the card and find the grabber without guessing
   its padding.
-- `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
+- `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator. In the map
+  overview it also draws the clustered spots: the normal marker and the cluster manager live in the
+  same `GoogleMap` node on purpose, because swapping the composable would recreate the map and lose
+  the camera the mode exists to move.
+- **Map overview ("every spot on the map")** — opened from the history sheet header, which carries
+  two buttons: this vehicle's spots and, only with more than one vehicle, every vehicle's
+  (`MapScope.ACTIVE_VEHICLE` / `MapScope.ALL_VEHICLES`). In `ALL_VEHICLES` no vehicle is selected:
+  the top card becomes `AllVehiclesCard` ("All vehicles" + the spot count) with no actions, and the
+  active vehicle in the database is never touched, so leaving returns to the car the user was
+  looking at. Entering frames every spot (`ParkingOverviewCameraEffect`); the bottom card is gone
+  until a cluster is tapped. Tapping a cluster (or a lone marker) freezes its ids in
+  `MapOverview.clusterLocationIds` and shows the card for its newest spot; the swipe and the history
+  sheet then page only through that frozen group, even though the map re-clusters on every zoom. A
+  lone marker is framed at `SPOT_ZOOM` (17), a group with its bounds. An empty map tap drops the
+  card; the system back button and `ExitOverviewFab` (top tools) leave the mode; `ShowAllSpotsFab`
+  replaces the car recenter button, frames the whole scope again and drops the group's card. In a
+  group-scoped sheet "Clear all" becomes "Delete group" and deletes only that group
+  (`ParkingRepository.deleteLocations`). The overview closes by itself when its scope runs out of
+  spots or the active vehicle changes. Clustering is `maps-compose-utils`' experimental
+  `Clustering`, with Compose-drawn markers: a dot in the vehicle's colour (`vehicleSpotColor`,
+  derived from the id so it survives adding vehicles), the car glyph on each vehicle's newest spot
+  (`latestSpotIds`), and a neutral bubble with the count for a group that may mix vehicles.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
   `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.
 - `ui/parking/ParkingViewModel.kt` + `ParkingUiState.kt` — `StateFlow<ParkingUiState>` built from
@@ -281,7 +303,10 @@ All UI is Compose, split in `ui/`:
   is what the swipe uses: index 0 is the newest spot and is represented by a null
   `selectedLocationId`, so stepping back to the newest spot must clear the selection instead of
   selecting it, or the "back to latest" arrow would stay on screen. Its `init` also runs the
-  address fill-in worker described under "Address resolution".
+  address fill-in worker described under "Address resolution". The state also derives
+  `overviewLocations` (the spots the map draws), `historyLocations` (that scope, or only the frozen
+  group), `displayLocation` (null in the overview until a group is picked), `latestSpotIds` and
+  `vehicleNames`; the card, the swipe and the sheet all read `historyLocations`, never `locations`.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`,
   `BackgroundLocationDialog`) that take state and callbacks, which is what the Compose tests
@@ -293,7 +318,9 @@ All UI is Compose, split in `ui/`:
   `LocationCard` shows `formatAddress(street, locality)` as its title and falls back to
   `parked_at` ("Parked") until a lookup succeeds, and `HistorySheet` replaces the coordinates with
   the same line, falling back to them when there is no address. The time stays the primary line in
-  the history and the second line on the card.
+  the history and the second line on the card. The sheet header also holds the two map buttons
+  (only while there are spots) and, in the all-vehicles overview, each row is prefixed with the
+  vehicle's name (`showVehicleNames`), because a mixed list would otherwise not say whose spot it is.
 - `ui/format/ParkingTimeFormatter.kt` — relative time with an injected `now` and a locale-aware
   absolute fallback.
 - `ui/format/AddressFormatter.kt` — `formatAddress(street, locality)` joins the stored components
@@ -330,7 +357,9 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   `activateOnly`, `insertVehicleAndActivate`, `deleteVehicleAndKeepOneActive` and
   `insertAndPrune` are transactional. Parking history orders by `timestamp DESC, id DESC` so
   entries saved in the same millisecond still have a stable newest one. `updateAddress` writes the
-  name and flips `addressResolved` in one statement.
+  name and flips `addressResolved` in one statement. `getAllLocations` and `deleteLocations(ids)`
+  are the overview's queries: the first feeds every vehicle at once, the second clears a group
+  after the confirmation dialog.
 - **Repositories** (`VehicleRepository`, `ParkingRepository`, `SettingsRepository`), the
   `ReverseGeocoder` (`location/ReverseGeocoder.kt`, implemented by `AndroidReverseGeocoder`) and
   the shared `SaveParkingLocation` / `ResolveLocationAddress` / `LocateSelf` use cases are built by
@@ -374,7 +403,7 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
 
 - **Strings:** every user-visible string lives in `res/values/strings.xml` and is read with
   `stringResource` / `getString`. Nine locales exist (`values`, `de`, `es`, `fr`, `it`, `ja`,
-  `ko`, `ru`, `zh`) and all currently carry the same 87 strings plus 2 plurals (89 entries).
+  `ko`, `ru`, `zh`) and all currently carry the same 94 strings plus 3 plurals (97 entries).
   When adding or changing a string, update **all nine** files; missing translations silently fall
   back to English. `LocaleResourcesTest` fails CI when the key sets differ or a translation
   changes the `%s`/`%d` arguments of a string or plural. Spanish, French and Italian need a
@@ -507,6 +536,14 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
     frame" where the card shows "Parked": an unreachable geocoder would then become a failed save.
     For the same reason `addressResolved` exists: a lookup that answered "nothing here" must not be
     repeated on every visit, while one that could not answer must stay pending.
+17. **The overview camera and the card camera must not fight.** `ParkingCameraEffect` returns early
+    while the overview is open: otherwise the cluster tap (which changes the displayed spot) would
+    zoom to 17 and throw away the extent the mode exists to show. `ParkingOverviewCameraEffect`
+    keys on `(isOverviewing, scope)` and not on the list, so a spot saved while the user reads the
+    map does not move it. The cluster ids are frozen at tap time because the clustering re-runs on
+    every zoom; reading "the cluster under the card" live would make the card jump groups under the
+    finger. The map and the cluster manager also have to stay in the **same** `GoogleMap` node:
+    rendering a different composable for the overview would recreate the map and reset the camera.
 
 ## Working rules for agents
 

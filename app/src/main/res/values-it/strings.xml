@@ -19,6 +19,14 @@
     <string name="go_to_my_location">Vai alla mia posizione</string>
     <string name="reset_orientation">Reimposta orientamento</string>
     <string name="share_location">Condividi posizione</string>
+    <string name="exit_overview">Esci dalla panoramica</string>
+    <string name="show_all_spots">Mostra tutti i punti</string>
+    <string name="all_vehicles">Tutti i veicoli</string>
+    <plurals name="saved_spots">
+        <item quantity="one">%d parcheggio salvato</item>
+        <item quantity="many">%d parcheggi salvati</item>
+        <item quantity="other">%d parcheggi salvati</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">Nessuna posizione salvata</string>
@@ -53,6 +61,10 @@
     <string name="clear_all">Cancella tutto</string>
     <string name="delete">Elimina</string>
     <string name="back_to_latest">Torna al più recente</string>
+    <string name="view_vehicle_on_map">Mostra questo veicolo sulla mappa</string>
+    <string name="view_all_on_map">Mostra tutti i veicoli sulla mappa</string>
+    <string name="clear_group">Elimina gruppo</string>
+    <string name="clear_group_message">Tutti i parcheggi salvati di questo gruppo verranno eliminati (%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">Adesso</string>

@@ -10,6 +10,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.repeatOnLifecycle
@@ -118,14 +120,35 @@ internal fun ParkingBackgroundLocationEffect(
 @Composable
 internal fun ParkingCameraEffect(
     displayLocation: ParkingLocationEntity?,
+    isOverviewing: Boolean,
     cameraPositionState: CameraPositionState,
 ) {
-    LaunchedEffect(displayLocation?.id) {
+    LaunchedEffect(displayLocation?.id, isOverviewing) {
+        // The overview owns the camera: it frames every spot when it opens, and paging through a
+        // group must not throw that extent away.
+        if (isOverviewing) return@LaunchedEffect
         displayLocation?.let {
             cameraPositionState.animate(
-                CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 17f),
+                CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), SPOT_ZOOM),
             )
         }
+    }
+}
+
+/**
+ * Frames every spot of the overview when it opens or when its scope changes (one vehicle or all of
+ * them). It keys on the scope rather than on the list so a newly saved spot does not move a map the
+ * user is reading.
+ */
+@Composable
+internal fun ParkingOverviewCameraEffect(
+    state: ParkingUiState,
+    cameraPositionState: CameraPositionState,
+) {
+    val paddingPx = with(LocalDensity.current) { OVERVIEW_PADDING_DP.dp.roundToPx() }
+    LaunchedEffect(state.isOverviewing, state.overview?.scope) {
+        if (!state.isOverviewing) return@LaunchedEffect
+        cameraUpdateFor(state.overviewLocations, paddingPx)?.let { cameraPositionState.animate(it) }
     }
 }
 

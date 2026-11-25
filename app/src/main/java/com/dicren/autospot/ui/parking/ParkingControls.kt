@@ -23,10 +23,12 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Navigation
+import androidx.compose.material.icons.filled.ZoomOutMap
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -59,6 +61,7 @@ import com.dicren.autospot.R
 import com.dicren.autospot.data.ParkingLocationEntity
 import com.dicren.autospot.ui.components.IconTooltip
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.parking.components.AllVehiclesCard
 import com.dicren.autospot.ui.parking.components.LocationCard
 import com.dicren.autospot.ui.parking.components.LocationServicesBanner
 import com.dicren.autospot.ui.parking.components.PermissionBanner
@@ -88,6 +91,7 @@ internal fun ParkingTopOverlay(
     onVehiclesClick: () -> Unit,
     onMyLocationClick: () -> Unit,
     onResetBearing: () -> Unit,
+    onExitOverview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -116,14 +120,20 @@ internal fun ParkingTopOverlay(
             Spacer(modifier = Modifier.height(8.dp))
         }
 
-        VehicleCard(
-            vehicle = state.activeVehicle,
-            onSettingsClick = onVehiclesClick,
-        )
+        // With no vehicle selected (the all-vehicles overview) the card would name a car the user
+        // is not looking at, so it says what the map is actually showing.
+        if (state.isShowingAllVehicles) {
+            AllVehiclesCard(spotCount = state.overviewLocations.size)
+        } else {
+            VehicleCard(
+                vehicle = state.activeVehicle,
+                onSettingsClick = onVehiclesClick,
+            )
+        }
 
-        // No saved spot, no map: the screen shows the empty-state card and there is no camera to
-        // move, so the tools would only be able to do nothing.
-        if (state.displayLocation != null) {
+        // No saved spot and no overview, no map: the screen shows the empty-state card and there is
+        // no camera to move, so the tools would only be able to do nothing.
+        if (state.displayLocation != null || state.isOverviewing) {
             Spacer(modifier = Modifier.height(12.dp))
 
             Column(
@@ -131,6 +141,11 @@ internal fun ParkingTopOverlay(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.spacedBy(8.dp),
             ) {
+                // The way out of the overview sits with the map tools: it is about the map mode,
+                // not about a spot.
+                if (state.isOverviewing) {
+                    ExitOverviewFab(onClick = onExitOverview)
+                }
                 // Without precise location there is no blue dot to fly to, and the button would
                 // only report that it found nothing.
                 if (state.hasLocationPermission) {
@@ -296,6 +311,37 @@ internal fun MyLocationFab(
     )
 }
 
+/** Leaves the "every spot on the map" view and goes back to the regular card. */
+@Composable
+internal fun ExitOverviewFab(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    MapToolFab(
+        imageVector = Icons.Default.Close,
+        contentDescription = stringResource(R.string.exit_overview),
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
+/**
+ * Goes back to every spot of the overview. It replaces [RecenterFab] in that mode: there is no
+ * single car to go back to, the extent is what the user wants to see.
+ */
+@Composable
+internal fun ShowAllSpotsFab(
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    MapToolFab(
+        imageVector = Icons.Default.ZoomOutMap,
+        contentDescription = stringResource(R.string.show_all_spots),
+        onClick = onClick,
+        modifier = modifier,
+    )
+}
+
 /** One-tap navigation to the displayed spot. */
 @Composable
 internal fun NavigateFab(
@@ -370,6 +416,8 @@ internal fun ParkingBottomControls(
     isHistorySheetOpen: Boolean,
     canShowOlder: Boolean,
     canShowNewer: Boolean,
+    isOverviewing: Boolean,
+    onShowAllSpots: () -> Unit,
     callbacks: ParkingBottomCallbacks,
     modifier: Modifier = Modifier,
 ) {
@@ -389,12 +437,18 @@ internal fun ParkingBottomControls(
     ) {
         SnackbarHost(hostState = snackbarHostState, modifier = Modifier.fillMaxWidth())
 
-        if (location != null) {
+        // The overview shows its own tool even with no card: "show every spot again" is the only
+        // way back to the extent after zooming into a group.
+        if (location != null || isOverviewing) {
             Spacer(modifier = Modifier.height(12.dp))
 
             val markerPosition =
-                remember(location.latitude, location.longitude) {
-                    LatLng(location.latitude, location.longitude)
+                if (location != null) {
+                    remember(location.latitude, location.longitude) {
+                        LatLng(location.latitude, location.longitude)
+                    }
+                } else {
+                    null
                 }
 
             // The card is being lifted into the sheet, and it would climb over the route button.
@@ -403,45 +457,57 @@ internal fun ParkingBottomControls(
                 modifier = Modifier.graphicsLayer { alpha = 1f - liftProgress.floatValue },
                 horizontalAlignment = Alignment.End,
             ) {
-                AnimatedVisibility(
-                    visible = rememberIsOffCenter(cameraPositionState, markerPosition),
-                    enter = fadeIn(),
-                    exit = fadeOut(),
-                ) {
-                    Column(horizontalAlignment = Alignment.End) {
-                        RecenterFab(onClick = { callbacks.onRecenter(location) })
+                if (isOverviewing) {
+                    // There is no single car to go back to, so the extent takes its place; the
+                    // spot the card shows can still be driven to.
+                    ShowAllSpotsFab(onClick = onShowAllSpots)
+                    if (location != null) {
                         Spacer(modifier = Modifier.height(12.dp))
+                        NavigateFab(onClick = { callbacks.onNavigate(location) })
                     }
-                }
+                } else if (location != null) {
+                    AnimatedVisibility(
+                        visible = rememberIsOffCenter(cameraPositionState, markerPosition!!),
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        Column(horizontalAlignment = Alignment.End) {
+                            RecenterFab(onClick = { callbacks.onRecenter(location) })
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
 
-                NavigateFab(onClick = { callbacks.onNavigate(location) })
+                    NavigateFab(onClick = { callbacks.onNavigate(location) })
+                }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            if (location != null) {
+                Spacer(modifier = Modifier.height(16.dp))
 
-            HistorySwipeContainer(
-                canSwipeOlder = canShowOlder,
-                canSwipeNewer = canShowNewer,
-                canOpenHistory = historyCount > 1,
-                isHistorySheetOpen = isHistorySheetOpen,
-                onSwipeOlder = callbacks.onOlder,
-                onSwipeNewer = callbacks.onNewer,
-                onOpenHistory = callbacks.onHistory,
-                onLiftChange = { liftProgress.floatValue = it },
-            ) {
-                LocationCard(
-                    location = location,
-                    timeFormatter = timeFormatter,
-                    nowMillis = nowMillis,
-                    historyCount = historyCount,
-                    isFromHistory = isShowingHistory,
-                    canStepOlder = canShowOlder,
-                    canStepNewer = canShowNewer,
-                    onShareClick = { callbacks.onShare(location) },
+                HistorySwipeContainer(
+                    canSwipeOlder = canShowOlder,
+                    canSwipeNewer = canShowNewer,
+                    canOpenHistory = historyCount > 1,
+                    isHistorySheetOpen = isHistorySheetOpen,
+                    onSwipeOlder = callbacks.onOlder,
+                    onSwipeNewer = callbacks.onNewer,
                     onOpenHistory = callbacks.onHistory,
-                    onBackToLatestClick = callbacks.onBackToLatest,
-                    modifier = Modifier.fillMaxWidth(),
-                )
+                    onLiftChange = { liftProgress.floatValue = it },
+                ) {
+                    LocationCard(
+                        location = location,
+                        timeFormatter = timeFormatter,
+                        nowMillis = nowMillis,
+                        historyCount = historyCount,
+                        isFromHistory = isShowingHistory,
+                        canStepOlder = canShowOlder,
+                        canStepNewer = canShowNewer,
+                        onShareClick = { callbacks.onShare(location) },
+                        onOpenHistory = callbacks.onHistory,
+                        onBackToLatestClick = callbacks.onBackToLatest,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
             }
         }
     }

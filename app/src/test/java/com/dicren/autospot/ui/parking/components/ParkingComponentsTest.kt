@@ -355,6 +355,123 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("Clear all").assertDoesNotExist()
     }
 
+    /**
+     * The button sits in the header, and it is the only way into the map overview, so it has to
+     * stay reachable without reading a tooltip.
+     */
+    @Test
+    fun `the history sheet offers its spots on the map`() {
+        var shown = 0
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    onShowOnMap = { shown++ },
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithContentDescription("View this vehicle on the map")
+            .assertIsDisplayed()
+            .performClick()
+
+        assertEquals(1, shown)
+    }
+
+    @Test
+    fun `an empty history has nothing to show on the map`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = emptyList(),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    onShowOnMap = {},
+                    onShowAllVehiclesOnMap = {},
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("View this vehicle on the map").assertDoesNotExist()
+        composeRule.onNodeWithContentDescription("View all vehicles on the map").assertDoesNotExist()
+    }
+
+    /**
+     * With a single vehicle there is nothing extra to show, so the second button is not offered:
+     * two buttons that draw the same spots would only ask the user to choose at random.
+     */
+    @Test
+    fun `showing every vehicle needs more than one vehicle`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    onShowOnMap = {},
+                    onShowAllVehiclesOnMap = null,
+                )
+            }
+        }
+
+        composeRule.onNodeWithContentDescription("View all vehicles on the map").assertDoesNotExist()
+    }
+
+    @Test
+    fun `the overview history says which vehicle each spot belongs to`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    vehicleNames = mapOf(vehicle.id to vehicle.name),
+                    showVehicleNames = true,
+                )
+            }
+        }
+
+        composeRule
+            .onNodeWithText("Mi coche · 42.000000, -5.000000")
+            .assertIsDisplayed()
+    }
+
+    /** "Clear all" would promise the vehicle's whole history; a group is only part of it. */
+    @Test
+    fun `a group is cleared with its own wording`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                HistorySheet(
+                    locations = listOf(location),
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    onLocationSelected = {},
+                    onDeleteLocation = {},
+                    onRequestClearAll = {},
+                    isClusterScoped = true,
+                )
+            }
+        }
+
+        composeRule.onNodeWithText("Delete group").assertIsDisplayed()
+        composeRule.onNodeWithText("Clear all").assertDoesNotExist()
+    }
+
     @Test
     fun `the edit dialog cannot save without a Bluetooth device`() {
         composeRule.setContent {

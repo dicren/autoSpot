@@ -105,6 +105,15 @@ class FakeParkingRepository(
 
     override fun locations(vehicleId: Long): Flow<List<ParkingLocationEntity>> = flowOf(history[vehicleId].orEmpty())
 
+    override fun allLocations(): Flow<List<ParkingLocationEntity>> =
+        flowOf(
+            history.values
+                .flatten()
+                .sortedWith(
+                    compareByDescending<ParkingLocationEntity> { it.timestamp }.thenByDescending { it.id },
+                ),
+        )
+
     override suspend fun saveLocation(
         vehicleId: Long,
         latitude: Double,
@@ -128,6 +137,11 @@ class FakeParkingRepository(
     override suspend fun deleteLocation(id: Long) {
         yield()
         history.replaceAll { _, locations -> locations.filterNot { it.id == id } }
+    }
+
+    override suspend fun deleteLocations(ids: Collection<Long>) {
+        yield()
+        history.replaceAll { _, locations -> locations.filterNot { it.id in ids } }
     }
 
     override suspend fun updateAddress(

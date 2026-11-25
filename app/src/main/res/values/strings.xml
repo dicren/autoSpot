@@ -19,6 +19,13 @@
     <string name="go_to_my_location">Go to my location</string>
     <string name="reset_orientation">Reset orientation</string>
     <string name="share_location">Share location</string>
+    <string name="exit_overview">Exit overview</string>
+    <string name="show_all_spots">Show all spots</string>
+    <string name="all_vehicles">All vehicles</string>
+    <plurals name="saved_spots">
+        <item quantity="one">%d saved spot</item>
+        <item quantity="other">%d saved spots</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">No saved location</string>
@@ -53,6 +60,10 @@
     <string name="clear_all">Clear all</string>
     <string name="delete">Delete</string>
     <string name="back_to_latest">Back to latest</string>
+    <string name="view_vehicle_on_map">View this vehicle on the map</string>
+    <string name="view_all_on_map">View all vehicles on the map</string>
+    <string name="clear_group">Delete group</string>
+    <string name="clear_group_message">Every saved location in this group will be deleted (%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">Just now</string>

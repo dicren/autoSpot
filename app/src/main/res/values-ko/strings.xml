@@ -19,6 +19,12 @@
     <string name="go_to_my_location">내 위치로 이동</string>
     <string name="reset_orientation">방향 초기화</string>
     <string name="share_location">위치 공유</string>
+    <string name="exit_overview">개요 종료</string>
+    <string name="show_all_spots">모든 위치 보기</string>
+    <string name="all_vehicles">모든 차량</string>
+    <plurals name="saved_spots">
+        <item quantity="other">%d개의 저장된 위치</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">저장된 위치 없음</string>
@@ -53,6 +59,10 @@
     <string name="clear_all">모두 삭제</string>
     <string name="delete">삭제</string>
     <string name="back_to_latest">최신으로 돌아가기</string>
+    <string name="view_vehicle_on_map">이 차량을 지도에서 보기</string>
+    <string name="view_all_on_map">모든 차량을 지도에서 보기</string>
+    <string name="clear_group">그룹 삭제</string>
+    <string name="clear_group_message">이 그룹의 저장된 위치가 모두 삭제됩니다(%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">방금</string>

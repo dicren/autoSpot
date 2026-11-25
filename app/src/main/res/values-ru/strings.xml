@@ -19,6 +19,15 @@
     <string name="go_to_my_location">К моему местоположению</string>
     <string name="reset_orientation">Сбросить ориентацию</string>
     <string name="share_location">Поделиться местоположением</string>
+    <string name="exit_overview">Выйти из обзора</string>
+    <string name="show_all_spots">Показать все точки</string>
+    <string name="all_vehicles">Все автомобили</string>
+    <plurals name="saved_spots">
+        <item quantity="one">%d сохранённое место</item>
+        <item quantity="few">%d сохранённых места</item>
+        <item quantity="many">%d сохранённых мест</item>
+        <item quantity="other">%d сохранённых мест</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">Нет сохранённого местоположения</string>
@@ -53,6 +62,10 @@
     <string name="clear_all">Очистить всё</string>
     <string name="delete">Удалить</string>
     <string name="back_to_latest">Вернуться к последнему</string>
+    <string name="view_vehicle_on_map">Показать этот автомобиль на карте</string>
+    <string name="view_all_on_map">Показать все автомобили на карте</string>
+    <string name="clear_group">Удалить группу</string>
+    <string name="clear_group_message">Все сохранённые места этой группы будут удалены (%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">Только что</string>

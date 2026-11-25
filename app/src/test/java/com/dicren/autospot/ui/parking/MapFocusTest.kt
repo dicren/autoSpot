@@ -85,4 +85,37 @@ class MapFocusTest {
         assertTrue("North should drift further than east", north > east)
         assertEquals(1 / cos(Math.toRadians(42.0)), north / east, 1e-6)
     }
+
+    private fun spot(
+        latitude: Double,
+        longitude: Double,
+    ) = com.dicren.autospot.data.ParkingLocationEntity(
+        id = 1,
+        vehicleId = 1,
+        latitude = latitude,
+        longitude = longitude,
+        timestamp = 1L,
+    )
+
+    @Test
+    fun `the overview bounds contain every spot of the scope`() {
+        val bounds =
+            spotBounds(
+                listOf(
+                    spot(42.0, -5.0),
+                    spot(43.5, -3.0),
+                    spot(41.0, -6.5),
+                ),
+            )
+
+        assertEquals(43.5, bounds?.northeast?.latitude ?: 0.0, 1e-9)
+        assertEquals(-3.0, bounds?.northeast?.longitude ?: 0.0, 1e-9)
+        assertEquals(41.0, bounds?.southwest?.latitude ?: 0.0, 1e-9)
+        assertEquals(-6.5, bounds?.southwest?.longitude ?: 0.0, 1e-9)
+    }
+
+    @Test
+    fun `an empty scope has no bounds to frame`() {
+        assertEquals(null, spotBounds(emptyList()))
+    }
 }

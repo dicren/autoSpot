@@ -58,7 +58,9 @@ class ParkingViewModel(
         val vehicles: List<VehicleEntity>,
         val activeVehicle: VehicleEntity?,
         val locations: List<ParkingLocationEntity>,
+        val allLocations: List<ParkingLocationEntity>,
         val selectedLocationId: Long?,
+        val overview: MapOverview?,
     )
 
     private data class Flags(
@@ -70,6 +72,7 @@ class ParkingViewModel(
     )
 
     private val selectedLocationId = MutableStateFlow<Long?>(null)
+    private val overview = MutableStateFlow<MapOverview?>(null)
     private val isSaving = MutableStateFlow(false)
     private val flags =
         MutableStateFlow(
@@ -96,18 +99,31 @@ class ParkingViewModel(
             vehicle?.let { parkingRepository.locations(it.id) } ?: flowOf(emptyList())
         }
 
+    private val allLocations: Flow<List<ParkingLocationEntity>> = parkingRepository.allLocations()
+
     private val content: Flow<Content> =
         combine(
-            vehicleRepository.vehicles,
-            vehicleRepository.activeVehicle,
-            locations,
-            selectedLocationId,
-        ) { vehicles, active, locations, selected ->
-            // `locations` is collected from the same active-vehicle flow, but `combine` can see
-            // the new vehicle before its history flow emits. Filtering keeps the previous car's
-            // spot from appearing under the new one for a frame.
-            Content(vehicles, active, locations.filter { it.vehicleId == active?.id }, selected)
-        }
+            combine(
+                vehicleRepository.vehicles,
+                vehicleRepository.activeVehicle,
+                locations,
+                allLocations,
+                selectedLocationId,
+            ) { vehicles, active, locations, all, selected ->
+                // `locations` is collected from the same active-vehicle flow, but `combine` can see
+                // the new vehicle before its history flow emits. Filtering keeps the previous car's
+                // spot from appearing under the new one for a frame.
+                Content(
+                    vehicles = vehicles,
+                    activeVehicle = active,
+                    locations = locations.filter { it.vehicleId == active?.id },
+                    allLocations = all,
+                    selectedLocationId = selected,
+                    overview = null,
+                )
+            },
+            overview,
+        ) { content, mode -> content.copy(overview = mode) }
 
     val uiState: StateFlow<ParkingUiState> =
         combine(
@@ -119,7 +135,9 @@ class ParkingViewModel(
                 vehicles = content.vehicles,
                 activeVehicle = content.activeVehicle,
                 locations = content.locations,
+                allLocations = content.allLocations,
                 selectedLocationId = content.selectedLocationId,
+                overview = content.overview,
                 hasMonitoringPermission = flags.hasMonitoringPermission,
                 locationAccuracy = flags.locationAccuracy,
                 hasBackgroundLocationPermission = flags.hasBackgroundLocationPermission,
@@ -137,12 +155,33 @@ class ParkingViewModel(
 
     init {
         // A history item belongs to the vehicle that was active when it was picked; switching
-        // vehicles must not keep showing the previous car's spot.
+        // vehicles must not keep showing the previous car's spot. The overview is scoped to that
+        // vehicle too (or to all of them), so it goes away with it.
         viewModelScope.launch {
             vehicleRepository.activeVehicle
                 .map { it?.id }
                 .distinctUntilChanged()
-                .collect { selectedLocationId.value = null }
+                .collect {
+                    selectedLocationId.value = null
+                    overview.value = null
+                }
+        }
+
+        // Clearing the history, deleting the focused cluster or losing the vehicle must not leave
+        // the overview framing spots that are no longer there.
+        viewModelScope.launch {
+            combine(overview, locations, allLocations) { mode, activeSpots, everySpot ->
+                Triple(mode, activeSpots, everySpot)
+            }.collect { (mode, activeSpots, everySpot) ->
+                if (mode == null) return@collect
+                val spots = if (mode.scope == MapScope.ALL_VEHICLES) everySpot else activeSpots
+                when {
+                    spots.isEmpty() -> closeOverview()
+
+                    mode.clusterLocationIds != null &&
+                        spots.none { it.id in mode.clusterLocationIds } -> clearClusterFocus()
+                }
+            }
         }
 
         // Address fill-in runs here, not in the save path: it is network work that can take
@@ -210,6 +249,44 @@ class ParkingViewModel(
 
     fun showLatestLocation() {
         selectedLocationId.value = null
+    }
+
+    /**
+     * Opens the "every spot on the map" view. The active vehicle is left untouched, even for
+     * [MapScope.ALL_VEHICLES]: the mode only stops showing it, so leaving the mode returns to the
+     * car the user was looking at.
+     */
+    fun showOverviewOnMap(scope: MapScope) {
+        selectedLocationId.value = null
+        overview.value = MapOverview(scope)
+    }
+
+    /** Leaves the overview and shows the active vehicle's newest spot again. */
+    fun closeOverview() {
+        selectedLocationId.value = null
+        overview.value = null
+    }
+
+    /**
+     * Shows the card of a group of spots and pages only through them. The ids are frozen here: the
+     * map re-clusters on every zoom, and the card must keep the group the user picked.
+     */
+    fun focusCluster(locationIds: Set<Long>) {
+        if (locationIds.isEmpty() || overview.value == null) return
+        selectedLocationId.value = null
+        overview.value = overview.value?.copy(clusterLocationIds = locationIds)
+    }
+
+    /** Hides the card and shows the whole scope again, without leaving the overview. */
+    fun clearClusterFocus() {
+        selectedLocationId.value = null
+        overview.value = overview.value?.copy(clusterLocationIds = null)
+    }
+
+    /** Deletes the spots of the focused group; the confirmation dialog calls this. */
+    fun clearClusterHistory() {
+        val ids = overview.value?.clusterLocationIds ?: return
+        launchAction { parkingRepository.deleteLocations(ids) }
     }
 
     fun saveCurrentLocation() {

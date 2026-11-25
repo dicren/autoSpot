@@ -68,10 +68,13 @@ class ParkingBottomControlsTest {
         canShowNewer: Boolean = true,
         historyCount: Int = 3,
         isHistorySheetOpen: Boolean = false,
+        isOverviewing: Boolean = false,
+        spot: ParkingLocationEntity? = location,
         onOlder: () -> Unit = {},
         onNewer: () -> Unit = {},
         onHistory: () -> Unit = {},
         onRecenter: () -> Unit = {},
+        onShowAllSpots: () -> Unit = {},
     ): CameraPositionState {
         lateinit var cameraPositionState: CameraPositionState
         composeRule.setContent {
@@ -79,11 +82,16 @@ class ParkingBottomControlsTest {
                 Box(modifier = Modifier.fillMaxSize()) {
                     cameraPositionState =
                         rememberCameraPositionState {
-                            position = CameraPosition.fromLatLngZoom(spot, 17f)
+                            position =
+                                CameraPosition.fromLatLngZoom(
+                                    spot?.let { LatLng(it.latitude, it.longitude) }
+                                        ?: LatLng(location.latitude, location.longitude),
+                                    17f,
+                                )
                         }
                     ParkingBottomControls(
                         snackbarHostState = SnackbarHostState(),
-                        location = location,
+                        location = spot,
                         cameraPositionState = cameraPositionState,
                         timeFormatter = formatter,
                         nowMillis = location.timestamp + 5 * 60_000L,
@@ -92,6 +100,8 @@ class ParkingBottomControlsTest {
                         isHistorySheetOpen = isHistorySheetOpen,
                         canShowOlder = canShowOlder,
                         canShowNewer = canShowNewer,
+                        isOverviewing = isOverviewing,
+                        onShowAllSpots = onShowAllSpots,
                         callbacks =
                             ParkingBottomCallbacks(
                                 onNavigate = {},
@@ -307,6 +317,50 @@ class ParkingBottomControlsTest {
     }
 
     /**
+     * In the overview there is no single car to go back to, so the extent takes its place: the
+     * car button would mean "the spot I am showing", which is not what the mode is about.
+     */
+    @Test
+    fun `the overview replaces the car button with the full extent`() {
+        var shown = 0
+        setContent(
+            isShowingHistory = false,
+            isOverviewing = true,
+            onShowAllSpots = { shown++ },
+        )
+
+        composeRule.onNodeWithContentDescription(GO_TO_CAR).assertDoesNotExist()
+        composeRule.onNodeWithContentDescription(SHOW_ALL).assertIsDisplayed().performClick()
+
+        assertEquals(1, shown)
+    }
+
+    /** With no group picked there is no card, but the way back to the extent still matters. */
+    @Test
+    fun `the overview without a card still offers the full extent`() {
+        setContent(isShowingHistory = false, isOverviewing = true, spot = null)
+
+        composeRule.onNodeWithContentDescription(SHOW_ALL).assertIsDisplayed()
+        composeRule.onNodeWithContentDescription(NAVIGATE).assertDoesNotExist()
+        composeRule.onNodeWithTag(LOCATION_CARD_TAG).assertDoesNotExist()
+    }
+
+    @Test
+    fun `a focused group keeps the route button under the full extent one`() {
+        setContent(isShowingHistory = false, isOverviewing = true)
+
+        assertFabClearsCard(NAVIGATE)
+        assertFabClearsCard(SHOW_ALL)
+
+        val showAll = composeRule.onNodeWithContentDescription(SHOW_ALL).getUnclippedBoundsInRoot()
+        val navigate = composeRule.onNodeWithContentDescription(NAVIGATE).getUnclippedBoundsInRoot()
+        assertTrue(
+            "The full extent button should sit above the route button: $showAll, $navigate",
+            showAll.bottom <= navigate.top,
+        )
+    }
+
+    /**
      * Swipes the card by hand instead of with `swipeLeft()`: that helper only travels the width of
      * the text node, which is less than the 72 dp the card has to move to count as a step.
      */
@@ -333,6 +387,7 @@ class ParkingBottomControlsTest {
     private companion object {
         const val NAVIGATE = "Navigate with Google Maps"
         const val GO_TO_CAR = "Go to my car"
+        const val SHOW_ALL = "Show all spots"
 
         /** Far enough to pass the 72 dp (and 32 dp upward) threshold at any Robolectric density. */
         const val LEFT = -600f

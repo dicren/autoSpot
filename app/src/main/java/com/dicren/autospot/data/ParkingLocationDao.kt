@@ -11,6 +11,13 @@ interface ParkingLocationDao {
     @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC")
     fun getLocationsByVehicle(vehicleId: Long): Flow<List<ParkingLocationEntity>>
 
+    /**
+     * Every stored spot of every vehicle, newest first. The "every spot on the map" view draws
+     * them together, so it cannot reuse the per-vehicle query.
+     */
+    @Query("SELECT * FROM parking_locations ORDER BY timestamp DESC, id DESC")
+    fun getAllLocations(): Flow<List<ParkingLocationEntity>>
+
     @Query("SELECT * FROM parking_locations WHERE vehicleId = :vehicleId ORDER BY timestamp DESC, id DESC LIMIT 1")
     suspend fun getLatestLocationByVehicleOnce(vehicleId: Long): ParkingLocationEntity?
 
@@ -19,6 +26,10 @@ interface ParkingLocationDao {
 
     @Query("DELETE FROM parking_locations WHERE id = :id")
     suspend fun deleteLocation(id: Long)
+
+    /** Deletes a group of spots at once; the overview clears a cluster this way. */
+    @Query("DELETE FROM parking_locations WHERE id IN (:ids)")
+    suspend fun deleteLocations(ids: List<Long>)
 
     /** Stores the resolved address and marks the row as attempted, even when no address was found. */
     @Query(

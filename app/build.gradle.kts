@@ -115,6 +115,8 @@ dependencies {
     // Google Maps
     implementation(libs.play.services.maps)
     implementation(libs.maps.compose)
+    // Clustering for the "every spot on the map" view.
+    implementation(libs.maps.compose.utils)
 
     // DataStore
     implementation(libs.androidx.datastore.preferences)

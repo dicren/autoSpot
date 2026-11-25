@@ -19,6 +19,14 @@
     <string name="go_to_my_location">Aller à ma position</string>
     <string name="reset_orientation">Réinitialiser l\'orientation</string>
     <string name="share_location">Partager l\'emplacement</string>
+    <string name="exit_overview">Quitter la vue d’ensemble</string>
+    <string name="show_all_spots">Afficher tous les points</string>
+    <string name="all_vehicles">Tous les véhicules</string>
+    <plurals name="saved_spots">
+        <item quantity="one">%d place enregistrée</item>
+        <item quantity="many">%d places enregistrées</item>
+        <item quantity="other">%d places enregistrées</item>
+    </plurals>
 
     <!-- No Location -->
     <string name="no_location_title">Aucun emplacement enregistré</string>
@@ -53,6 +61,10 @@
     <string name="clear_all">Tout effacer</string>
     <string name="delete">Supprimer</string>
     <string name="back_to_latest">Retour au plus récent</string>
+    <string name="view_vehicle_on_map">Afficher ce véhicule sur la carte</string>
+    <string name="view_all_on_map">Afficher tous les véhicules sur la carte</string>
+    <string name="clear_group">Supprimer le groupe</string>
+    <string name="clear_group_message">Tous les emplacements enregistrés de ce groupe seront supprimés (%1$d).</string>
 
     <!-- Relative time -->
     <string name="just_now">À l\'instant</string>
