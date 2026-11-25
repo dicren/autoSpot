@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Share
@@ -15,7 +16,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -59,20 +59,22 @@ fun LocationCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
-                    if (isFromHistory) {
-                        TextButton(onClick = onBackToLatestClick) {
-                            Text(
-                                text = stringResource(R.string.back_to_latest),
-                                style = MaterialTheme.typography.bodySmall,
-                            )
-                        }
-                    }
                 }
 
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
+                    // Kept in the action row, not as a row of its own: a second line made the
+                    // card taller every time an old spot was selected.
+                    if (isFromHistory) {
+                        IconButton(onClick = onBackToLatestClick) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = stringResource(R.string.back_to_latest),
+                            )
+                        }
+                    }
                     IconButton(onClick = onCenterMapClick) {
                         Icon(
                             imageVector = Icons.Default.MyLocation,

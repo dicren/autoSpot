@@ -209,7 +209,11 @@ All UI is Compose, split in `ui/`:
 - `ui/parking/ParkingEffects.kt` — the side effects: refresh on resume, start/stop the monitor,
   request `POST_NOTIFICATIONS`, explain the background-location requirement and follow the
   displayed spot with the camera.
-- `ui/parking/ParkingControls.kt` — the top banners/vehicle card, compass FAB and navigate FAB.
+- `ui/parking/ParkingControls.kt` — the top banners/vehicle card, the compass FAB, and
+  `ParkingBottomControls`: snackbar, navigate FAB and `LocationCard` stacked in **one column**. The
+  FAB used to be an overlay with a fixed bottom padding and the card grew on top of it whenever an
+  old spot was selected ("back to latest" was a second row); keep them in the column, never with
+  absolute offsets. `ParkingBottomControlsTest` asserts the FAB still clears the card.
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
   `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.

@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,7 +40,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dicren.autospot.R
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
 import com.dicren.autospot.ui.parking.components.BackgroundLocationDialog
-import com.dicren.autospot.ui.parking.components.LocationCard
 import com.dicren.autospot.ui.parking.components.NoLocationCard
 import com.dicren.autospot.util.BluetoothDeviceInfo
 import com.dicren.autospot.util.BluetoothDevices
@@ -200,73 +198,7 @@ fun ParkingScreen(
                     ).padding(top = 92.dp, end = 16.dp),
         )
 
-        if (displayLocation != null) {
-            NavigateFab(
-                onClick = {
-                    val opened =
-                        MapsIntents.openNavigation(
-                            context,
-                            displayLocation.latitude,
-                            displayLocation.longitude,
-                        )
-                    if (!opened) {
-                        coroutineScope.launch {
-                            snackbarHostState.showSnackbar(mapsNotInstalled)
-                        }
-                    }
-                },
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomEnd)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(
-                                WindowInsetsSides.Bottom + WindowInsetsSides.End,
-                            ),
-                        ).padding(end = 16.dp, bottom = 132.dp),
-            )
-
-            LocationCard(
-                location = displayLocation,
-                timeFormatter = timeFormatter,
-                nowMillis = nowMillis,
-                historyCount = state.locations.size,
-                isFromHistory = state.isShowingHistory,
-                onShareClick = {
-                    runCatching {
-                        context.startActivity(
-                            MapsIntents.shareIntent(
-                                displayLocation.latitude,
-                                displayLocation.longitude,
-                                shareTitle,
-                            ),
-                        )
-                    }.onFailure { Log.w(TAG, "No app can share the location", it) }
-                },
-                onHistoryClick = { showHistorySheet = true },
-                onBackToLatestClick = viewModel::showLatestLocation,
-                onCenterMapClick = {
-                    coroutineScope.launch {
-                        cameraPositionState.animate(
-                            CameraUpdateFactory.newLatLngZoom(
-                                LatLng(
-                                    displayLocation.latitude,
-                                    displayLocation.longitude,
-                                ),
-                                17f,
-                            ),
-                        )
-                    }
-                },
-                modifier =
-                    Modifier
-                        .align(Alignment.BottomCenter)
-                        .windowInsetsPadding(
-                            WindowInsets.safeDrawing.only(
-                                WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-                            ),
-                        ).padding(16.dp),
-            )
-        } else if (state.isReady) {
+        if (displayLocation == null && state.isReady) {
             NoLocationCard(
                 isSaving = state.isSaving,
                 onSaveLocationClick = viewModel::saveCurrentLocation,
@@ -274,16 +206,53 @@ fun ParkingScreen(
             )
         }
 
-        SnackbarHost(
-            hostState = snackbarHostState,
-            modifier =
-                Modifier
-                    .align(Alignment.BottomCenter)
-                    .windowInsetsPadding(
-                        WindowInsets.safeDrawing.only(
-                            WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
-                        ),
-                    ).padding(start = 16.dp, end = 16.dp, bottom = 120.dp),
+        ParkingBottomControls(
+            snackbarHostState = snackbarHostState,
+            location = displayLocation,
+            timeFormatter = timeFormatter,
+            nowMillis = nowMillis,
+            historyCount = state.locations.size,
+            isShowingHistory = state.isShowingHistory,
+            callbacks =
+                ParkingBottomCallbacks(
+                    onNavigate = { location ->
+                        val opened =
+                            MapsIntents.openNavigation(
+                                context,
+                                location.latitude,
+                                location.longitude,
+                            )
+                        if (!opened) {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(mapsNotInstalled)
+                            }
+                        }
+                    },
+                    onShare = { location ->
+                        runCatching {
+                            context.startActivity(
+                                MapsIntents.shareIntent(
+                                    location.latitude,
+                                    location.longitude,
+                                    shareTitle,
+                                ),
+                            )
+                        }.onFailure { Log.w(TAG, "No app can share the location", it) }
+                    },
+                    onCenterMap = { location ->
+                        coroutineScope.launch {
+                            cameraPositionState.animate(
+                                CameraUpdateFactory.newLatLngZoom(
+                                    LatLng(location.latitude, location.longitude),
+                                    17f,
+                                ),
+                            )
+                        }
+                    },
+                    onHistory = { showHistorySheet = true },
+                    onBackToLatest = viewModel::showLatestLocation,
+                ),
+            modifier = Modifier.align(Alignment.BottomCenter),
         )
     }
 

@@ -152,7 +152,7 @@ class ParkingComponentsTest {
         }
 
         composeRule.onNodeWithContentDescription("History").assertIsDisplayed()
-        composeRule.onNodeWithText("Back to latest").performClick()
+        composeRule.onNodeWithContentDescription("Back to latest").performClick()
 
         assertTrue(backClicked)
     }

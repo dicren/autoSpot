@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
@@ -19,6 +20,8 @@ import androidx.compose.material.icons.filled.Navigation
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -28,6 +31,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.dicren.autospot.R
+import com.dicren.autospot.data.ParkingLocationEntity
+import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.parking.components.LocationCard
 import com.dicren.autospot.ui.parking.components.LocationServicesBanner
 import com.dicren.autospot.ui.parking.components.PermissionBanner
 import com.dicren.autospot.ui.parking.components.VehicleCard
@@ -127,5 +133,69 @@ internal fun NavigateFab(
             contentDescription = stringResource(R.string.navigate_button),
             tint = MaterialTheme.colorScheme.onPrimary,
         )
+    }
+}
+
+/** The actions of the bottom overlay, taking the spot they refer to. */
+internal data class ParkingBottomCallbacks(
+    val onNavigate: (ParkingLocationEntity) -> Unit,
+    val onShare: (ParkingLocationEntity) -> Unit,
+    val onCenterMap: (ParkingLocationEntity) -> Unit,
+    val onHistory: () -> Unit,
+    val onBackToLatest: () -> Unit,
+)
+
+/**
+ * Everything anchored to the bottom of the screen: the snackbar, the navigation FAB and the card
+ * with the displayed spot.
+ *
+ * They share one column on purpose. The FAB used to be an independent overlay placed with a fixed
+ * bottom padding, so the card covered it as soon as the card grew (the "back to latest" row, a
+ * longer text, a bigger font). Inside the column the FAB always sits above the card, whatever
+ * height the card needs, and the snackbar stacks above the FAB instead of crossing it.
+ */
+@Composable
+internal fun ParkingBottomControls(
+    snackbarHostState: SnackbarHostState,
+    location: ParkingLocationEntity?,
+    timeFormatter: ParkingTimeFormatter,
+    nowMillis: Long,
+    historyCount: Int,
+    isShowingHistory: Boolean,
+    callbacks: ParkingBottomCallbacks,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier =
+            modifier
+                .windowInsetsPadding(
+                    WindowInsets.safeDrawing.only(
+                        WindowInsetsSides.Bottom + WindowInsetsSides.Horizontal,
+                    ),
+                ).padding(16.dp),
+        horizontalAlignment = Alignment.End,
+    ) {
+        SnackbarHost(hostState = snackbarHostState, modifier = Modifier.fillMaxWidth())
+
+        if (location != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+
+            NavigateFab(onClick = { callbacks.onNavigate(location) })
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            LocationCard(
+                location = location,
+                timeFormatter = timeFormatter,
+                nowMillis = nowMillis,
+                historyCount = historyCount,
+                isFromHistory = isShowingHistory,
+                onShareClick = { callbacks.onShare(location) },
+                onHistoryClick = callbacks.onHistory,
+                onBackToLatestClick = callbacks.onBackToLatest,
+                onCenterMapClick = { callbacks.onCenterMap(location) },
+                modifier = Modifier.fillMaxWidth(),
+            )
+        }
     }
 }
