@@ -213,6 +213,8 @@ fun ParkingScreen(
             nowMillis = nowMillis,
             historyCount = state.locations.size,
             isShowingHistory = state.isShowingHistory,
+            canShowOlder = state.canStepOlder,
+            canShowNewer = state.canStepNewer,
             callbacks =
                 ParkingBottomCallbacks(
                     onNavigate = { location ->
@@ -251,6 +253,9 @@ fun ParkingScreen(
                     },
                     onHistory = { showHistorySheet = true },
                     onBackToLatest = viewModel::showLatestLocation,
+                    // Swiping the card walks the history; both directions stop at the ends.
+                    onOlder = { state.stepIndex(older = true)?.let { viewModel.showSpotAt(state, it) } },
+                    onNewer = { state.stepIndex(older = false)?.let { viewModel.showSpotAt(state, it) } },
                 ),
             modifier = Modifier.align(Alignment.BottomCenter),
         )
@@ -318,6 +323,18 @@ private fun rememberNow(): Long {
         }
     }
     return now
+}
+
+/**
+ * Shows the spot at [index] of the newest-first history. Index 0 is the latest spot, which is
+ * represented by clearing the selection: selecting it explicitly would keep the "back to latest"
+ * arrow on screen while the card is already showing the newest spot.
+ */
+private fun ParkingViewModel.showSpotAt(
+    state: ParkingUiState,
+    index: Int,
+) {
+    if (index == 0) showLatestLocation() else selectLocation(state.locations[index])
 }
 
 private fun Context.openLocationSettings() {

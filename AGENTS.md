@@ -214,6 +214,14 @@ All UI is Compose, split in `ui/`:
   FAB used to be an overlay with a fixed bottom padding and the card grew on top of it whenever an
   old spot was selected ("back to latest" was a second row); keep them in the column, never with
   absolute offsets. `ParkingBottomControlsTest` asserts the FAB still clears the card.
+  The card is also the handle for the history: `HistorySwipeContainer` wraps it and swiping it
+  **left** shows the older spot, **right** returns towards the newest one, with a 72 dp threshold
+  or a 1 200 px/s flick, a rubber-band bump when there is nothing on that side, one haptic tick per
+  step, and no wrap-around at either end. The drag offset is applied to the card, not to the node
+  that reads the pointer: moving the detector would drag the coordinate system its deltas are
+  measured in. The step animation runs on `rememberCoroutineScope`, not on the pointer-input scope,
+  because that one has no frame clock (it hangs under the Compose test rule). The gesture is
+  invisible by design, so the history sheet stays the discoverable and accessible path.
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator.
 - `ui/parking/ParkingSheets.kt` — the vehicle list, history and "clear all" dialogs, with a
   `ParkingSheetCallbacks` data class so the composable does not take twenty lambdas.
@@ -223,7 +231,11 @@ All UI is Compose, split in `ui/`:
   `ParkingEvent.OperationFailed` instead of crashing the app. Switching the active vehicle clears
   the selected history item, and the location list is filtered by the active vehicle id so the
   previous car's history cannot appear for a frame while the new Room flow emits. `isReady` stays
-  false until the first real emission so the UI never acts on the defaults.
+  false until the first real emission so the UI never acts on the defaults. `ParkingUiState` also
+  derives the history position (`displayIndex`, `canStepOlder`, `canStepNewer`, `stepIndex`), which
+  is what the swipe uses: index 0 is the newest spot and is represented by a null
+  `selectedLocationId`, so stepping back to the newest spot must clear the selection instead of
+  selecting it, or the "back to latest" arrow would stay on screen.
 - `ui/parking/components/` — stateless components (`VehicleCard`, `Banners`, `LocationCard`,
   `NoLocationCard`, `HistorySheet`, `VehiclesSheet`, `VehicleEditDialog`,
   `BackgroundLocationDialog`) that take state and callbacks, which is what the Compose tests
