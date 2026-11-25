@@ -2,11 +2,13 @@
 <data-extraction-rules>
     <cloud-backup>
         <!--
-          The parking database is excluded from cloud backup on purpose. Only the onboarding flag
-          is uploaded, and it contains no personal data. A device-to-device transfer keeps the
-          vehicles and the parking history (see the device-transfer section below). Declaring
-          only the datastore as an include is what excludes the database from this section.
+          These files go to the user's own Google account when Android backup is enabled. The
+          platform encrypts the backup; AutoSpot never receives or has access to it. Keep this
+          list in sync with backup_rules.xml and the privacy policy.
         -->
+        <include domain="database" path="parking_database" />
+        <include domain="database" path="parking_database-shm" />
+        <include domain="database" path="parking_database-wal" />
         <include domain="file" path="datastore/settings.preferences_pb" />
     </cloud-backup>
     <device-transfer>

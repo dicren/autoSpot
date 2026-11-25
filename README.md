@@ -14,7 +14,7 @@ AutoSpot is an open-source Android app that automatically saves your parking loc
 - **Parking History** - View all your previous parking locations
 - **Share Location** - Share your parking spot with friends or family
 - **Home Screen Shortcut** - Quick access to navigate to your car
-- **Privacy First** - All data stays on your device. No accounts, no tracking, no ads
+- **Privacy First** - We never receive your data. No accounts, no tracking, no ads
 - **Multi-language** - Available in 9 languages: English, Spanish, French, German, Italian, Russian, Japanese, Chinese, and Korean
 
 ## How It Works
@@ -131,8 +131,8 @@ Compose components, plus an instrumented smoke test that launches the real activ
 
 AutoSpot respects your privacy:
 
-- **No data collection** - All data is stored locally on your device
-- **No cloud copy of your parking history** - The vehicle and location database is excluded from Android cloud backup. Only the onboarding flag, which contains no personal data, can be backed up. A direct device-to-device transfer still copies the database.
+- **No data collection** - We never receive your data; it stays on your device or in your own Android backup
+- **Backups stay in your account** - If you enable Android backup, your vehicles and parking history are copied to your own Google account, encrypted by the platform. AutoSpot does not receive or have access to that backup. You can disable or delete it from your Google account settings.
 - **No analytics** - We don't track how you use the app
 - **No ads** - The app is completely ad-free
 - **No accounts** - No sign-up required

@@ -249,11 +249,11 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   that the background-location rationale was already shown. Writes are best effort: a failed
   write must not crash the app.
 - Cloud backup / device transfer rules (`res/xml/backup_rules.xml`,
-  `res/xml/data_extraction_rules.xml`): **cloud backup includes only the DataStore preferences**
-  (`datastore/settings.preferences_pb`, i.e. the onboarding flag). The parking database is
-  deliberately excluded from the cloud, while `<device-transfer>` still copies it between the
-  user's own devices. Do not add the database back to `<cloud-backup>`: the privacy policy
-  promises that location history stays on the device.
+  `res/xml/data_extraction_rules.xml`) include the three database files and the DataStore
+  preferences (`datastore/settings.preferences_pb`) in **both** `<cloud-backup>` and
+  `<device-transfer>`. Android copies the backup to the user's own Google account, encrypted by
+  the platform; AutoSpot never receives or has access to it. Keep both XML files and the privacy
+  policy in sync; the policy must not claim that data is excluded from cloud backup.
 
 ## Conventions
 
