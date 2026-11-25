@@ -154,6 +154,8 @@ class BluetoothMonitorServiceTest {
 
         assertEquals(Service.START_NOT_STICKY, result)
         assertTrue(shadowOf(controller.get()).isStoppedBySelf)
+        // Stopping without entering the foreground first makes Android kill the process.
+        assertNotNull(shadowOf(controller.get()).lastForegroundNotification)
         controller.destroy()
     }
 

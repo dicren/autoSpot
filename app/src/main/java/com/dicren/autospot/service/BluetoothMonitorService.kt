@@ -170,6 +170,25 @@ class BluetoothMonitorService : Service() {
         flags: Int,
         startId: Int,
     ): Int {
+        // The service is started with startForegroundService(), so it must call
+        // startForeground() even when it is about to stop: stopping first makes Android throw
+        // ForegroundServiceDidNotStartInTimeException and kill the process.
+        try {
+            ServiceCompat.startForeground(
+                this,
+                AppNotifications.MONITOR_NOTIFICATION_ID,
+                notifications.monitorNotification(),
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
+            )
+        } catch (e: Exception) {
+            // SecurityException when a required permission disappeared, and
+            // ForegroundServiceStartNotAllowedException when the system refuses the start.
+            Log.e(TAG, "Cannot start foreground monitor", e)
+            notifications.notifyMonitorFailed()
+            stopSelf()
+            return START_NOT_STICKY
+        }
+
         if (!Permissions.canMonitor(this)) {
             Log.w(TAG, "Location or Bluetooth permission missing, stopping monitor")
             notifications.notifyMonitorFailed()
@@ -177,22 +196,7 @@ class BluetoothMonitorService : Service() {
             return START_NOT_STICKY
         }
 
-        return try {
-            ServiceCompat.startForeground(
-                this,
-                AppNotifications.MONITOR_NOTIFICATION_ID,
-                notifications.monitorNotification(),
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE,
-            )
-            START_STICKY
-        } catch (e: Exception) {
-            // SecurityException when a location permission is missing, and
-            // ForegroundServiceStartNotAllowedException when the system refuses the start.
-            Log.e(TAG, "Cannot start foreground monitor", e)
-            notifications.notifyMonitorFailed()
-            stopSelf()
-            START_NOT_STICKY
-        }
+        return START_STICKY
     }
 
     override fun onDestroy() {

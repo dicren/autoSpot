@@ -358,7 +358,14 @@ Traps and limitations verified in the current tree. Fix them deliberately, not a
 12. **Approximate location is not a usable permission.** If the user picks "Approximate" (Android
     12+), `hasLocation` is false, the monitor does not start and the manual save cannot work. The
     banner now says "Precise location required" instead of the generic permissions notice.
-13. **The monitor and the save service use different foreground-service types.** The monitor is
+13. **A `startForegroundService` start must reach `startForeground`, even if the service stops.**
+    `BluetoothMonitorService` used to check its permissions first and call `stopSelf()` when they
+    were gone. Android 12+ then killed the process with
+    `ForegroundServiceDidNotStartInTimeException: startForegroundService() did not then call
+    Service.startForeground()`. It now enters the foreground before checking permissions and stops
+    afterwards; verified on an API 37 emulator by revoking background location and starting the
+    service as the app UID. Covered by `BluetoothMonitorServiceTest`.
+14. **The monitor and the save service use different foreground-service types.** The monitor is
     `connectedDevice` (it only watches Bluetooth); `LocationSaveService` is `location`. The save
     service is started from the background while the monitor is running, which Android 14+
     restricts, so this exact combination was verified on a Pixel 7 Pro (Android 16): app in the
