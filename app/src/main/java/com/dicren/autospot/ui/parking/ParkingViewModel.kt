@@ -243,8 +243,18 @@ class ParkingViewModel(
      */
     suspend fun findMyLocation(): LocationFix? = locateSelf.find()
 
+    /**
+     * Shows a spot picked in the history. Picking the newest one clears the selection instead of
+     * setting it, the same way a swipe back to it does: index 0 is what the card falls back to, and
+     * keeping it selected would put a "back to latest" control on a card that already shows the
+     * latest spot.
+     */
     fun selectLocation(location: ParkingLocationEntity) {
-        selectedLocationId.value = location.id
+        val isNewest =
+            uiState.value.historyLocations
+                .firstOrNull()
+                ?.id == location.id
+        selectedLocationId.value = if (isNewest) null else location.id
     }
 
     fun showLatestLocation() {

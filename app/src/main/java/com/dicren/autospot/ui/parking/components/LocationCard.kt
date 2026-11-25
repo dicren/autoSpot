@@ -1,5 +1,10 @@
 package com.dicren.autospot.ui.parking.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandHorizontally
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -13,9 +18,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.KeyboardDoubleArrowRight
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -51,6 +56,10 @@ internal const val HISTORY_HANDLE_TAG = "location_card_history_handle"
  * The card is also the handle of the parking history: swiping it up opens the history sheet and
  * swiping it sideways walks that history. The old history button is gone; [HistoryHandle] is the
  * visual cue for both gestures, and it is also what accessibility services activate.
+ *
+ * The way back is the rightmost action, after Share: it is the edge the card already reads as
+ * "newest", and the glyph points that way. Share keeps the edge while there is nothing to go back
+ * to, because the arrow is only composed with a history selection.
  */
 @Composable
 fun LocationCard(
@@ -104,24 +113,32 @@ fun LocationCard(
                     )
                 }
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    // Kept in the action row, not as a row of its own: a second line made the
-                    // card taller every time an old spot was selected.
-                    if (isFromHistory) {
-                        TooltippedIconButton(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            label = stringResource(R.string.back_to_latest),
-                            onClick = onBackToLatestClick,
-                        )
-                    }
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     TooltippedIconButton(
                         imageVector = Icons.Default.Share,
                         label = stringResource(R.string.share_location),
                         onClick = onShareClick,
                     )
+                    // The way back is the last thing on the right, and it is a pair with the glyph:
+                    // an arrow that points right only reads as "the newest" on that edge, which is
+                    // the one the card already uses for "newer" (see the chevron above). Share
+                    // gives up the edge while it is there and slides back when it leaves, instead
+                    // of the icon jumping to a new place; the spacing lives inside the animation so
+                    // nothing is left behind when it collapses.
+                    AnimatedVisibility(
+                        visible = isFromHistory,
+                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End),
+                    ) {
+                        Row {
+                            Spacer(modifier = Modifier.width(ACTION_SPACING))
+                            TooltippedIconButton(
+                                imageVector = Icons.Default.KeyboardDoubleArrowRight,
+                                label = stringResource(R.string.back_to_latest),
+                                onClick = onBackToLatestClick,
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -203,6 +220,12 @@ private fun StepChevron(
 
 /** Quiet enough to sit above the address without competing with it. */
 private const val HANDLE_ALPHA = 0.35f
+
+/**
+ * Gap between the two card actions. It is part of the arrow's animation, not a `spacedBy` on the
+ * row, so Share sits flush with the edge whenever the arrow is gone.
+ */
+private val ACTION_SPACING = 4.dp
 
 /** Readable as "there is another page" without looking like a button. */
 private const val CHEVRON_ENABLED_ALPHA = 0.6f

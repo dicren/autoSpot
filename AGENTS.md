@@ -271,6 +271,17 @@ All UI is Compose, split in `ui/`:
   Both the grabber and its action exist only while `historyCount > 1`. `LOCATION_CARD_TAG` and
   `HISTORY_HANDLE_TAG` let the layout tests measure the card and find the grabber without guessing
   its padding.
+  The way back to the latest spot is the card's **last action, on the right**, after Share: an
+  arrow that points right only reads as "the newest" on that edge, which is the one the card
+  already uses for "newer" (the right chevron). The glyph and the edge are a pair — `ArrowBack` in
+  that position points away from the edge it sits on and is worse than it was on the left. Share
+  gives up the edge while the arrow is there and slides back when it leaves, because the arrow
+  lives in an `AnimatedVisibility` with `expandHorizontally`/`shrinkHorizontally` anchored to
+  `Alignment.End`, and the 4 dp gap is inside the animation (a `spacedBy` would leave Share 4 dp
+  short of the edge with nothing beside it). `ParkingComponentsTest` pins the order and the
+  absence. `ParkingViewModel.selectLocation` clears the selection when the newest spot is picked,
+  the same rule the swipe follows: index 0 is what the card already falls back to, and selecting it
+  would leave a "back to latest" control on a card showing the latest.
 - `ui/parking/ParkingMap.kt` — the `GoogleMap` + marker, kept out of the orchestrator. In the map
   overview it also draws the clustered spots: the normal marker and the cluster manager live in the
   same `GoogleMap` node on purpose, because swapping the composable would recreate the map and lose

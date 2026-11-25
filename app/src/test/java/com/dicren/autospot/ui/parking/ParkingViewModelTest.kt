@@ -240,14 +240,15 @@ class ParkingViewModelTest {
             val second = addVehicle("B")
             parking.saveLocation(first, 1.0, 1.0)
             parking.saveLocation(second, 2.0, 2.0)
+            parking.saveLocation(second, 3.0, 3.0)
             val viewModel = viewModel()
 
             viewModel.uiState.test {
                 var state = awaitItem()
-                while (state.locations.isEmpty() || state.locations.any { it.vehicleId != second }) {
+                while (state.locations.size != 2 || state.locations.any { it.vehicleId != second }) {
                     state = awaitItem()
                 }
-                viewModel.selectLocation(state.locations.first())
+                viewModel.selectLocation(state.locations.last())
                 while (state.selectedLocationId == null) state = awaitItem()
                 assertTrue(state.isShowingHistory)
 
@@ -256,6 +257,32 @@ class ParkingViewModelTest {
                     state = awaitItem()
                 }
 
+                assertFalse(state.isShowingHistory)
+                cancelAndIgnoreRemainingEvents()
+            }
+        }
+
+    @Test
+    fun `picking the newest spot is the same as showing the latest one`() =
+        runTest {
+            val id = addVehicle("A")
+            parking.saveLocation(id, 1.0, 1.0)
+            parking.saveLocation(id, 2.0, 2.0)
+            val viewModel = viewModel()
+
+            viewModel.uiState.test {
+                var state = awaitItem()
+                while (state.locations.size != 2) state = awaitItem()
+
+                // An older spot is a selection…
+                viewModel.selectLocation(state.locations.last())
+                while (state.selectedLocationId == null) state = awaitItem()
+                assertTrue(state.isShowingHistory)
+
+                // …and the newest one is the spot the card already falls back to, so picking it
+                // must not leave a "back to latest" control on a card that shows the latest.
+                viewModel.selectLocation(state.locations.first())
+                while (state.selectedLocationId != null) state = awaitItem()
                 assertFalse(state.isShowingHistory)
                 cancelAndIgnoreRemainingEvents()
             }
@@ -517,12 +544,13 @@ class ParkingViewModelTest {
             parking.saveLocation(id, 1.0, 1.0)
             parking.saveLocation(id, 2.0, 2.0)
             val viewModel = viewModel()
-            val location = parking.latestLocationOnce(id)!!
 
             viewModel.uiState.test {
                 var state = awaitItem()
                 while (state.locations.size != 2) state = awaitItem()
 
+                // The older spot: picking the newest one is the same as having no selection.
+                val location = state.locations.last()
                 viewModel.selectLocation(location)
                 while (state.selectedLocationId != location.id) state = awaitItem()
 

@@ -8,6 +8,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
+import androidx.compose.ui.test.getUnclippedBoundsInRoot
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.v2.createComposeRule
@@ -175,6 +176,8 @@ class ParkingComponentsTest {
         composeRule.onNodeWithText("5 minutes ago").assertIsDisplayed()
         // Nothing to page through and nothing to open, so the grabber stays out of the way.
         composeRule.onNodeWithTag(HISTORY_HANDLE_TAG).assertDoesNotExist()
+        // The newest spot is the default, so there is nowhere to go back to: Share keeps the edge.
+        composeRule.onNodeWithContentDescription("Back to latest").assertDoesNotExist()
         // Recentring lives on the map now: the card keeps its width for the address.
         composeRule.onNodeWithContentDescription("Center map").assertDoesNotExist()
     }
@@ -227,6 +230,36 @@ class ParkingComponentsTest {
         composeRule.onNodeWithContentDescription("Back to latest").performClick()
 
         assertTrue(backClicked)
+    }
+
+    /**
+     * The arrow points right, so it belongs on the right edge, which the card already reads as
+     * "newest" (the newer chevron). Share gives it that edge and slides back when it goes.
+     */
+    @Test
+    fun `the way back to the latest spot is the last action on the right`() {
+        composeRule.setContent {
+            AutoSpotTheme {
+                LocationCard(
+                    location = location,
+                    timeFormatter = formatter,
+                    nowMillis = nowMillis,
+                    historyCount = 3,
+                    isFromHistory = true,
+                    canStepOlder = true,
+                    canStepNewer = true,
+                    onShareClick = {},
+                    onOpenHistory = {},
+                    onBackToLatestClick = {},
+                )
+            }
+        }
+
+        val share = composeRule.onNodeWithContentDescription("Share location").getUnclippedBoundsInRoot()
+        val back = composeRule.onNodeWithContentDescription("Back to latest").getUnclippedBoundsInRoot()
+
+        assertTrue(back.left > share.left)
+        assertTrue(back.right > share.right)
     }
 
     /**
