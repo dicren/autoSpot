@@ -95,7 +95,8 @@ internal fun ParkingBackgroundLocationEffect(
         state.vehicles.isNotEmpty(),
     ) {
         if (state.needsBackgroundLocationRationale) {
-            viewModel.markBackgroundRationaleShown()
+            // The flag is persisted from the dialog callbacks, not here: a dialog that never
+            // reaches the user must not stop the explanation from appearing next time.
             onShowRationale()
         }
     }

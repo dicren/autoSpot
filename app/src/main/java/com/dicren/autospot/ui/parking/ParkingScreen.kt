@@ -17,12 +17,8 @@ import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -43,6 +39,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.dicren.autospot.R
 import com.dicren.autospot.ui.format.ParkingTimeFormatter
+import com.dicren.autospot.ui.parking.components.BackgroundLocationDialog
 import com.dicren.autospot.ui.parking.components.LocationCard
 import com.dicren.autospot.ui.parking.components.NoLocationCard
 import com.dicren.autospot.util.BluetoothDeviceInfo
@@ -321,24 +318,15 @@ fun ParkingScreen(
     )
 
     if (showBackgroundRationale) {
-        AlertDialog(
-            onDismissRequest = { showBackgroundRationale = false },
-            title = { Text(stringResource(R.string.background_location_title)) },
-            text = { Text(stringResource(R.string.background_location_description)) },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        showBackgroundRationale = false
-                        backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
-                    },
-                ) {
-                    Text(stringResource(R.string.continue_label))
-                }
+        BackgroundLocationDialog(
+            onConfirm = {
+                showBackgroundRationale = false
+                viewModel.markBackgroundRationaleShown()
+                backgroundLocationLauncher.launch(Manifest.permission.ACCESS_BACKGROUND_LOCATION)
             },
-            dismissButton = {
-                TextButton(onClick = { showBackgroundRationale = false }) {
-                    Text(stringResource(R.string.not_now))
-                }
+            onDismiss = {
+                showBackgroundRationale = false
+                viewModel.markBackgroundRationaleShown()
             },
         )
     }

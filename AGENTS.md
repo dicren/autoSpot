@@ -185,8 +185,9 @@ required permission is granted, and stops it when the last vehicle is removed. I
 default state would stop the monitor that `BootReceiver` had just started. When monitoring starts
 and `POST_NOTIFICATIONS` is missing (Android 13+), the screen asks for it; denying it only hides
 the ongoing notification, the service keeps running. The "Allow all the time" rationale is only
-shown after precise location is granted and a vehicle exists, is recorded in DataStore so it is
-not repeated on every launch, and hides the permission banner while the dialog is on screen.
+shown after precise location is granted and a vehicle exists, hides the permission banner while
+the dialog is on screen, and is recorded in DataStore only when the user confirms or dismisses it.
+A dialog that never reached the user is shown again; "Not now" is persisted so it does not nag.
 
 ### UI
 
@@ -252,7 +253,7 @@ The map is edge-to-edge; the cards apply `WindowInsets.safeDrawing` themselves.
   history is capped at 100 rows per vehicle.
 - **`SettingsRepository`** wraps the `settings` DataStore. It treats an `IOException` (corrupt
   file) as "not onboarded" instead of crashing, and persists the onboarding flag plus the fact
-  that the background-location rationale was already shown. Writes are best effort: a failed
+  that the background-location rationale was shown and acted on. Writes are best effort: a failed
   write must not crash the app.
 - Cloud backup / device transfer rules (`res/xml/backup_rules.xml`,
   `res/xml/data_extraction_rules.xml`) include the three database files and the DataStore
